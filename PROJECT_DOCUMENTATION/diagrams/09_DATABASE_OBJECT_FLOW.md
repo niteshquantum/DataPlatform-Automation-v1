@@ -1,0 +1,12 @@
+# 09 — Database Object Flow
+
+```mermaid
+flowchart TD
+    A[deploy_objects.bat] --> B[bootstrap_generator.py<br/>GENERATION ONLY]
+    B --> C[ObjectDetector.detect]
+    C --> D[generate SQL per type<br/>objects/<db>/generated]
+    D --> E[generate XML changesets<br/>liquibase/<db>/objects]
+    E --> F[generate_master_objects.py<br/>master_objects.xml]
+    F --> G[deploy_objects.py<br/>run_liquibase master_objects.xml]
+    G --> H[validate_objects.bat]
+```

@@ -1,0 +1,43 @@
+Caller,Callee,InvocationType,Database,OS,Purpose,EvidenceFile
+jenkins/Jenkinsfile,scripts/batch/postgresql/setup/*.bat,Direct (bat),postgresql,windows,Install/start/configure PostgreSQL per stage,Jenkinsfile (PostgreSQL Setup stage)
+jenkins/Jenkinsfile,scripts/bash/mysql/setup/*.sh,Direct (sh),mysql,ubuntu,Install/start/configure MySQL per stage,Jenkinsfile (MySQL Setup stage)
+jenkins/Jenkinsfile,scripts/bash/postgresql/setup/run_liquibase.sh,Direct (sh),postgresql,ubuntu,Apply Liquibase changelog,Jenkinsfile (PostgreSQL/MSSQL Setup)
+scripts/bash/postgresql/setup/deploy_postgresql.sh,terraform/postgresql/main.tf,Shell exec (terraform apply),postgresql,windows+ubuntu,Provision DB via null_resource local-exec,deploy_postgresql.sh
+terraform/postgresql/main.tf,scripts/powershell/postgresql/install_windows.ps1,null_resource local-exec,postgresql,windows,Install PostgreSQL binaries,terraform/postgresql/main.tf
+terraform/postgresql/main.tf,scripts/bash/postgresql/setup/install_postgresql.sh,null_resource local-exec,postgresql,ubuntu,Install PostgreSQL binaries,terraform/postgresql/main.tf
+scripts/batch/postgresql/setup/run_liquibase.bat,tools/liquibase/liquibase.bat,Direct (java),postgresql,windows,Execute Liquibase update,run_liquibase.bat
+scripts/bash/postgresql/setup/run_liquibase.sh,tools/liquibase/liquibase,Direct (java),postgresql,ubuntu,Execute Liquibase update,run_liquibase.sh
+run_liquibase,liquibase/<db>/master.xml,Changelog input,postgresql/mysql/mssql,windows+ubuntu,Master schema changelog,run_liquibase.bat / .sh
+scripts/bash/postgresql/load/load_data.sh,scripts/schema_detector.py,Python CLI,postgresql,ubuntu,Detect schema from DB,load_data.sh
+scripts/bash/postgresql/load/load_data.sh,scripts/python/postgresql/setup/generate_liquibase_xml.py,Python CLI,postgresql,ubuntu,Generate dataset changelog XML,load_data.sh
+scripts/bash/postgresql/load/load_data.sh,scripts/python/postgresql/setup/update_master_xml.py,Python CLI,postgresql,ubuntu,Regenerate master.xml with includes,load_data.sh
+scripts/bash/postgresql/load/load_data.sh,scripts/data_loader.py,Python CLI,all (csv/json),windows+ubuntu,Load CSV/JSON into database,load_data.sh
+scripts/data_loader.py,scripts/cdc/metadata_manager.py,Python import,all,-,Update CDC file metadata,data_loader.py
+scripts/data_loader.py,scripts/python/<db>/setup/db_connection.py,Python import,<db>,-,Database connection,data_loader.py
+scripts/batch/postgresql/objects/deploy_objects.bat,scripts/python/common/check_schema_changed.py,Python CLI (MISSING),postgresql,windows,CDC skip check — FILE NOT PRESENT,deploy_objects.bat:25
+scripts/batch/postgresql/objects/deploy_objects.bat,scripts/python/common/objects/bootstrap_generator.py,Python CLI,postgresql,windows,Generate SQL+XML+master_objects.xml,deploy_objects.bat:52
+scripts/batch/postgresql/objects/deploy_objects.bat,scripts/python/common/objects/deploy_objects.py,Python CLI,postgresql,windows,Deploy objects via Liquibase,deploy_objects.bat:70
+scripts/python/common/objects/deploy_objects.py,scripts/bash/<db>/setup/run_liquibase.sh,Subprocess,postgresql,ubuntu,Deploy master_objects.xml,deploy_objects.py:109
+scripts/python/common/objects/bootstrap_generator.py,scripts/python/common/objects/generators/generate_views.py,Python import,postgresql,-,Generate view SQL, bootstrap_generator.py:88
+scripts/python/common/objects/generate_liquibase_objects.py,scripts/python/common/objects/xml_generators/generate_view_xml.py,Python import,postgresql,-,Generate view changesets,generate_liquibase_objects.py:28
+scripts/python/common/objects/bootstrap_generator.py,scripts/python/common/objects/generate_master_objects.py,Python import,all,-,Build master_objects.xml,bootstrap_generator.py:123
+generate_master_objects.py,templates/<db>/liquibase_master_template.py,Importlib,all,-,Load template header/body,generate_master_objects.py:24
+scripts/python/common/objects/database_capabilities.py,config/common/database_objects.json,JSON read,all,-,Object capability matrix,database_capabilities.py:27
+jenkins/Jenkinsfile,rbac/auth_cli.py,Python CLI (sh/bat),all,all,RBAC authentication,Jenkinsfile:34-54
+jenkins/Jenkinsfile,rbac/cli.py,Python CLI (sh/bat),all,all,RBAC authorization,Jenkinsfile:91-107
+rbac/cli.py,rbac/auth.py,Python import,all,-,Authenticate user,cli.py:8
+rbac/auth.py,rbac/utils.py,Python import,all,-,Load credentials.json + verify hash,auth.py:5
+rbac/cli.py,rbac/authorization.py,Python import,all,-,Check permission in roles,cli.py:9
+rbac/authorization.py,config/rbac/roles.json,JSON read,all,-,Role->permission map,authorization.py:13
+jenkins/Jenkinsfile,scripts/logging/logger.py,Python CLI (sh/bat),all,all,Init/finalize execution log,Jenkinsfile:118-139
+jenkins/Jenkinsfile,scripts/reporting/generate_report.py,Python CLI (sh/bat),all,all,Generate HTML/JSON report,Jenkinsfile:206-209
+jenkins/Jenkinsfile,scripts/reporting/generate_history.py,Python CLI (sh/bat),all,all,Append build history,Jenkinsfile:213-216
+scripts/batch/postgresql/postgresql_setup_pipeline.bat,scripts/batch/postgresql/setup/*.bat,Direct (call),postgresql,windows,Standalone local setup orchestration,postgresql_setup_pipeline.bat
+scripts/bash/postgresql/postgresql_setup_pipeline.sh,scripts/bash/postgresql/setup/*.sh,Direct (bash),postgresql,ubuntu,Standalone local setup orchestration,postgresql_setup_pipeline.sh
+jenkins/<db>/<os>/setup_pipeline.groovy,scripts/batch/<db>/<os>/*.bat,Direct (bat),all,windows,Standalone Jenkins setup stage wrappers,postgresql/windows/setup_pipeline.groovy
+jenkins/<db>/<os>/load_pipeline.groovy,scripts/batch/<db>/<os>/*.bat,Direct (bat),all,windows,Standalone Jenkins load stage wrappers,postgresql/windows/load_pipeline.groovy
+scripts/batch/common/download_dataset.bat,scripts/powershell/common/download_dataset.ps1,PowerShell exec,all,windows,Download dataset archive,download_dataset.bat:20
+scripts/powershell/common/download_dataset.ps1,scripts/python/common/download_dataset.py,Python import,all,-,Resolve + download dataset,download_dataset.ps1
+scripts/batch/postgresql/load/load_data.bat,scripts/bash/postgresql/load/load_data.sh,Direct (call),postgresql,windows,Reuse Linux load logic (Linux script reused),load_data.bat (pattern)
+scripts/python/common/config_loader.py,config/<os>/<db>.conf,File read,all,windows+ubuntu,Load DB connection config,config_loader.py:24
+scripts/python/common/config_loader.py,config/common/*.conf,File read,all,-,Load common config,config_loader.py:44

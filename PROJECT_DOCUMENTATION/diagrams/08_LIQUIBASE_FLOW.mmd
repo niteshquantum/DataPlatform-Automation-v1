@@ -1,0 +1,9 @@
+﻿flowchart TD
+    A[run_liquibase.bat / .sh] --> B[read config/<os>/<db>.conf]
+    B --> C[validate liquibase + jdbc driver]
+    C --> D[java -jar liquibase<br/>--changeLogFile]
+    D --> E{master.xml?}
+    E -->|schema| F[apply schema changelog]
+    E -->|master_objects.xml| G[apply object changelog]
+    F --> H[(Database)]
+    G --> H

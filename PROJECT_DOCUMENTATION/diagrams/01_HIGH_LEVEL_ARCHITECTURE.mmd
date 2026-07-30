@@ -1,0 +1,32 @@
+﻿flowchart TD
+    subgraph ENTRY[Execution Entry Layer]
+        M1[Main Jenkins<br/>Jenkinsfile]
+        M2[Standalone Jenkins<br/>db/os pipelines]
+        M3[Direct Local<br/>.bat / .sh]
+    end
+    subgraph CORE[Shared Core Automation]
+        OS[OS Orchestration<br/>batch / bash / ps1]
+        TF[Terraform<br/>local-exec]
+        LQ[Liquibase]
+        PY[Python Engines<br/>load / objects / discovery]
+        RB[RBAC Gate]
+        LG[Logging / Reporting]
+    end
+    subgraph TARGET[Targets & Evidence]
+        DB[(Databases)]
+        MD[metadata/]
+        LOG[logs/ reports/]
+        AR[archive/ failed/]
+    end
+    M1 --> OS
+    M2 --> OS
+    M3 --> OS
+    OS --> TF
+    OS --> LQ
+    OS --> PY
+    M1 --> RB
+    OS --> DB
+    PY --> MD
+    LG --> LOG
+    PY --> AR
+    LQ --> DB

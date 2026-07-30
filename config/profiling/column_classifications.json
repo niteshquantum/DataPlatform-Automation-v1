@@ -1,0 +1,121 @@
+{
+  "mssql": {
+    "products.csv": {
+      "Product_ID": "required",
+      "SKU": "optional",
+      "Title": "optional",
+      "Brand_ID": "optional",
+      "Category_ID": "optional",
+      "Subcategory_ID": "optional",
+      "Short_Description": "optional",
+      "Long_Description": "optional",
+      "Model_Number": "optional",
+      "Manufacturer": "optional",
+      "Warranty_Months": "optional",
+      "Launch_Date": "optional",
+      "Discontinued_Date": "optional",
+      "Style": "optional",
+      "Is_Active": "optional",
+      "Created_At": "optional",
+      "Updated_At": "optional"
+    },
+    "orders.csv": {
+      "Order_ID": "required",
+      "Customer_ID": "required",
+      "Order_Placed_Timestamp": "required",
+      "Promised_Delivery_Timestamp": "optional",
+      "Days_Since_Prior_Order": "optional",
+      "Purchase_Channel_Type": "optional",
+      "Order_Status_Code": "optional",
+      "Global_Currency": "optional",
+      "Base_Basket_Amount": "optional",
+      "Shipping_Fee": "optional",
+      "Tax_Component": "optional",
+      "Total_Invoice_Value_USD": "optional",
+      "Total_Items_Ordered": "optional",
+      "created_at": "optional",
+      "updated_at": "optional",
+      "etl_load_timestamp": "optional",
+      "record_version": "optional",
+      "is_active": "optional"
+    },
+    "customers.csv": {
+      "customer_id": "required",
+      "account_status": "optional",
+      "referral_source": "optional",
+      "last_login_at": "optional",
+      "preferred_language": "optional",
+      "is_verified": "optional",
+      "email": "optional",
+      "phone": "optional",
+      "age": "optional",
+      "created_at": "optional",
+      "gender": "optional",
+      "first_name": "optional",
+      "last_name": "optional"
+    }
+  },
+  "mysql": {
+    "products.csv": {
+      "Product_ID": "required",
+      "SKU": "optional",
+      "Title": "optional",
+      "Brand_ID": "optional",
+      "Category_ID": "optional",
+      "Subcategory_ID": "optional",
+      "Short_Description": "optional",
+      "Long_Description": "optional",
+      "Model_Number": "optional",
+      "Manufacturer": "optional",
+      "Warranty_Months": "optional",
+      "Launch_Date": "optional",
+      "Discontinued_Date": "optional",
+      "Style": "optional",
+      "Is_Active": "optional",
+      "Created_At": "optional",
+      "Updated_At": "optional"
+    }
+  },
+  "postgresql": {
+    "products.csv": {
+      "Product_ID": "required",
+      "SKU": "optional",
+      "Title": "optional",
+      "Brand_ID": "optional",
+      "Category_ID": "optional",
+      "Subcategory_ID": "optional",
+      "Short_Description": "optional",
+      "Long_Description": "optional",
+      "Model_Number": "optional",
+      "Manufacturer": "optional",
+      "Warranty_Months": "optional",
+      "Launch_Date": "optional",
+      "Discontinued_Date": "optional",
+      "Style": "optional",
+      "Is_Active": "optional",
+      "Created_At": "optional",
+      "Updated_At": "optional"
+    }
+  },
+  "mongodb": {
+    "products.csv": {
+      "Product_ID": "required",
+      "SKU": "optional",
+      "Title": "optional",
+      "Brand_ID": "optional",
+      "Category_ID": "optional",
+      "Subcategory_ID": "optional",
+      "Short_Description": "optional",
+      "Long_Description": "optional",
+      "Model_Number": "optional",
+      "Manufacturer": "optional",
+      "Warranty_Months": "optional",
+      "Launch_Date": "optional",
+      "Discontinued_Date": "optional",
+      "Style": "optional",
+      "Is_Active": "optional",
+      "Created_At": "optional",
+      "Updated_At": "optional"
+    }
+  }
+}

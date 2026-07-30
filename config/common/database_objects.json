@@ -1,0 +1,30 @@
+{
+  "mysql": [
+    "views",
+    "functions",
+    "procedures",
+    "triggers",
+    "events",
+    "indexes"
+  ],
+  "postgresql": [
+    "views",
+    "materialized_views",
+    "functions",
+    "procedures",
+    "triggers",
+    "extensions",
+    "indexes"
+  ],
+  "mssql": [
+    "views",
+    "functions",
+    "procedures",
+    "triggers",
+    "indexes"
+  ],
+  "mongodb": [
+    "collections",
+    "indexes"
+  ]
+}

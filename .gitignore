@@ -1,0 +1,176 @@
+# =====================================================
+# Databases (Generated Locally)
+# =====================================================
+
+databases/*
+!databases/mssql/
+databases/mssql/*
+!databases/mssql/templates/
+databases/mssql/templates/*
+!databases/mssql/templates/ConfigurationFile.template.ini
+
+# =====================================================
+# Logs
+# Generated at runtime — never commit
+# =====================================================
+
+logs/
+*.log
+
+# =====================================================
+# Reports & Assessment Outputs
+# Generated at runtime — never commit
+# =====================================================
+
+reports/
+
+outputs/assessments/**/*.json
+outputs/assessments/**/*.csv
+
+# Keep assessment folder structure
+!outputs/assessments/.gitkeep
+!outputs/assessments/*/.gitkeep
+
+# =====================================================
+# Python
+# =====================================================
+
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =====================================================
+# IDE
+# =====================================================
+
+.vscode/
+.idea/
+
+# =====================================================
+# Operating System
+# =====================================================
+
+Thumbs.db
+.DS_Store
+
+# =====================================================
+# Metadata — Runtime / Generated
+# =====================================================
+
+metadata/**/schema_registry.json
+metadata/**/object_registry.json
+metadata/**/object_generation_report.json
+metadata/**/object_validation_report.json
+metadata/**/trigger_generation_report.json
+metadata/**/pipeline_log*.json
+metadata/**/*.jsonl
+
+# Discovery runtime outputs
+metadata/discovery/**/*.json
+metadata/discovery/**/*.csv
+
+# DB-level generated numbered JSON
+metadata/**/[0-9]*.json
+
+# CDC runtime metadata
+metadata/**/cdc_status.json
+metadata/**/cdc_summary.json
+metadata/**/migration_state.json
+
+# Schema runtime status
+metadata/**/schema_status.json
+
+# Keep required folder placeholders
+!metadata/*/.gitkeep
+!metadata/discovery/*/.gitkeep
+
+# Dataset runtime state
+metadata/common/dataset_state.json
+
+# =====================================================
+# Incoming / Archive / Failed
+# Keep folder structures only
+# =====================================================
+
+incoming/*/*
+!incoming/*/.gitkeep
+
+archive/*/*
+!archive/*/.gitkeep
+
+failed/*/*
+!failed/*/.gitkeep
+
+# =====================================================
+# Terraform
+# Keep only Terraform configuration files
+# =====================================================
+
+terraform/*/*
+!terraform/*/*.tf
+!terraform/*/*.tfvars
+
+# =====================================================
+# Tools
+# Keep folder structure only
+# =====================================================
+
+tools/*/*
+!tools/*/.gitkeep
+
+# =====================================================
+# Database Objects
+#
+# custom SQL    = dataset-specific, do not commit
+# generated SQL = runtime-generated, do not commit
+# .gitkeep      = preserve clean directory structure
+# =====================================================
+
+objects/**/custom/**/*.sql
+objects/**/generated/
+
+# =====================================================
+# Liquibase — Generated / Dataset-Specific
+#
+# TRACK:
+#   liquibase.properties
+#   required .gitkeep placeholders
+#
+# IGNORE:
+#   numbered schema changelogs
+#   master.xml
+#   master_objects.xml
+#   custom object XML
+#   generated object XML
+# =====================================================
+
+# Existing architecture defaults to ignoring DB-level contents
+liquibase/*/*
+
+# Keep required static Liquibase entry points
+!liquibase/*/master.xml
+!liquibase/*/liquibase.properties
+
+# Ignore generated/dataset-specific numbered changelogs
+liquibase/**/[0-9]*.xml
+
+# Generated object master changelogs must not be committed
+liquibase/**/master_objects.xml
+
+# Dataset-specific/runtime object XML
+liquibase/**/objects/custom/**/*.xml
+liquibase/**/objects/generated/
+
+# Re-allow required object directory structure
+!liquibase/**/objects/
+!liquibase/**/objects/custom/
+!liquibase/**/objects/custom/*/
+!liquibase/**/objects/generated
+
+# Generated metadata outputs
+metadata/profiling/**/profiling.json
+metadata/reconciliation/**/reconciliation.json
+metadata/assessment/**/assessment.json
+metadata/recommendation/**/recommendation.json
+metadata/governance/**/action_plan.json

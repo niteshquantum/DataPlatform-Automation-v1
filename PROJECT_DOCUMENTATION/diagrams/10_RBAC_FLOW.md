@@ -1,0 +1,13 @@
+# 10 — RBAC Flow
+
+```mermaid
+flowchart TD
+    A[Jenkins stage] --> B[auth_cli.py<br/>--username --password]
+    B --> C{role?}
+    C -->|Viewer| R[publish executive report, return]
+    C -->|other| D[cli.py --permission db.action]
+    D --> E[authenticate credentials.json SHA256]
+    E --> F[has_permission roles.json]
+    F -->|granted| G[AUTHORIZED: run automation]
+    F -->|denied| H[ACCESS_DENIED: fail stage]
+```

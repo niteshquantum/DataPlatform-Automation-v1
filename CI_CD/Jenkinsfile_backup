@@ -1,0 +1,553 @@
+
+pipeline {
+
+    agent none
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+
+        choice(
+            name: 'DATABASE',
+            choices: ['MYSQL', 'MSSQL', 'MONGODB', 'POSTGRESQL'],
+            description: 'Select Database'
+        )
+
+        choice(
+            name: 'ACTION',
+            choices: ['SETUP', 'LOAD'],
+            description: 'Select Action'
+        )
+    }
+
+    stages {
+
+        /*
+        ============================================================
+        MYSQL SETUP
+        ============================================================
+        */
+
+        stage('MySQL Setup') {
+
+            agent { label 'ubuntu-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'MYSQL' }
+                    expression { params.ACTION == 'SETUP' }
+                }
+            }
+
+            steps {
+                checkout scm
+
+                sh '''
+                    find scripts/bash -type f -name "*.sh" -exec chmod +x {} \\;
+
+                    ./scripts/bash/common/validate_python_runtime.sh
+                    ./scripts/bash/common/validate_java_runtime.sh
+                    ./scripts/bash/mysql/setup/install_tools.sh
+                    ./scripts/bash/mysql/setup/install_mysql.sh
+                    ./scripts/bash/mysql/setup/deploy_mysql.sh
+                    ./scripts/bash/mysql/setup/start_mysql.sh
+                    ./scripts/bash/mysql/setup/create_database.sh
+                    ./scripts/bash/mysql/setup/configure_global_mysql.sh
+                    ./scripts/bash/mysql/setup/validate_environment.sh
+                '''
+            }
+        }
+
+
+        /*
+        ============================================================
+        MYSQL LOAD
+        ============================================================
+        */
+
+        stage('MySQL Load') {
+
+            agent { label 'ubuntu-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'MYSQL' }
+                    expression { params.ACTION == 'LOAD' }
+                }
+            }
+
+            steps {
+                checkout scm
+
+                sh '''
+                    find scripts/bash -type f -name "*.sh" -exec chmod +x {} \\;
+
+                    ./scripts/bash/common/validate_python_runtime.sh
+                    ./scripts/bash/mysql/setup/install_python_requirements.sh
+                    ./scripts/bash/mysql/setup/validate_python_requirements.sh
+                    ./scripts/bash/mysql/setup/start_mysql.sh
+                    ./scripts/bash/mysql/setup/validate_mysql.sh
+                    ./scripts/bash/mysql/load/load_data.sh
+                    ./scripts/bash/mysql/load/validate_loaded_data.sh
+                '''
+            }
+        }
+
+
+        /*
+        ============================================================
+        MSSQL SETUP
+        ============================================================
+        */
+
+        stage('MSSQL Setup') {
+
+            agent { label 'ubuntu-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'MSSQL' }
+                    expression { params.ACTION == 'SETUP' }
+                }
+            }
+
+            steps {
+                checkout scm
+
+                sh '''
+                    chmod +x scripts/bash/common/*.sh
+                    chmod +x scripts/bash/mssql/*.sh
+
+                    ./scripts/bash/common/validate_python_runtime.sh
+                    ./scripts/bash/common/validate_java_runtime.sh
+                    ./scripts/bash/common/install_tools.sh
+                    ./scripts/bash/common/install_mssql_driver.sh
+                    ./scripts/bash/mssql/install_mssql.sh
+                    ./scripts/bash/mssql/install_sqlcmd.sh
+                    ./scripts/bash/mssql/start_mssql.sh
+                    ./scripts/bash/mssql/create_database.sh
+                    ./scripts/bash/mssql/run_liquibase.sh
+                    ./scripts/bash/mssql/validate_environment.sh
+                '''
+            }
+        }
+
+
+        /*
+        ============================================================
+        MSSQL LOAD
+        ============================================================
+        */
+
+        stage('MSSQL Load') {
+
+            agent { label 'ubuntu-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'MSSQL' }
+                    expression { params.ACTION == 'LOAD' }
+                }
+            }
+
+            steps {
+                checkout scm
+
+                sh '''
+                    find scripts/bash -type f -name "*.sh" -exec chmod +x {} \\;
+
+                    ./scripts/bash/common/validate_python_runtime.sh
+                    ./scripts/bash/install_python_requirements.sh
+                    ./scripts/bash/validate_python_requirements.sh
+                    ./scripts/bash/common/install_tools.sh
+                    ./scripts/bash/mssql/validate_tools.sh
+                    ./scripts/bash/mssql/validate_mssql.sh
+                    ./scripts/bash/mssql/load_data.sh
+                    ./scripts/bash/mssql/validate_loaded_data.sh
+                '''
+            }
+        }
+
+
+        /*
+        ============================================================
+        MONGODB SETUP
+        ============================================================
+        */
+
+        stage('MongoDB Setup') {
+
+            agent { label 'windows-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'MONGODB' }
+                    expression { params.ACTION == 'SETUP' }
+                }
+            }
+
+            stages {
+
+                stage('MongoDB Setup - Checkout SCM') {
+                    steps {
+                        checkout scm
+                    }
+                }
+
+                stage('MongoDB Setup - Check Administrator Privileges') {
+
+                    steps {
+
+                        script {
+
+                            def adminStatus = bat(
+                                script: 'scripts\\batch\\common\\check_admin_privileges.bat',
+                                returnStatus: true
+                            )
+
+                            if (adminStatus == 0) {
+
+                                writeFile(
+                                    file: 'admin_status.txt',
+                                    text: 'true'
+                                )
+
+                                echo 'Administrator privileges available.'
+                                echo 'Global Mongosh and MongoDB Service configuration will be enabled.'
+
+                            } else {
+
+                                writeFile(
+                                    file: 'admin_status.txt',
+                                    text: 'false'
+                                )
+
+                                echo 'Administrator privileges not available.'
+                                echo 'Global Mongosh and MongoDB Service configuration will be skipped.'
+                                echo 'MongoDB will run using project-local mode.'
+                            }
+
+                            def adminResult = readFile(
+                                'admin_status.txt'
+                            ).trim()
+
+                            echo "ADMIN STATUS = ${adminResult}"
+                        }
+                    }
+                }
+
+                stage('MongoDB Setup - Validate Python Runtime') {
+                    steps {
+                        bat 'scripts\\batch\\common\\validate_python_runtime.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Install Python Requirements') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\install_python_requirements.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Validate Python Requirements') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_python_requirements.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Validate Java Runtime') {
+                    steps {
+                        bat 'scripts\\batch\\common\\validate_java_runtime.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Install Tools') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\install_tools.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Validate Tools') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_tools.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Deploy MongoDB') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\run_terraform.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Configure Global Mongosh') {
+
+                    when {
+                        expression {
+                            return readFile('admin_status.txt').trim() == 'true'
+                        }
+                    }
+
+                    steps {
+                        echo 'Administrator privileges available.'
+                        echo 'Configuring Global Mongosh command...'
+
+                        bat 'scripts\\batch\\mongodb\\setup\\configure_global_mongosh.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Configure MongoDB Service') {
+
+                    when {
+                        expression {
+                            return readFile('admin_status.txt').trim() == 'true'
+                        }
+                    }
+
+                    steps {
+                        echo 'Administrator privileges available.'
+                        echo 'Configuring MongoDB Windows Service...'
+
+                        bat 'scripts\\batch\\mongodb\\setup\\configure_mongodb_service.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Start MongoDB') {
+
+                    when {
+                        expression {
+                            return readFile('admin_status.txt').trim() != 'true'
+                        }
+                    }
+
+                    steps {
+                        echo 'Administrator privileges unavailable.'
+                        echo 'Starting MongoDB in project-local mode...'
+
+                        bat 'scripts\\batch\\mongodb\\setup\\start_mongodb.bat'
+                    }
+                }
+
+                stage('MongoDB Setup - Validate MongoDB') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_mongodb.bat'
+                    }
+                }
+            }
+
+            post {
+
+                success {
+
+                    echo 'MONGODB SETUP SUCCESSFUL'
+
+                    script {
+
+                        def adminResult = readFile(
+                            'admin_status.txt'
+                        ).trim()
+
+                        if (adminResult == 'true') {
+
+                            echo 'MongoDB Windows Service configured successfully.'
+                            echo 'Global Mongosh configuration completed successfully.'
+
+                        } else {
+
+                            echo 'MongoDB configured successfully in project-local mode.'
+                            echo 'Windows Service and Global Mongosh configuration were skipped because Administrator privileges were unavailable.'
+                        }
+                    }
+                }
+
+                failure {
+                    echo 'MONGODB SETUP FAILED'
+                }
+
+                always {
+                    echo 'MONGODB SETUP PIPELINE COMPLETED'
+                }
+            }
+        }
+
+
+        /*
+        ============================================================
+        MONGODB LOAD
+        ============================================================
+        */
+
+        stage('MongoDB Load') {
+
+            agent { label 'windows-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'MONGODB' }
+                    expression { params.ACTION == 'LOAD' }
+                }
+            }
+
+            stages {
+
+                stage('MongoDB Load - Checkout SCM') {
+                    steps {
+                        checkout scm
+                    }
+                }
+
+                stage('MongoDB Load - Validate Python Runtime') {
+                    steps {
+                        bat 'scripts\\batch\\common\\validate_python_runtime.bat'
+                    }
+                }
+
+                stage('MongoDB Load - Validate Python Requirements') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_python_requirements.bat'
+                    }
+                }
+
+                stage('MongoDB Load - Start MongoDB Service') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\start_mongodb.bat'
+                    }
+                }
+
+                stage('MongoDB Load - Validate MongoDB') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_mongodb.bat'
+                    }
+                }
+
+                stage('MongoDB Load - Download Dataset') {
+                    steps {
+                        bat 'scripts\\batch\\common\\download_dataset.bat'
+                    }
+                }
+
+                stage('MongoDB Load - Load Data') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\load\\load_data.bat'
+                    }
+                }
+
+                stage('MongoDB Load - Validate Loaded Data') {
+                    steps {
+                        bat 'scripts\\batch\\mongodb\\load\\validate_loaded_data.bat'
+                    }
+                }
+            }
+
+            post {
+
+                success {
+                    echo 'MONGODB LOAD SUCCESSFUL'
+                }
+
+                failure {
+                    echo 'MONGODB LOAD FAILED'
+                }
+
+                always {
+                    echo 'MONGODB LOAD PIPELINE COMPLETED'
+                }
+            }
+        }
+
+
+        /*
+        ============================================================
+        POSTGRESQL SETUP
+        ============================================================
+        */
+
+        stage('PostgreSQL Setup') {
+
+            agent { label 'windows-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'POSTGRESQL' }
+                    expression { params.ACTION == 'SETUP' }
+                }
+            }
+
+            steps {
+                checkout scm
+
+                bat 'scripts\\batch\\common\\validate_python_runtime.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\install_python_requirements.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\validate_python_requirements.bat'
+
+                bat 'scripts\\batch\\common\\validate_java_runtime.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\install_tools.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\deploy_postgresql.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\configure_postgresql_service.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\create_database.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\configure_global_psql.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\validate_environment.bat'
+            }
+        }
+
+
+        /*
+        ============================================================
+        POSTGRESQL LOAD
+        ============================================================
+        */
+
+        stage('PostgreSQL Load') {
+
+            agent { label 'windows-node' }
+
+            when {
+                allOf {
+                    expression { params.DATABASE == 'POSTGRESQL' }
+                    expression { params.ACTION == 'LOAD' }
+                }
+            }
+
+            steps {
+                checkout scm
+
+                bat 'scripts\\batch\\common\\validate_python_runtime.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\validate_python_requirements.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\start_postgresql.bat'
+
+                bat 'scripts\\batch\\postgresql\\setup\\validate_postgresql.bat'
+
+                bat 'scripts\\batch\\postgresql\\load\\load_data.bat'
+
+                bat 'scripts\\batch\\postgresql\\load\\validate_loaded_data.bat'
+            }
+        }
+    }
+
+
+    post {
+
+        success {
+            echo "${params.DATABASE} ${params.ACTION} SUCCESSFUL"
+        }
+
+        failure {
+            echo "${params.DATABASE} ${params.ACTION} FAILED"
+        }
+
+        always {
+            echo "MASTER DATABASE PIPELINE COMPLETED"
+        }
+    }
+}
+

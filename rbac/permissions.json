@@ -1,0 +1,44 @@
+{
+    "mysql.setup": {
+        "name": "MySQL Setup"
+    },
+    "mysql.load": {
+        "name": "MySQL Load"
+    },
+    "mysql.cleanup": {
+        "name": "MySQL Cleanup"
+    },
+
+    "mongodb.setup": {
+        "name": "MongoDB Setup"
+    },
+    "mongodb.load": {
+        "name": "MongoDB Load"
+    },
+    "mongodb.cleanup": {
+        "name": "MongoDB Cleanup"
+    },
+
+    "postgresql.setup": {
+        "name": "PostgreSQL Setup"
+    },
+    "postgresql.load": {
+        "name": "PostgreSQL Load"
+    },
+    "postgresql.cleanup": {
+        "name": "PostgreSQL Cleanup"
+    },
+
+    "mssql.setup": {
+        "name": "MSSQL Setup"
+    },
+    "mssql.load": {
+        "name": "MSSQL Load"
+    },
+    "mssql.cleanup": {
+        "name": "MSSQL Cleanup"
+    },
+    "report.view": {
+        "name": "View Migration Reports"
+    }
+}

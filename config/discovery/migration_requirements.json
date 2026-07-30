@@ -1,0 +1,42 @@
+{
+    "mysql": {
+        "retention_requirements": {
+            "required_retention_days": 365,
+            "archive_required": true
+        },
+        "sla_requirements": {
+            "maximum_migration_duration_minutes": 60,
+            "maximum_downtime_minutes": 15
+        }
+    },
+    "postgresql": {
+        "retention_requirements": {
+            "required_retention_days": 365,
+            "archive_required": true
+        },
+        "sla_requirements": {
+            "maximum_migration_duration_minutes": 60,
+            "maximum_downtime_minutes": 15
+        }
+    },
+    "mongodb": {
+        "retention_requirements": {
+            "required_retention_days": 365,
+            "archive_required": true
+        },
+        "sla_requirements": {
+            "maximum_migration_duration_minutes": 60,
+            "maximum_downtime_minutes": 15
+        }
+    },
+    "mssql": {
+        "retention_requirements": {
+            "required_retention_days": 365,
+            "archive_required": true
+        },
+        "sla_requirements": {
+            "maximum_migration_duration_minutes": 60,
+            "maximum_downtime_minutes": 15
+        }
+    }
+}

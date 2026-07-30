@@ -1,0 +1,4 @@
+pandas
+pyyaml
+python-dotenv
+gdown>=5.2.0

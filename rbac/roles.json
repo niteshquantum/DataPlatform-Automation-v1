@@ -1,0 +1,62 @@
+{
+    "Admin": {
+        "description": "Full Access",
+        "permissions": [
+            "mysql.setup",
+            "mysql.load",
+            "mysql.cleanup",
+
+            "mongodb.setup",
+            "mongodb.load",
+            "mongodb.cleanup",
+
+            "postgresql.setup",
+            "postgresql.load",
+            "postgresql.cleanup",
+
+            "mssql.setup",
+            "mssql.load",
+            "mssql.cleanup",
+
+            "report.view"
+        ]
+    },
+
+    "Developer": {
+        "description": "Developer Access",
+        "permissions": [
+            "mysql.setup",
+            "mysql.load",
+
+            "mongodb.setup",
+            "mongodb.load",
+
+            "postgresql.setup",
+            "postgresql.load",
+
+            "mssql.setup",
+            "mssql.load",
+
+            "report.view"
+        ]
+    },
+
+    "QA": {
+        "description": "QA Access",
+        "permissions": [
+            "mysql.load",
+            "mongodb.load",
+            "postgresql.load",
+            "mssql.load",
+
+            "report.view"
+        ]
+    },
+
+    "Viewer": {
+        "description": "Read Only",
+        "permissions": [
+            "report.view"
+        ]
+    }
+}

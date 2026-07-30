@@ -1,0 +1,14 @@
+# 11 — Configuration Flow
+
+```mermaid
+flowchart TD
+    A[Script starts] --> B[set_project_root.bat / .sh]
+    B --> C{platform.system?}
+    C -->|Windows| D[config/windows/<db>.conf]
+    C -->|Linux| E[config/ubuntu/<db>.conf]
+    D --> F[load host/port/db/user/password/driver]
+    E --> F
+    F --> G[config/common/database_objects.json]
+    G --> H[capability decisions]
+    F --> I[Terraform / Liquibase / Python loaders]
+```

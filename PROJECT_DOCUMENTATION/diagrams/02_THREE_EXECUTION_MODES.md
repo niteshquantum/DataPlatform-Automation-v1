@@ -1,0 +1,20 @@
+# 02 — Three Execution Modes
+
+```mermaid
+flowchart LR
+    subgraph M1[Mode 1: Main Jenkins]
+        J1[Jenkinsfile<br/>params: DATABASE/ACTION]
+    end
+    subgraph M2[Mode 2: Standalone Jenkins]
+        J2[db/os pipeline.groovy]
+    end
+    subgraph M3[Mode 3: Direct Local]
+        J3[.bat / .sh]
+    end
+    CORE{{Shared Core<br/>scripts/batch|bash + Python<br/>+ Terraform + Liquibase}}
+    DB[(Database)]
+    J1 --> CORE
+    J2 --> CORE
+    J3 --> CORE
+    CORE --> DB
+```

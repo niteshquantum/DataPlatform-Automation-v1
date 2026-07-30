@@ -1,0 +1,986 @@
+/*
+============================================================
+COMMON LOGGING AND REPORTING FUNCTION
+============================================================
+*/
+
+def executePipeline(
+    String database,
+    String action,
+    String operatingSystem,
+    Closure executionBody
+) {
+
+    def finalStatus = 'SUCCESS'
+    def originalError = null
+    def loggingInitialized = false
+
+    try {
+
+        /*
+        ============================================================
+        RBAC AUTHENTICATION
+        ============================================================
+        */
+
+        def permission = "${database}.${action}".toLowerCase()
+
+        echo "RBAC Permission : ${permission}"
+
+        def authResult
+
+        if (isUnix()) {
+
+            authResult = sh(
+                script: """
+                    python3 rbac/auth_cli.py \
+                        --username "${params.USERNAME}" \
+                        --password "${params.PASSWORD}"
+                """,
+                returnStdout: true
+            ).trim()
+
+        } else {
+
+            authResult = bat(
+                script: """
+                    @echo off
+                    python rbac\\auth_cli.py ^
+                        --username "${params.USERNAME}" ^
+                        --password "${params.PASSWORD}"
+                """,
+                returnStdout: true
+            ).trim()
+        }
+
+        def role = authResult.readLines().last().trim()
+
+        echo "Logged in Role : ${role}"
+
+        if (role.equalsIgnoreCase("Viewer")) {
+
+            echo "=========================================="
+            echo "Viewer Role Detected"
+            echo "Publishing Executive Report"
+            echo "=========================================="
+
+		if (action == "load") {
+		
+		    publishHTML([
+		        allowMissing: true,
+		        alwaysLinkToLastBuild: true,
+		        keepAll: true,
+		        reportDir: "reports/migration/${database}",
+		        reportFiles: "executive_report.html",
+		        reportName: "${database.toUpperCase()} Executive Report"
+		    ])
+		
+		}
+
+            return
+        }
+
+        /*
+        ============================================================
+        RBAC AUTHORIZATION
+        ============================================================
+        */
+
+        if (isUnix()) {
+
+            sh """
+                python3 rbac/cli.py \
+                    --username "${params.USERNAME}" \
+                    --password "${params.PASSWORD}" \
+                    --permission "${permission}"
+            """
+
+        } else {
+
+            bat """
+                @echo off
+                python rbac\\cli.py ^
+                    --username "${params.USERNAME}" ^
+                    --password "${params.PASSWORD}" ^
+                    --permission "${permission}"
+            """
+        }
+
+        /*
+        ============================================================
+        INITIALIZE LOGGING
+        ============================================================
+        
+        */
+
+        if (isUnix()) {
+
+            sh """
+                python3 scripts/logging/logger.py init \
+                    --database "${database}" \
+                    --action "${action}" \
+                    --os "${operatingSystem}" \
+                    --build-number "${env.BUILD_NUMBER}" \
+                    --job-name "${env.JOB_NAME}" \
+                    --build-url "${env.BUILD_URL}"
+            """
+
+        } else {
+
+            bat """
+                python scripts\\logging\\logger.py init ^
+                    --database "${database}" ^
+                    --action "${action}" ^
+                    --os "${operatingSystem}" ^
+                    --build-number "${env.BUILD_NUMBER}" ^
+                    --job-name "${env.JOB_NAME}" ^
+                    --build-url "${env.BUILD_URL}"
+            """
+        }
+
+        loggingInitialized = true
+
+        /*
+        ============================================================
+        EXECUTE ORIGINAL PIPELINE FLOW
+        ============================================================
+        */
+
+        executionBody()
+
+    } catch (Exception error) {
+
+        finalStatus = 'FAILURE'
+        originalError = error
+
+    } finally {
+
+        /*
+        ============================================================
+        FINALIZE LOGGING
+        ============================================================
+        */
+
+        if (loggingInitialized) {
+
+            try {
+
+                if (isUnix()) {
+
+                    sh """
+                        python3 scripts/logging/logger.py finalize \
+                            --database "${database}" \
+                            --action "${action}" \
+                            --build-number "${env.BUILD_NUMBER}" \
+                            --status "${finalStatus}"
+                    """
+
+                } else {
+
+                    bat """
+                        python scripts\\logging\\logger.py finalize ^
+                            --database "${database}" ^
+                            --action "${action}" ^
+                            --build-number "${env.BUILD_NUMBER}" ^
+                            --status "${finalStatus}"
+                    """
+                }
+
+            } catch (Exception finalizeError) {
+
+                echo "WARNING: Logging finalization failed: ${finalizeError}"
+            }
+
+            /*
+            ============================================================
+            GENERATE REPORT
+            ============================================================
+            */
+
+            try {
+
+                if (isUnix()) {
+
+                    sh """
+                        python3 scripts/reporting/generate_report.py \
+                            --database "${database}" \
+                            --action "${action}" \
+                            --build-number "${env.BUILD_NUMBER}"
+                    """
+
+                    sh """
+                        python3 scripts/reporting/generate_history.py \
+                            --database "${database}" \
+                            --action "${action}" \
+                            --build-number "${env.BUILD_NUMBER}"
+                    """
+
+                } else {
+
+                    bat """
+                        python scripts\\reporting\\generate_report.py ^
+                            --database "${database}" ^
+                            --action "${action}" ^
+                            --build-number "${env.BUILD_NUMBER}"
+                    """
+
+                    bat """
+                        python scripts\\reporting\\generate_history.py ^
+                            --database "${database}" ^
+                            --action "${action}" ^
+                            --build-number "${env.BUILD_NUMBER}"
+                    """
+                }
+
+            } catch (Exception reportError) {
+
+                echo "WARNING: Report generation failed: ${reportError}"
+            }
+
+            /*
+            ============================================================
+            ARCHIVE LOGS AND REPORTS
+            ============================================================
+            */
+
+            try {
+
+                archiveArtifacts(
+                    artifacts:
+                        "logs/${database}/${action}/build_${env.BUILD_NUMBER}/**," +
+                        "reports/${database}/${action}/build_${env.BUILD_NUMBER}/**," +
+                        "reports/history/**," +
+                        "reports/migration/${database}/**," +
+                        "outputs/assessments/${database}/**," +
+                        "outputs/assessments/assessment_report.json," +
+                        "metadata/profiling/${database}/**," +
+                        "metadata/reconciliation/${database}/**," +
+                        "metadata/discovery/${database}/**," +
+                        "metadata/assessment/${database}/**," +
+                        "metadata/recommendation/${database}/**," +
+                        "metadata/governance/${database}/**",
+                    fingerprint: true,
+                    allowEmptyArchive: true
+                )
+                publishHTML([
+                    allowMissing: true,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: "reports/migration/${database}",
+                    reportFiles: "executive_report.html",
+                    reportName: "${database.toUpperCase()} Executive Report"
+                ])
+
+            } catch (Exception archiveError) {
+
+                echo "WARNING: Artifact archiving failed: ${archiveError}"
+            }
+        }
+    }
+
+    /*
+    ============================================================
+    RESTORE ORIGINAL PIPELINE FAILURE
+    ============================================================
+    */
+
+    if (originalError != null) {
+        throw originalError
+    }
+}
+
+/*
+============================================================
+MASTER DATABASE PIPELINE
+============================================================
+*/
+
+pipeline {
+
+    agent none
+
+    options {
+
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+
+        choice(
+            name: 'DATABASE',
+            choices: [
+                'MYSQL',
+                'POSTGRESQL',
+                'MSSQL',
+                'MONGODB'
+            ],
+            description: 'Select Database'
+        )
+
+        choice(
+            name: 'ACTION',
+            choices: [
+                'SETUP',
+                'LOAD',
+                'CLEANUP'
+            ],
+            description: 'Select Action'
+        )
+
+        choice(
+            name: 'CLEANUP_MODE',
+            choices: [
+                'PRESERVE_DATA',
+                'DELETE_DATA'
+            ],
+            description: 'Select Cleanup Mode'
+        )
+
+        string(
+            name: 'USERNAME',
+            defaultValue: '',
+            description: 'RBAC Username'
+        )
+
+        password(
+            name: 'PASSWORD',
+            defaultValue: '',
+            description: 'RBAC Password'
+)
+    }
+
+    stages {
+
+        /*
+        ============================================================
+        VALIDATE SELECTION
+        ============================================================
+        */
+
+stage('Validate Selection') {
+
+    agent any
+
+    steps {
+
+        script {
+
+if (currentBuild.number == 1) {
+
+    currentBuild.description = "Parameters Registered"
+
+if (currentBuild.number == 1) {
+    echo "First build detected. Parameters will be available after this build."
+}
+}
+
+    echo "============================================"
+    echo "MASTER DATABASE PIPELINE"
+    echo "============================================"
+    echo "DATABASE     : ${params.DATABASE}"
+    echo "ACTION       : ${params.ACTION}"
+
+    echo "============================================"
+
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        POSTGRESQL SETUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('PostgreSQL Setup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+					expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'POSTGRESQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'SETUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'postgresql',
+                        'setup',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\postgresql\\postgresql_setup_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        POSTGRESQL LOAD
+        WINDOWS
+        ============================================================
+        */
+
+        stage('PostgreSQL Load') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+					expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'POSTGRESQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'LOAD'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'postgresql',
+                        'load',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\postgresql\\postgresql_load_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MONGODB SETUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MongoDB Setup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+					expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MONGODB'
+                    }
+
+                    expression {
+                        params.ACTION == 'SETUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mongodb',
+                        'setup',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\mongodb\\mongodb_setup_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MONGODB LOAD
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MongoDB Load') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+ 					expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MONGODB'
+                    }
+
+                    expression {
+                        params.ACTION == 'LOAD'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mongodb',
+                        'load',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\mongodb\\mongodb_load_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MYSQL SETUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MySQL Setup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MYSQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'SETUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mysql',
+                        'setup',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\mysql\\mysql_setup_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MYSQL LOAD
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MySQL Load') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MYSQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'LOAD'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mysql',
+                        'load',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\mysql\\mysql_load_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MYSQL CLEANUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MySQL Cleanup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MYSQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'CLEANUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mysql',
+                        'cleanup',
+                        'windows'
+                    ) {
+
+                        withEnv([
+                            "CLEANUP_MODE=${params.CLEANUP_MODE}"
+                        ]) {
+
+                            bat 'scripts\\batch\\mysql\\cleanup\\mysql_cleanup_pipeline.bat'
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MSSQL SETUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MSSQL Setup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MSSQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'SETUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mssql',
+                        'setup',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\mssql\\mssql_setup_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MSSQL LOAD
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MSSQL Load') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MSSQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'LOAD'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mssql',
+                        'load',
+                        'windows'
+                    ) {
+
+                        bat 'scripts\\batch\\mssql\\mssql_load_pipeline.bat'
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MSSQL CLEANUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MSSQL Cleanup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MSSQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'CLEANUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mssql',
+                        'cleanup',
+                        'windows'
+                    ) {
+
+                        withEnv([
+                            "CLEANUP_MODE=${params.CLEANUP_MODE}"
+                        ]) {
+
+                            bat 'scripts\\batch\\mssql\\cleanup\\mssql_cleanup_pipeline.bat'
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        POSTGRESQL CLEANUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('PostgreSQL Cleanup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'POSTGRESQL'
+                    }
+
+                    expression {
+                        params.ACTION == 'CLEANUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'postgresql',
+                        'cleanup',
+                        'windows'
+                    ) {
+
+                        withEnv([
+                            "CLEANUP_MODE=${params.CLEANUP_MODE}"
+                        ]) {
+
+                            bat 'scripts\\batch\\postgresql\\cleanup\\postgresql_cleanup_pipeline.bat'
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        MONGODB CLEANUP
+        WINDOWS
+        ============================================================
+        */
+
+        stage('MongoDB Cleanup') {
+
+            agent {
+                label 'windows-node'
+            }
+
+            when {
+
+                allOf {
+                    expression { currentBuild.number > 1 }
+                    expression {
+                        params.DATABASE == 'MONGODB'
+                    }
+
+                    expression {
+                        params.ACTION == 'CLEANUP'
+                    }
+                }
+            }
+
+            steps {
+
+                checkout scm
+
+                script {
+
+                    executePipeline(
+                        'mongodb',
+                        'cleanup',
+                        'windows'
+                    ) {
+
+                        withEnv([
+                            "CLEANUP_MODE=${params.CLEANUP_MODE}"
+                        ]) {
+
+                            bat 'scripts\\batch\\mongodb\\cleanup\\mongodb_cleanup_pipeline.bat'
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        ============================================================
+        WINDOWS
+        ============================================================
+        */
+
+    }
+
+    post {
+
+        success {
+
+            echo """
+            ============================================
+            MASTER DATABASE PIPELINE SUCCESSFUL
+            DATABASE : ${params.DATABASE}
+            ACTION   : ${params.ACTION}
+            ============================================
+            """
+        }
+
+        failure {
+
+            echo """
+            ============================================
+            MASTER DATABASE PIPELINE FAILED
+            DATABASE : ${params.DATABASE}
+            ACTION   : ${params.ACTION}
+            ============================================
+            """
+        }
+
+        always {
+
+            echo 'MASTER DATABASE PIPELINE COMPLETED'
+        }
+    }
+}
