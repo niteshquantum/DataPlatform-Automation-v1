@@ -3,6 +3,8 @@ import shutil
 import subprocess
 import zipfile
 import os
+import threading
+import time
 
 def get_7zip_executable() -> Path:
     """
@@ -100,9 +102,13 @@ def extract_archive(archive_path: Path, destination: Path) -> None:
 
     except NotImplementedError:
 
+
         exe = get_7zip_executable()
 
-        result = subprocess.run(
+        print("[INFO] Extraction started...")
+        print("[INFO] Large archives may take several minutes.")
+
+        process = subprocess.Popen(
             [
                 str(exe),
                 "x",
@@ -114,10 +120,49 @@ def extract_archive(archive_path: Path, destination: Path) -> None:
             stderr=subprocess.PIPE,
             text=True
         )
-        if result.returncode != 0:
+
+
+        def heartbeat():
+
+            elapsed = 0
+
+            while process.poll() is None:
+
+                for _ in range(20):
+
+                    if process.poll() is not None:
+                        return
+
+                    time.sleep(1)
+
+                elapsed += 20
+
+                if process.poll() is None:
+
+                    minutes = elapsed // 60
+                    seconds = elapsed % 60
+
+                    print(
+                        f"[INFO] Extraction in progress... ({minutes:02}:{seconds:02})"
+                    )
+
+
+        heartbeat_thread = threading.Thread(
+            target=heartbeat,
+            daemon=True
+        )
+
+        heartbeat_thread.start()
+
+        _, stderr = process.communicate()
+
+        heartbeat_thread.join()
+
+        if process.returncode != 0:
+
             raise RuntimeError(
                 "Archive extraction failed.\n"
-                f"{result.stderr}"
+                f"{stderr}"
             )
 
 def list_archive_folders(archive_path: Path) -> list[str]:
