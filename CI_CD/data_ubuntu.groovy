@@ -8,7 +8,6 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-
     stages {
 
         stage('Set Permissions') {
@@ -25,28 +24,31 @@ pipeline {
 
             steps {
 
-                script {
-
-                    runTrackedStage('Install Python Requirements') {
-
-                        sh './scripts/bash/postgresql/setup/install_python_requirements.sh'
-                    }
-                }
+                sh './scripts/bash/postgresql/setup/install_python_requirements.sh'
             }
         }
 
-                stage('Download Dataset') {
+        stage('Download Dataset') {
 
             steps {
 
-                script {
-
-                    runTrackedStage('Download Dataset') {
-
-                        sh './scripts/bash/common/download_dataset.sh'
-                    }
-                }
+                sh './scripts/bash/common/download_dataset.sh'
             }
+        }
+    }
+
+    post {
+
+        success {
+            echo 'DATASET DOWNLOAD SUCCESSFUL'
+        }
+
+        failure {
+            echo 'DATASET DOWNLOAD FAILED'
+        }
+
+        always {
+            echo 'PIPELINE COMPLETED'
         }
     }
 }

@@ -7,35 +7,36 @@ pipeline {
     }
 
     stages {
-                    stage('Install Python Requirements') {
+
+        stage('Install Python Requirements') {
 
             steps {
 
-                script {
-
-                    runTrackedStage(
-                        'Install Python Requirements'
-                    ) {
-
-                        bat 'scripts\\batch\\postgresql\\setup\\install_python_requirements.bat'
-                    }
-                }
+                bat 'scripts\\batch\\postgresql\\setup\\install_python_requirements.bat'
             }
         }
 
-                stage('Download Dataset') {
+        stage('Download Dataset') {
 
             steps {
 
-                script {
-
-                    runTrackedStage('Download Dataset') {
-
-                        bat 'scripts\\batch\\common\\download_dataset.bat'
-                    }
-                }
+                bat 'scripts\\batch\\common\\download_dataset.bat'
             }
         }
+    }
 
+    post {
+
+        success {
+            echo 'DATASET DOWNLOAD SUCCESSFUL'
+        }
+
+        failure {
+            echo 'DATASET DOWNLOAD FAILED'
+        }
+
+        always {
+            echo 'PIPELINE COMPLETED'
+        }
     }
 }
