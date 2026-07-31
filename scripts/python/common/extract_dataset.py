@@ -17,6 +17,12 @@ from scripts.python.common.dataset_state import (
     save_state
 )
 
+from scripts.python.common.archive_utils import (
+    validate_archive,
+    extract_archive,
+    list_archive_folders
+)
+
 
 def print_header():
     print()
@@ -25,20 +31,6 @@ def print_header():
     print("=" * 60)
 
 
-def validate_zip(path: Path) -> None:
-    if not path.exists():
-        raise FileNotFoundError(f"Archive not found: {path}")
-    if path.stat().st_size == 0:
-        raise ValueError(f"Archive is empty: {path}")
-    with zipfile.ZipFile(path, "r") as zf:
-        bad = zf.testzip()
-        if bad is not None:
-            raise ValueError(f"Corrupt ZIP entry: {bad}")
-
-
-def zip_top_folders(zip_path: Path):
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        return sorted({Path(p).parts[0] for p in zf.namelist() if "/" in p or "\\" in p})
 
 
 def _folder_has_supported_files(folder_path: Path) -> bool:
@@ -53,28 +45,34 @@ def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
     print("Extracting and merging dataset...")
     print()
 
-    with zipfile.ZipFile(archive_file, "r") as zip_ref:
-        for member in zip_ref.infolist():
-            target_path = incoming_path / member.filename
+    try:
+        with zipfile.ZipFile(archive_file, "r") as zip_ref:
+            for member in zip_ref.infolist():
+                target_path = incoming_path / member.filename
 
-            if member.is_dir():
-                target_path.mkdir(parents=True, exist_ok=True)
-                continue
+                if member.is_dir():
+                    target_path.mkdir(parents=True, exist_ok=True)
+                    continue
 
-            target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.parent.mkdir(parents=True, exist_ok=True)
 
-            if target_path.exists():
+                if target_path.exists():
+                    try:
+                        target_path.unlink()
+                    except PermissionError:
+                        print(f"[WARNING] Cannot delete {target_path}. Trying overwrite...")
+
                 try:
-                    target_path.unlink()
-                except PermissionError:
-                    print(f"[WARNING] Cannot delete {target_path}. Trying overwrite...")
+                    with zip_ref.open(member) as source, open(target_path, "wb") as target:
+                        shutil.copyfileobj(source, target)
+                except PermissionError as e:
+                    print(f"[ERROR] Permission Denied for file: {target_path}")
+                    raise e
 
-            try:
-                with zip_ref.open(member) as source, open(target_path, "wb") as target:
-                    shutil.copyfileobj(source, target)
-            except PermissionError as e:
-                print(f"[ERROR] Permission Denied for file: {target_path}")
-                raise e
+    except NotImplementedError:
+        print("[INFO] Unsupported ZIP compression detected.")
+        print("[INFO] Falling back to 7-Zip extraction...")
+        extract_archive(archive_file, incoming_path)
 
     print("[SUCCESS] Dataset extracted and merged successfully.")
 
@@ -89,12 +87,12 @@ def extract_dataset():
         config["DATASET_NAME"]
     )
 
-    validate_zip(archive_file)
+    validate_archive(archive_file)
 
     incoming_path = project_root / "incoming"
     incoming_path.mkdir(parents=True, exist_ok=True)
 
-    expected_folders = zip_top_folders(archive_file)
+    expected_folders = list_archive_folders(archive_file)
 
     state = load_state()
 
@@ -180,8 +178,7 @@ def verify_dataset():
         else:
             raise Exception("Incoming folder is empty.")
 
-    with zipfile.ZipFile(archive_file, "r") as zf:
-        zip_top_folders = sorted({Path(p).parts[0] for p in zf.namelist() if "/" in p or "\\" in p})
+    zip_top_folders = list_archive_folders(archive_file)
 
     for folder in zip_top_folders:
         folder_path = incoming / folder

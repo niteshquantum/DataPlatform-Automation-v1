@@ -1,12 +1,13 @@
 from pathlib import Path
 import sys
 import tempfile
-import zipfile
+
 
 import gdown
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
+
 
 from scripts.python.common.config_loader import (
     load_common_config,
@@ -19,6 +20,7 @@ from scripts.python.common.dataset_state import (
     save_state
 )
 
+from scripts.python.common.archive_utils import validate_archive
 
 def print_header():
     print()
@@ -31,18 +33,6 @@ def create_directory(directory: Path):
     directory.mkdir(parents=True, exist_ok=True)
 
 
-def validate_zip(path: Path) -> None:
-    if not path.exists():
-        raise FileNotFoundError(f"Downloaded archive not found: {path}")
-    if path.stat().st_size == 0:
-        raise ValueError(f"Downloaded archive is empty: {path}")
-    try:
-        with zipfile.ZipFile(path, "r") as zf:
-            bad = zf.testzip()
-            if bad is not None:
-                raise ValueError(f"Corrupt entry in ZIP: {bad}")
-    except zipfile.BadZipFile as exc:
-        raise ValueError(f"Invalid ZIP file: {path}") from exc
 
 
 def download_dataset():
@@ -70,7 +60,7 @@ def download_dataset():
         print("[INFO] Dataset already exists:")
         print(output_file)
         try:
-            validate_zip(output_file)
+            validate_archive(output_file)
             print("[INFO] Existing archive is valid. Skipping download.")
             return output_file
         except Exception as exc:
@@ -97,7 +87,7 @@ def download_dataset():
             quiet=False
         )
 
-        validate_zip(tmp_path)
+        validate_archive(tmp_path)
 
         tmp_path.replace(output_file)
 
@@ -115,7 +105,7 @@ def download_dataset():
             tmp_path.unlink(missing_ok=True)
         if output_file.exists():
             try:
-                validate_zip(output_file)
+                validate_archive(output_file)
             except Exception:
                 output_file.unlink(missing_ok=True)
         raise

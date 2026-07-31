@@ -13,6 +13,19 @@ REM =====================================
 
 call "%~dp0set_project_root.bat"
 
+
+REM =====================================
+REM INSTALL 7-ZIP
+REM =====================================
+
+call "%PROJECT_ROOT%\scripts\batch\common\install_7zip.bat"
+
+if errorlevel 1 (
+    echo.
+    echo 7-ZIP INSTALLATION FAILED
+    exit /b 1
+)
+
 REM =====================================
 REM DOWNLOAD DATASET
 REM =====================================
