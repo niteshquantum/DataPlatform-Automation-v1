@@ -12,9 +12,9 @@ echo
 
 "$PROJECT_ROOT/scripts/bash/common/install_7zip.sh"
 
-python3 "$PROJECT_ROOT/scripts/python/common/download_dataset.py"
+python3 -u "$PROJECT_ROOT/scripts/python/common/download_dataset.py"
 
-python3 "$PROJECT_ROOT/scripts/python/common/extract_dataset.py"
+python3 -u "$PROJECT_ROOT/scripts/python/common/extract_dataset.py"
 
 echo
 echo "====================================="

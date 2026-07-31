@@ -16,7 +16,7 @@ Write-Host ""
 # DOWNLOAD DATASET
 # =====================================
 
-python "$PROJECT_ROOT\scripts\python\common\download_dataset.py"
+python -u "$PROJECT_ROOT\scripts\python\common\download_dataset.py"
 
 if ($LASTEXITCODE -ne 0) {
     throw "Dataset download failed."
@@ -26,7 +26,7 @@ if ($LASTEXITCODE -ne 0) {
 # EXTRACT DATASET
 # =====================================
 
-python "$PROJECT_ROOT\scripts\python\common\extract_dataset.py"
+python -u "$PROJECT_ROOT\scripts\python\common\extract_dataset.py"
 
 if ($LASTEXITCODE -ne 0) {
     throw "Dataset extraction failed."

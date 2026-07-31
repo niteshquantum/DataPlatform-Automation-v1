@@ -105,8 +105,8 @@ def extract_archive(archive_path: Path, destination: Path) -> None:
 
         exe = get_7zip_executable()
 
-        print("[INFO] Extraction started...")
-        print("[INFO] Large archives may take several minutes.")
+        print("[INFO] Extraction started...", flush=True)
+        print("[INFO] Large archives may take several minutes.", flush=True)
 
         process = subprocess.Popen(
             [
@@ -143,7 +143,7 @@ def extract_archive(archive_path: Path, destination: Path) -> None:
                     seconds = elapsed % 60
 
                     print(
-                        f"[INFO] Extraction in progress... ({minutes:02}:{seconds:02})"
+                        f"[INFO] Extraction in progress... ({minutes:02}:{seconds:02})", flush=True
                     )
 
 
