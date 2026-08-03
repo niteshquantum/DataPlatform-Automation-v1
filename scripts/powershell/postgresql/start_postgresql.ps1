@@ -357,7 +357,14 @@ Write-Log "Starting PostgreSQL..."
 $PgCtlArguments = @("start", "-D", "`"$PgData`"", "-l", "`"$PgLog`"", "-o", "`"-p $ExpectedPort`"", "-w", "-t", "60")
 $PreviousErrorActionPreference = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
+# & "$PgCtl" @PgCtlArguments > $PgCtlOutput 2> $PgCtlError
+# $PgCtlExitCode = $LASTEXITCODE
+Write-Log "Calling pg_ctl..."
+
 & "$PgCtl" @PgCtlArguments > $PgCtlOutput 2> $PgCtlError
+
+Write-Log "pg_ctl returned. ExitCode = $LASTEXITCODE"
+
 $PgCtlExitCode = $LASTEXITCODE
 $ErrorActionPreference = $PreviousErrorActionPreference
 
