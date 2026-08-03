@@ -3,6 +3,7 @@ import gdown
 
 SOURCE_TYPE = "google_drive"
 
+
 def download(config, output_path):
     """
     Download a dataset from Google Drive.
@@ -19,15 +20,10 @@ def download(config, output_path):
     if not source_path:
         raise ValueError(
             "SOURCE_PATH is not configured."
-    )
-
-    dataset_url = (
-        os.getenv("DATASET_URL")
-        or config.get("DATASET_URL")
-    )
+        )
 
     gdown.download(
-        dataset_url,
+        source_path,
         output_path,
         quiet=False
     )
