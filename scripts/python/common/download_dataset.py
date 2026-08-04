@@ -179,7 +179,23 @@ def download_dataset():
                     print(f"Database    : {database.lower()}")
 
                 print(f"Destination : {destination_directory}")
-                print("Input Type  : Folder/File")
+                if source.is_dir():
+
+                    input_type = "Folder"
+
+                elif source.suffix.lower() == ".csv":
+
+                    input_type = "CSV File"
+
+                elif source.suffix.lower() == ".json":
+
+                    input_type = "JSON File"
+
+                else:
+
+                    input_type = "File"
+
+                print(f"Input Type  : {input_type}")
                 print("Status      : SKIPPED")
                 print()
 
@@ -327,7 +343,27 @@ def download_dataset():
 
     print(f"Destination : {destination_directory}")
 
-    print(f"Input Type  : {'ZIP Archive' if archive else 'Folder/File'}")
+    if archive:
+
+        input_type = "ZIP Archive"
+
+    elif source.is_dir():
+
+        input_type = "Folder"
+
+    elif source.suffix.lower() == ".csv":
+
+        input_type = "CSV File"
+
+    elif source.suffix.lower() == ".json":
+
+        input_type = "JSON File"
+
+    else:
+
+        input_type = "File"
+
+        print(f"Input Type  : {input_type}")
 
     print("Status      : SUCCESS")
 
