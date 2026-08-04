@@ -100,6 +100,16 @@ REM =====================================
 echo Creating database if not exists...
 echo.
 
+echo -----------------------------------
+echo MYSQL_EXE: %MYSQL_EXE%
+echo MYSQL_PASSWORD_OPTION: %MYSQL_PASSWORD_OPTION%
+echo Current PATH: %PATH%
+echo Working Directory: %CD%
+for /f "delims=" %%W in ('where mysql 2^>nul') do echo Resolved mysql.exe location: %%W
+echo Exact command that will be executed:
+echo   "%MYSQL_EXE%" -h %MYSQL_HOST% -u %MYSQL_USER% -P %MYSQL_PORT% %MYSQL_PASSWORD_OPTION% -e "CREATE DATABASE IF NOT EXISTS %MYSQL_DB%;"
+echo -----------------------------------
+
 "%MYSQL_EXE%" ^
 -h %MYSQL_HOST% ^
 -u %MYSQL_USER% ^
