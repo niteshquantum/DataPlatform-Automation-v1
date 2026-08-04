@@ -78,7 +78,7 @@ def download_dataset():
         config=config
     )
 
-    archive = is_archive_file(source_path)
+    archive = is_archive_file(output_filename)
 
     # ---------------------------------------
     # Decide destination
@@ -138,8 +138,24 @@ def download_dataset():
 
                 try:
                     validate_archive(output_file)
+
                     print("[INFO] Existing archive already verified.")
                     print("[INFO] Download skipped.")
+
+                    print()
+                    print("=" * 60)
+                    print("DATASET SUMMARY")
+                    print("=" * 60)
+                    print(f"Source Type : {source_type.upper()}")
+
+                    if database:
+                        print(f"Database    : {database.lower()}")
+
+                    print(f"Destination : {destination_directory}")
+                    print("Input Type  : ZIP Archive")
+                    print("Status      : SKIPPED")
+                    print()
+
                     return output_file
 
                 except Exception as exc:
@@ -149,6 +165,23 @@ def download_dataset():
                     print("[INFO] Re-downloading archive...")
 
             else:
+
+                print("[INFO] Dataset already exists.")
+                print(f"Location : {output_file}")
+
+                print()
+                print("=" * 60)
+                print("DATASET SUMMARY")
+                print("=" * 60)
+                print(f"Source Type : {source_type.upper()}")
+
+                if database:
+                    print(f"Database    : {database.lower()}")
+
+                print(f"Destination : {destination_directory}")
+                print("Input Type  : Folder/File")
+                print("Status      : SKIPPED")
+                print()
 
                 return output_file
 
@@ -226,11 +259,26 @@ def download_dataset():
 
             print()
 
-            print("[SUCCESS] Dataset downloaded successfully.")
+            print("Download completed successfully.")
 
             print(f"Archive : {output_file}")
 
-            print(f"Source  : {source_path}")
+            print()
+
+            print("=" * 60)
+            print("DATASET SUMMARY")
+            print("=" * 60)
+
+            print(f"Source Type : {source_type.upper()}")
+
+            if database:
+                print(f"Database    : {database.lower()}")
+
+            print(f"Destination : {destination_directory}")
+
+            print("Input Type  : ZIP Archive")
+
+            print("Status      : SUCCESS")
 
             print()
 
@@ -259,13 +307,29 @@ def download_dataset():
         config,
         str(output_file)
     )
+    
+
     print()
 
-    print("[SUCCESS] Dataset copied successfully.")
+    print("Copy operation completed successfully.")
 
     print(f"Location : {output_file}")
 
-    print(f"Database : {database}")
+    print()
+    print("=" * 60)
+    print("DATASET SUMMARY")
+    print("=" * 60)
+
+    print(f"Source Type : {source_type.upper()}")
+
+    if database:
+        print(f"Database    : {database.lower()}")
+
+    print(f"Destination : {destination_directory}")
+
+    print(f"Input Type  : {'ZIP Archive' if archive else 'Folder/File'}")
+
+    print("Status      : SUCCESS")
 
     print()
 
