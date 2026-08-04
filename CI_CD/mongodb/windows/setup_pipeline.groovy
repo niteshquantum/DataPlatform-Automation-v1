@@ -169,106 +169,106 @@ pipeline {
         }
 
 
-        // stage('Validate Python Runtime') {
+        stage('Validate Python Runtime') {
 
-        //     steps {
+            steps {
 
-        //         script {
+                script {
 
-        //             runTrackedStage(
-        //                 'Validate Python Runtime'
-        //             ) {
+                    runTrackedStage(
+                        'Validate Python Runtime'
+                    ) {
 
-        //                 bat 'scripts\\batch\\common\\validate_python_runtime.bat'
-        //             }
-        //         }
-        //     }
-        // }
-
-
-        // stage('Install Python Requirements') {
-
-        //     steps {
-
-        //         script {
-
-        //             runTrackedStage(
-        //                 'Install Python Requirements'
-        //             ) {
-
-        //                 bat 'scripts\\batch\\mongodb\\setup\\install_python_requirements.bat'
-        //             }
-        //         }
-        //     }
-        // }
+                        bat 'scripts\\batch\\common\\validate_python_runtime.bat'
+                    }
+                }
+            }
+        }
 
 
-        // stage('Validate Python Requirements') {
+        stage('Install Python Requirements') {
 
-        //     steps {
+            steps {
 
-        //         script {
+                script {
 
-        //             runTrackedStage(
-        //                 'Validate Python Requirements'
-        //             ) {
+                    runTrackedStage(
+                        'Install Python Requirements'
+                    ) {
 
-        //                 bat 'scripts\\batch\\mongodb\\setup\\validate_python_requirements.bat'
-        //             }
-        //         }
-        //     }
-        // }
-
-
-        // stage('Validate Java Runtime') {
-
-        //     steps {
-
-        //         script {
-
-        //             runTrackedStage(
-        //                 'Validate Java Runtime'
-        //             ) {
-
-        //                 bat 'scripts\\batch\\common\\validate_java_runtime.bat'
-        //             }
-        //         }
-        //     }
-        // }
+                        bat 'scripts\\batch\\mongodb\\setup\\install_python_requirements.bat'
+                    }
+                }
+            }
+        }
 
 
-        // stage('Install Tools') {
+        stage('Validate Python Requirements') {
 
-        //     steps {
+            steps {
 
-        //         script {
+                script {
 
-        //             runTrackedStage(
-        //                 'Install Tools'
-        //             ) {
+                    runTrackedStage(
+                        'Validate Python Requirements'
+                    ) {
 
-        //                 bat 'scripts\\batch\\mongodb\\setup\\install_tools.bat'
-        //             }
-        //         }
-        //     }
-        // }
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_python_requirements.bat'
+                    }
+                }
+            }
+        }
 
 
-        // stage('Validate Tools') {
+        stage('Validate Java Runtime') {
 
-        //     steps {
+            steps {
 
-        //         script {
+                script {
 
-        //             runTrackedStage(
-        //                 'Validate Tools'
-        //             ) {
+                    runTrackedStage(
+                        'Validate Java Runtime'
+                    ) {
 
-        //                 bat 'scripts\\batch\\mongodb\\setup\\validate_tools.bat'
-        //             }
-        //         }
-        //     }
-        // }
+                        bat 'scripts\\batch\\common\\validate_java_runtime.bat'
+                    }
+                }
+            }
+        }
+
+
+        stage('Install Tools') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage(
+                        'Install Tools'
+                    ) {
+
+                        bat 'scripts\\batch\\mongodb\\setup\\install_tools.bat'
+                    }
+                }
+            }
+        }
+
+
+        stage('Validate Tools') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage(
+                        'Validate Tools'
+                    ) {
+
+                        bat 'scripts\\batch\\mongodb\\setup\\validate_tools.bat'
+                    }
+                }
+            }
+        }
 
 
         stage('Check MongoDB Instance') {
