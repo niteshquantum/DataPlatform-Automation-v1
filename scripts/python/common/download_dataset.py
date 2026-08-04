@@ -292,7 +292,11 @@ def download_dataset():
 
             print(f"Destination : {destination_directory}")
 
-            print("Input Type  : ZIP Archive")
+            print(f"Input Type  : {input_type}")
+
+            if source.is_dir():
+
+                print(f"Files Found : {copied}")
 
             print("Status      : SUCCESS")
 
@@ -363,7 +367,7 @@ def download_dataset():
 
         input_type = "File"
 
-        print(f"Input Type  : {input_type}")
+    print(f"Input Type  : {input_type}")
 
     print("Status      : SUCCESS")
 

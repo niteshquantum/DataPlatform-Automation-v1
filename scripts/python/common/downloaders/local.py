@@ -111,6 +111,7 @@ def download(config, output_path):
         print(f"CSV Files   : {csv_count}")
         print(f"JSON Files  : {json_count}")
         print(f"Total Files : {copied}")
+        print(f"Target      : {destination}")
 
         return
 
