@@ -108,7 +108,7 @@ def extract_dataset():
         config["DOWNLOAD_DIRECTORY"] /
         output_filename
     )
-    if not is_archive_file(source_path):
+    if not is_archive_file(output_filename):
 
         print()
         print("[INFO] Dataset is not a ZIP archive.")
@@ -203,7 +203,7 @@ def verify_dataset():
     )
     project_root = get_project_root()
     incoming = project_root / "incoming"
-    if not is_archive_file(source_path):
+    if not is_archive_file(output_filename):
 
         print()
         print("=" * 60)
