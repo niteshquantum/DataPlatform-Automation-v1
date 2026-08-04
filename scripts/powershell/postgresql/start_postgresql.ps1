@@ -180,27 +180,28 @@ if ($ExistingService) {
         exit 0
     }
 
-        $ServiceImagePathFromCim = Get-ServiceImagePath -Name $ServiceName
-        $ServiceInWorkspace = $false
-        if ($ServiceImagePathFromCim) {
-            $ServiceInWorkspace = $ServiceImagePathFromCim -like "*$ProjectRoot*"
-        }
+    $ServiceImagePathFromCim = Get-ServiceImagePath -Name $ServiceName
+    $ServiceInWorkspace = $false
+    if ($ServiceImagePathFromCim) {
+        $ServiceInWorkspace = $ServiceImagePathFromCim -like "*$ProjectRoot*"
+    }
 
-        Write-Log ""
-        Write-Log "======================================="
-        Write-Log "PRE-START SERVICE DIAGNOSTICS"
-        Write-Log "======================================="
-        Write-Log "Service Name            : $ServiceName"
-        Write-Log "Service Exists          : True"
-        Write-Log "Service Status          : $($ExistingService.Status)"
-        Write-Log "Service StartType       : $($ExistingService.StartType)"
-        Write-Log "Service Binary Path     : $ServiceImagePathFromCim"
-        Write-Log "Current Project Root    : $ProjectRoot"
-        Write-Log "Expected Bin Directory  : $PgBin"
-        Write-Log "Expected Data Directory : $PgData"
-        Write-Log "ImagePath In Workspace  : $ServiceInWorkspace"
-        Write-Log "======================================="
+    Write-Log ""
+    Write-Log "======================================="
+    Write-Log "PRE-START SERVICE DIAGNOSTICS"
+    Write-Log "======================================="
+    Write-Log "Service Name            : $ServiceName"
+    Write-Log "Service Exists          : True"
+    Write-Log "Service Status          : $($ExistingService.Status)"
+    Write-Log "Service StartType       : $($ExistingService.StartType)"
+    Write-Log "Service Binary Path     : $ServiceImagePathFromCim"
+    Write-Log "Current Project Root    : $ProjectRoot"
+    Write-Log "Expected Bin Directory  : $PgBin"
+    Write-Log "Expected Data Directory : $PgData"
+    Write-Log "ImagePath In Workspace  : $ServiceInWorkspace"
+    Write-Log "======================================="
 
+    if ($ServiceInWorkspace) {
         Write-Log "Starting existing PostgreSQL service..."
 
         try {
@@ -215,7 +216,7 @@ if ($ExistingService) {
             if ($_.Exception -is [System.ComponentModel.Win32Exception]) {
                 Write-Log "Win32 NativeErrorCode   : $($_.Exception.NativeErrorCode)"
             }
-            if ($_.Exception -is [System.ServiceProcess.ServiceCommandException]) {
+            if ($_.Exception.GetType().FullName -eq "System.ServiceProcess.ServiceCommandException") {
                 Write-Log "ServiceCommandException : True"
             }
 
@@ -270,6 +271,60 @@ if ($ExistingService) {
             Write-Log "======================================="
             Write-Log "Falling back to pg_ctl start due to service start failure."
         }
+    }
+    else {
+        Write-Log "Service is registered outside workspace. Re-registering..."
+
+        if ($ExistingService.Status -ne "Stopped") {
+            Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
+            Write-Log "Stopped existing service."
+        }
+
+        & "$PgCtl" unregister -N $ServiceName
+        Write-Log "Unregistered PostgreSQLAutomation service."
+
+        $PgCtlRegisterArgs = @("register", "-N", "`"$ServiceName`"", "-S", "auto", "-D", "`"$PgData`"", "-o", "`"-p $ExpectedPort`"")
+        & "$PgCtl" @PgCtlRegisterArgs
+        Write-Log "Registered PostgreSQLAutomation service."
+
+        Start-Service -Name $ServiceName
+        Write-Log "Started PostgreSQLAutomation service."
+
+        $SvcStatus = $null
+        for ($Attempt = 1; $Attempt -le 30; $Attempt++) {
+            Start-Sleep -Seconds 1
+            $SvcStatus = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+            if ($SvcStatus -and $SvcStatus.Status -eq "Running") {
+                Write-Log "Windows Service is running."
+                break
+            }
+            Write-Log "Waiting for service to start... $Attempt/30"
+        }
+
+        if (-not $SvcStatus -or $SvcStatus.Status -ne "Running") {
+            throw "PostgreSQLAutomation service failed to reach Running state within 30 seconds."
+        }
+
+        if (Test-Path $Psql) {
+            $env:PGPASSWORD = $Config["POSTGRESQL_PASSWORD"]
+            $PreviousErrorActionPreference = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            & "$Psql" --host="$PgHost" --port="$ExpectedPort" --username="$PgUser" --dbname="postgres" --command="SELECT 1;" *> $null
+            $PsqlExitCode = $LASTEXITCODE
+            $ErrorActionPreference = $PreviousErrorActionPreference
+            $env:PGPASSWORD = $null
+
+            if ($PsqlExitCode -eq 0) {
+                Write-Log "PostgreSQL is reachable via Windows Service."
+                exit 0
+            }
+
+            throw "PostgreSQLAutomation service started but PostgreSQL is not reachable."
+        }
+
+        Write-Log "Windows Service started successfully."
+        exit 0
+    }
 }
 
 # =====================================
@@ -357,7 +412,14 @@ Write-Log "Starting PostgreSQL..."
 $PgCtlArguments = @("start", "-D", "`"$PgData`"", "-l", "`"$PgLog`"", "-o", "`"-p $ExpectedPort`"", "-w", "-t", "60")
 $PreviousErrorActionPreference = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
+# & "$PgCtl" @PgCtlArguments > $PgCtlOutput 2> $PgCtlError
+# $PgCtlExitCode = $LASTEXITCODE
+Write-Log "Calling pg_ctl..."
+
 & "$PgCtl" @PgCtlArguments > $PgCtlOutput 2> $PgCtlError
+
+Write-Log "pg_ctl returned. ExitCode = $LASTEXITCODE"
+
 $PgCtlExitCode = $LASTEXITCODE
 $ErrorActionPreference = $PreviousErrorActionPreference
 
