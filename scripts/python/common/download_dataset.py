@@ -132,27 +132,62 @@ def download_dataset():
 
             print()
             print("[INFO] Dataset already exists:")
-            print(output_file)
+            print(f"Location : {output_file}")
 
             if archive:
 
                 try:
                     validate_archive(output_file)
-                    print("[INFO] Existing archive is valid. Skipping download.")
+                    print("[INFO] Existing archive already verified.")
+                    print("[INFO] Download skipped.")
                     return output_file
 
                 except Exception as exc:
 
                     print()
-                    print(f"[WARNING] Existing archive invalid: {exc}")
-                    print("[INFO] Will re-download.")
+                    print(f"[WARNING] Archive validation failed : {exc}")
+                    print("[INFO] Re-downloading archive...")
 
             else:
 
                 return output_file
 
     print()
-    print("Downloading dataset...")
+
+    print(f"Source Type : {source_type.upper()}")
+
+    if database:
+        print(f"Database    : {database.lower()}")
+
+    print(f"Source      : {source_path}")
+    print(f"Destination : {destination_directory}")
+
+    print()
+
+    if source_type.lower() == "google_drive":
+
+        print("Downloading dataset from Google Drive...")
+
+    elif source_type.lower() == "local":
+
+        source = Path(source_path)
+
+        if source.is_dir():
+
+            print("Copying local dataset folder...")
+
+        elif archive:
+
+            print("Copying local ZIP archive...")
+
+        else:
+
+            print("Copying local dataset file...")
+
+    else:
+
+        print("Acquiring dataset...")
+
     print()
 
     # ---------------------------------------
@@ -190,8 +225,14 @@ def download_dataset():
             save_state(state)
 
             print()
+
             print("[SUCCESS] Dataset downloaded successfully.")
-            print(output_file)
+
+            print(f"Archive : {output_file}")
+
+            print(f"Source  : {source_path}")
+
+            print()
 
             return output_file
 
@@ -218,10 +259,15 @@ def download_dataset():
         config,
         str(output_file)
     )
+    print()
+
+    print("[SUCCESS] Dataset copied successfully.")
+
+    print(f"Location : {output_file}")
+
+    print(f"Database : {database}")
 
     print()
-    print("[SUCCESS] Dataset copied successfully.")
-    print(output_file)
 
     return output_file
 
