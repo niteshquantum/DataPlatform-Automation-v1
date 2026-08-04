@@ -324,6 +324,7 @@ if ($ExistingService) {
 
         Write-Log "Windows Service started successfully."
         exit 0
+    }
 }
 
 # =====================================
