@@ -333,7 +333,7 @@ def download_dataset():
 
     print("Copy operation completed successfully.")
 
-    print(f"Location : {output_file}")
+    print(f"Destination : {output_file}")
 
     print()
     print("=" * 60)

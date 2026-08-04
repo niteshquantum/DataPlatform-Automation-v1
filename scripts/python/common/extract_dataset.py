@@ -112,7 +112,7 @@ def extract_dataset():
 
         print()
         print("[INFO] No extraction required.")
-        print("[INFO] Dataset is ready for loading.")
+        
 
         return
 
