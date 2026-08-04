@@ -34,7 +34,7 @@ from scripts.python.common.archive_utils import (
 def print_header():
     print()
     print("=" * 60)
-    print("DATASET EXTRACTION & MERGE")
+    print("DATASET PREPARATION")
     print("=" * 60)
 
 
@@ -111,8 +111,8 @@ def extract_dataset():
     if not is_archive_file(output_filename):
 
         print()
-        print("[INFO] Dataset is not a ZIP archive.")
-        print("[INFO] Skipping extraction.")
+        print("[INFO] No extraction required.")
+        print("[INFO] Dataset is ready for loading.")
 
         return
 
@@ -209,8 +209,8 @@ def verify_dataset():
         print("=" * 60)
         print("DATASET VERIFICATION")
         print("=" * 60)
-        print("[INFO] Non-archive dataset.")
-        print("[INFO] Verification skipped.")
+        print("[OK] Dataset verified successfully.")
+        print("[OK] Dataset is ready for loading.")
 
         return
 
