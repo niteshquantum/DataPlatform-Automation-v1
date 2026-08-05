@@ -63,6 +63,12 @@ def download_media():
         quiet=False
     )
 
+    if not output_file.exists() or output_file.stat().st_size == 0:
+
+        raise FileNotFoundError(
+            f"MSSQL media download failed or produced an empty file:\n{output_file}"
+        )
+
     print()
     print("[SUCCESS] MSSQL media downloaded successfully.")
     print(output_file)

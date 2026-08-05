@@ -1,0 +1,1173 @@
+Started by user DIVYA PATIL
+Obtained CI_CD/mysql/windows/setup_pipeline.groovy from git https://github.com/niteshquantum/DataPlatform-Automation-v1
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+Cloning the remote Git repository
+Cloning repository https://github.com/niteshquantum/DataPlatform-Automation-v1
+ > git.exe init C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1 # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.49.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1 +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1 # timeout=10
+ > git.exe config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+ > git.exe rev-parse "refs/remotes/origin/main^{commit}" # timeout=10
+Checking out Revision b1381e50222905d90d65e9999ab3e4a6850e5fe6 (refs/remotes/origin/main)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f b1381e50222905d90d65e9999ab3e4a6850e5fe6 # timeout=10
+Commit message: "Uncomment pg_ctl command execution in script"
+First time build. Skipping changelog.
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Initialize Logging)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py init                         --database mysql                         --action setup                         --os windows                         --build-number "1"                         --job-name "mysql-setup-1"                         --build-url "http://localhost:8080/job/mysql-setup-1/1/" 
+Execution log initialized: logs\mysql\setup\build_1\execution.json
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Check Administrator Privileges)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Check Administrator Privileges" 
+Stage started: Check Administrator Privileges
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\common\check_admin_privileges.bat
+
+=====================================
+CHECKING ADMINISTRATOR PRIVILEGES
+=====================================
+
+Administrator privileges detected.
+[Pipeline] writeFile
+[Pipeline] echo
+Administrator privileges available.
+[Pipeline] echo
+MySQL Service and Global MySQL configuration will be enabled.
+[Pipeline] readFile
+[Pipeline] echo
+ADMIN STATUS = true
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py set-environment                             --database mysql                             --action setup                             --build-number "1"                             --administrator-privileges "true" 
+Environment information updated: logs\mysql\setup\build_1\execution.json
+Administrator Privileges: True
+Execution Mode: windows_service
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Check Administrator Privileges"             --status SUCCESS 
+Stage completed: Check Administrator Privileges
+Stage Status: SUCCESS
+Stage Duration: 3.84 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Python Runtime)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Validate Python Runtime" 
+Stage started: Validate Python Runtime
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\common\validate_python_runtime.bat
+
+=====================================
+VALIDATING PYTHON RUNTIME
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+Python 3.13.4
+
+=====================================
+PYTHON RUNTIME VALIDATED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Validate Python Runtime"             --status SUCCESS 
+Stage completed: Validate Python Runtime
+Stage Status: SUCCESS
+Stage Duration: 2.79 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Install Python Requirements)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Install Python Requirements" 
+Stage started: Install Python Requirements
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\install_python_requirements.bat
+
+=====================================
+PYTHON VERSION
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+Python 3.13.4
+
+=====================================
+INSTALLING PYTHON REQUIREMENTS
+=====================================
+
+Requirement already satisfied: pandas in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 1)) (2.3.3)
+Requirement already satisfied: pyyaml in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 2)) (6.0.3)
+Requirement already satisfied: python-dotenv in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 3)) (1.2.1)
+Requirement already satisfied: gdown>=5.2.0 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (6.1.0)
+Requirement already satisfied: libarchive-c>=5.3 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 5)) (5.3)
+Requirement already satisfied: mysql-connector-python in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\scripts\batch\mysql\setup\..\..\..\..\requirements\mysql.txt (line 3)) (9.7.0)
+Requirement already satisfied: numpy>=1.26.0 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 1)) (2.3.3)
+Requirement already satisfied: python-dateutil>=2.8.2 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 1)) (2.9.0.post0)
+Requirement already satisfied: pytz>=2020.1 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 1)) (2025.2)
+Requirement already satisfied: tzdata>=2022.7 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 1)) (2025.2)
+Requirement already satisfied: beautifulsoup4 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (4.13.5)
+Requirement already satisfied: filelock in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (3.29.7)
+Requirement already satisfied: requests[socks] in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (2.32.5)
+Requirement already satisfied: tqdm in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (4.67.1)
+Requirement already satisfied: six>=1.5 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from python-dateutil>=2.8.2->pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 1)) (1.17.0)
+Requirement already satisfied: soupsieve>1.2 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from beautifulsoup4->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (2.8)
+Requirement already satisfied: typing-extensions>=4.0.0 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from beautifulsoup4->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (4.15.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (3.4.3)
+Requirement already satisfied: idna<4,>=2.5 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (2025.8.3)
+Requirement already satisfied: PySocks!=1.5.7,>=1.5.6 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (1.7.1)
+Requirement already satisfied: colorama in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from tqdm->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\requirements\common.txt (line 4)) (0.4.6)
+
+[notice] A new release of pip is available: 25.3 -> 26.2
+[notice] To update, run: python.exe -m pip install --upgrade pip
+
+=====================================
+PYTHON REQUIREMENTS INSTALLED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Install Python Requirements"             --status SUCCESS 
+Stage completed: Install Python Requirements
+Stage Status: SUCCESS
+Stage Duration: 6.88 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Python Requirements)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Validate Python Requirements" 
+Stage started: Validate Python Requirements
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\validate_python_requirements.bat
+
+=====================================
+VALIDATING PYTHON REQUIREMENTS
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+
+Python Version:
+Python 3.13.4
+
+Checking PyYAML...
+Checking python-dotenv...
+Checking mysql-connector-python...
+Checking pandas...
+
+=====================================
+PYTHON REQUIREMENTS VALIDATED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Validate Python Requirements"             --status SUCCESS 
+Stage completed: Validate Python Requirements
+Stage Status: SUCCESS
+Stage Duration: 5.21 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Java Runtime)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Validate Java Runtime" 
+Stage started: Validate Java Runtime
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\common\validate_java_runtime.bat
+=====================================
+VALIDATING JAVA RUNTIME
+=====================================
+========================================
+       Discovering Installed JDK
+========================================
+
+Checking C:\Program Files\Java
+  Ignoring unsupported: jdk1.8.0_202
+  Ignoring unsupported: jre1.8.0_202
+Checking C:\Program Files\Microsoft
+  Ignoring unsupported: AzureAttestService
+
+========================================
+Java Configuration
+========================================
+Selected Version : JDK 17
+JAVA_HOME         : C:\Program Files\Microsoft\jdk-17.0.14.7-hotspot
+========================================
+
+Validating Java installation...
+
+--- java -version ---
+openjdk version "17.0.14" 2025-01-21 LTS
+OpenJDK Runtime Environment Microsoft-10800295 (build 17.0.14+7-LTS)
+OpenJDK 64-Bit Server VM Microsoft-10800295 (build 17.0.14+7-LTS, mixed mode, sharing)
+
+--- javac -version ---
+javac 17.0.14
+
+========================================
+Java 17 validated successfully
+========================================
+'...' is not recognized as an internal or external command,
+operable program or batch file.
+Java Path:
+C:\Program Files\Microsoft\jdk-17.0.14.7-hotspot\bin\java.exe
+D:\java21-install\bin\java.exe
+D:\bin\java.exe
+C:\Program Files\java\jdk1.8.0_202\bin\java.exe
+
+JAVA_HOME:
+C:\Program Files\Microsoft\jdk-17.0.14.7-hotspot
+
+Java Version:
+openjdk version "17.0.14" 2025-01-21 LTS
+OpenJDK Runtime Environment Microsoft-10800295 (build 17.0.14+7-LTS)
+OpenJDK 64-Bit Server VM Microsoft-10800295 (build 17.0.14+7-LTS, mixed mode, sharing)
+
+Detecting Java Version...
+Detected Java Major Version: 17
+
+Java 17 detected - Supported
+
+=====================================
+JAVA RUNTIME VALIDATED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Validate Java Runtime"             --status SUCCESS 
+Stage completed: Validate Java Runtime
+Stage Status: SUCCESS
+Stage Duration: 3.85 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Install Tools)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Install Tools" 
+Stage started: Install Tools
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\install_tools.bat
+
+=====================================
+INSTALLING MYSQL TOOLS
+=====================================
+
+[1/4] Installing Terraform...
+
+=====================================
+INSTALLING TERRAFORM
+=====================================
+
+Downloading Terraform...
+Extracting Terraform...
+Terraform Installed Successfully.
+[2/4] Installing Liquibase...
+
+=====================================
+INSTALLING LIQUIBASE
+=====================================
+
+Downloading Liquibase Version 5.0.3 ...
+URL : https://github.com/liquibase/liquibase/releases/download/v5.0.3/liquibase-5.0.3.zip
+LiquibaseDir = C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\liquibase
+
+
+    Directory: C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\liquibase
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+d-----          8/4/2026  11:12 AM                examples                                                             
+d-----          8/4/2026  11:12 AM                internal                                                             
+d-----          8/4/2026  11:12 AM                lib                                                                  
+d-----          8/4/2026  11:12 AM                licenses                                                             
+-a----          8/4/2026  11:09 AM              0 .gitkeep                                                             
+-a----         5/14/2026   4:12 PM             50 ABOUT.txt                                                            
+-a----         5/14/2026   4:12 PM         466775 changelog.txt                                                        
+-a----         5/14/2026   4:12 PM          11088 GETTING_STARTED.txt                                                  
+-a----         5/14/2026   4:12 PM           3688 LICENSE.txt                                                          
+-a----         5/13/2026   7:11 PM           2655 liquibase                                                            
+-a----         5/13/2026   7:11 PM           3247 liquibase.bat                                                        
+-a----         5/14/2026   4:12 PM           3566 README.txt                                                           
+-a----         5/14/2026   4:12 PM            738 UNINSTALL.txt                                                        
+Liquibase downloaded successfully.
+
+
+
+LIQUIBASE INSTALLATION SUCCESSFUL
+
+[3/4] Installing MySQL JDBC Driver...
+
+=====================================
+INSTALLING MYSQL DRIVER
+=====================================
+
+
+=====================================
+DOWNLOADING MYSQL JDBC DRIVER
+=====================================
+Version : 9.5.0
+URL     : https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.5.0/mysql-connector-j-9.5.0.jar
+
+
+=====================================
+MYSQL JDBC DRIVER INSTALLED
+=====================================
+Driver : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\drivers\mysql-connector-j-9.5.0.jar
+=====================================
+
+MYSQL DRIVER INSTALLATION SUCCESSFUL
+
+[4/4] Validating Installed Tools...
+
+=====================================
+VALIDATING TOOLS
+=====================================
+
+Checking Terraform...
+Terraform v1.13.0
+on windows_amd64
+
+Your version of Terraform is out of date! The latest version
+is 1.15.8. You can update by downloading from https://developer.hashicorp.com/terraform/install
+Checking Liquibase...
+
+=====================================
+VALIDATING LIQUIBASE
+=====================================
+
+Expected Liquibase Version : 5.0.3
+
+Java Found:
+D:\java21-install\bin\java.exe
+D:\bin\java.exe
+C:\Program Files\java\jdk1.8.0_202\bin\java.exe
+
+Checking Liquibase Version...
+
+####################################################
+##   _     _             _ _                      ##
+##  | |   (_)           (_) |                     ##
+##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##
+##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##
+##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##
+##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##
+##              | |                               ##
+##              |_|                               ##
+##                                                ## 
+##  Get documentation at docs.liquibase.com       ##
+##  Get certified courses at learn.liquibase.com  ## 
+##                                                ##
+####################################################
+Starting Liquibase at 11:12:21 using Java 21.0.11 (version 5.0.3 #10665 built at 2026-05-13 17:55+0000)
+Liquibase Home: C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\liquibase
+Java Home D:\java21-install (Version 21.0.11)
+Libraries:
+- internal\lib\commons-collections4.jar: Apache Commons Collections 4.5.0 By The Apache Software Foundation
+- internal\lib\commons-io.jar: Apache Commons IO 2.22.0 By The Apache Software Foundation
+- internal\lib\commons-lang3.jar: Apache Commons Lang 3.20.0 By The Apache Software Foundation
+- internal\lib\commons-text.jar: Apache Commons Text 1.15.0 By The Apache Software Foundation
+- internal\lib\h2.jar: H2 Database Engine 2.4.240 By H2 Group
+- internal\lib\opencsv.jar: opencsv 5.12.0
+- internal\lib\picocli.jar: picocli 4.7.7 By Remko Popma
+- internal\lib\snakeyaml.jar: SnakeYAML 2.6.0
+
+
+Liquibase Version: 5.0.3
+
+
+=====================================
+LIQUIBASE VALIDATED
+=====================================
+
+Checking MySQL Driver...
+
+=====================================
+VALIDATING MYSQL JDBC DRIVER
+=====================================
+
+Expected Driver Version : 9.5.0
+
+Driver Found:
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\drivers\mysql-connector-j-9.5.0.jar
+
+=====================================
+MYSQL JDBC DRIVER VALIDATED
+=====================================
+
+TERRAFORM VALIDATED
+
+=====================================
+TOOLS VALIDATED SUCCESSFULLY
+=====================================
+
+
+=====================================
+MYSQL TOOLS INSTALLED SUCCESSFULLY
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Install Tools"             --status SUCCESS 
+Stage completed: Install Tools
+Stage Status: SUCCESS
+Stage Duration: 169.89 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Check MySQL Instance)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Check MySQL Instance" 
+Stage started: Check MySQL Instance
+[Pipeline] bat
+[Pipeline] echo
+Instance State: NO_INSTANCE
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Check MySQL Instance"             --status SUCCESS 
+Stage completed: Check MySQL Instance
+Stage Status: SUCCESS
+Stage Duration: 4.57 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy MySQL)
+[Pipeline] bat
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Deploy MySQL" 
+Stage started: Deploy MySQL
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\deploy_mysql.bat
+
+=====================================
+TERRAFORM INIT
+=====================================
+
+[0m[1mInitializing the backend...[0m
+[0m[1mInitializing provider plugins...[0m
+- Finding hashicorp/null versions matching "~> 3.2"...
+- Installing hashicorp/null v3.3.0...
+- Installed hashicorp/null v3.3.0 (signed by HashiCorp)
+Terraform has created a lock file [1m.terraform.lock.hcl[0m to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.[0m
+
+[0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
+[0m[32m
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.[0m
+
+=====================================
+TERRAFORM APPLY
+=====================================
+
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # null_resource.create_mysql_user_windows[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "create_mysql_user_windows" {
+      [32m+[0m[0m id       = (known after apply)
+      [32m+[0m[0m triggers = {
+          [32m+[0m[0m "bootstrap_version" = "config-driven-mysql-user-v2"
+          [32m+[0m[0m "config_sha"        = "067760cb8d6697160b0f98567d9686f0b21f2d040ee748c8152b7e777914f399"
+        }
+    }
+
+[1m  # null_resource.download_mysql_windows[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "download_mysql_windows" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1m  # null_resource.extract_mysql_windows[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "extract_mysql_windows" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1m  # null_resource.init_mysql_windows[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "init_mysql_windows" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1m  # null_resource.start_mysql_windows[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "start_mysql_windows" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1mPlan:[0m 5 to add, 0 to change, 0 to destroy.
+[0m[0m[1mnull_resource.download_mysql_windows: Creating...[0m[0m
+[0m[1mnull_resource.download_mysql_windows: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.download_mysql_windows (local-exec):[0m [0mExecuting: ["PowerShell" "-Command" "\r\nif (!(Test-Path \"..\\..\\databases\\mysql\")) {\r\n    New-Item -ItemType Directory -Path \"..\\..\\databases\\mysql\" -Force\r\n}\r\n\r\n$ProgressPreference = 'SilentlyContinue'\r\n\r\nInvoke-WebRequest `\r\n    -Uri \"https://cdn.mysql.com/Downloads/MySQL-9.7/mysql-9.7.0-winx64.zip\" `\r\n    -OutFile \"..\\..\\databases\\mysql\\mysql.zip\" `\r\n    -UseBasicParsing\r\n\r\nif (!(Test-Path \"..\\..\\databases\\mysql\\mysql.zip\")) {\r\n    throw \"mysql.zip download failed\"\r\n}\r\n\r\nWrite-Host \"Download Complete\"\r\n\r\n"]
+
+
+[0m[1mnull_resource.download_mysql_windows (local-exec):[0m [0m    Directory: C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases
+
+
+[0m[1mnull_resource.download_mysql_windows (local-exec):[0m [0mMode                 LastWriteTime         Length Name
+[0m[1mnull_resource.download_mysql_windows (local-exec):[0m [0m----                 -------------         ------ ----
+[0m[1mnull_resource.download_mysql_windows (local-exec):[0m [0md-----          8/4/2026  11:12 AM                mysql
+[0m[1mnull_resource.download_mysql_windows: Still creating... [00m10s elapsed][0m[0m
+[0m[1mnull_resource.download_mysql_windows (local-exec):[0m [0mDownload Complete
+
+
+[0m[1mnull_resource.download_mysql_windows: Creation complete after 11s [id=1277930184636292152][0m
+[0m[1mnull_resource.extract_mysql_windows: Creating...[0m[0m
+[0m[1mnull_resource.extract_mysql_windows: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.extract_mysql_windows (local-exec):[0m [0mExecuting: ["PowerShell" "-Command" "\r\nif (Test-Path \"..\\..\\databases\\mysql\\server\") {\r\n    Remove-Item \"..\\..\\databases\\mysql\\server\" -Recurse -Force\r\n}\r\n\r\nExpand-Archive `\r\n    -Path \"..\\..\\databases\\mysql\\mysql.zip\" `\r\n    -DestinationPath \"..\\..\\databases\\mysql\" `\r\n    -Force\r\n\r\n$folder = Get-ChildItem \"..\\..\\databases\\mysql\" -Directory | Where-Object {\r\n    $_.Name -like \"mysql-*\"\r\n} | Select-Object -First 1\r\n\r\nif ($null -eq $folder) {\r\n    throw \"MySQL extraction failed\"\r\n}\r\n\r\nRename-Item $folder.FullName \"server\" -Force\r\n\r\nWrite-Host \"Extraction Complete\"\r\n\r\n"]
+[0m[1mnull_resource.extract_mysql_windows: Still creating... [00m10s elapsed][0m[0m
+[0m[1mnull_resource.extract_mysql_windows: Still creating... [00m20s elapsed][0m[0m
+[0m[1mnull_resource.extract_mysql_windows: Still creating... [00m30s elapsed][0m[0m
+[0m[1mnull_resource.extract_mysql_windows: Still creating... [00m40s elapsed][0m[0m
+[0m[1mnull_resource.extract_mysql_windows (local-exec):[0m [0mExtraction Complete
+[0m[1mnull_resource.extract_mysql_windows: Creation complete after 47s [id=7197241856245749244][0m
+[0m[1mnull_resource.init_mysql_windows: Creating...[0m[0m
+[0m[1mnull_resource.init_mysql_windows: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.init_mysql_windows (local-exec):[0m [0mExecuting: ["PowerShell" "-Command" "\r\nif (!(Test-Path \"..\\..\\databases\\mysql\\data\")) {\r\n    New-Item -ItemType Directory -Path \"..\\..\\databases\\mysql\\data\" -Force\r\n}\r\n\r\n& \"..\\..\\databases\\mysql\\server\\bin\\mysqld.exe\" `\r\n    --initialize-insecure `\r\n    --basedir=\"..\\..\\databases\\mysql\\server\" `\r\n    --datadir=\"..\\..\\databases\\mysql\\data\"\r\n\r\nif (!(Test-Path \"..\\..\\databases\\mysql\\data\\ibdata1\")) {\r\n    throw \"MySQL initialization failed\"\r\n}\r\n\r\nWrite-Host \"MySQL Initialized Successfully\"\r\n\r\n"]
+
+
+[0m[1mnull_resource.init_mysql_windows (local-exec):[0m [0m    Directory: C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql
+
+
+[0m[1mnull_resource.init_mysql_windows (local-exec):[0m [0mMode                 LastWriteTime         Length Name
+[0m[1mnull_resource.init_mysql_windows (local-exec):[0m [0m----                 -------------         ------ ----
+[0m[1mnull_resource.init_mysql_windows (local-exec):[0m [0md-----          8/4/2026  11:13 AM                data
+[0m[1mnull_resource.init_mysql_windows: Still creating... [00m10s elapsed][0m[0m
+[0m[1mnull_resource.init_mysql_windows (local-exec):[0m [0mMySQL Initialized Successfully
+
+
+[0m[1mnull_resource.init_mysql_windows: Creation complete after 15s [id=6446035785557158765][0m
+[0m[1mnull_resource.start_mysql_windows: Creating...[0m[0m
+[0m[1mnull_resource.start_mysql_windows: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mExecuting: ["PowerShell" "-Command" "powershell -ExecutionPolicy Bypass -File ../../scripts/powershell/mysql/start_mysql.ps1"]
+
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0m=====================================
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mSTARTING MYSQL
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0m=====================================
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mBaseDir : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\server
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mDataDir : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\data
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mPort    : 3306
+
+
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0m=====================================
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mMYSQL START SUCCESSFUL
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0mPort : 3306
+[0m[1mnull_resource.start_mysql_windows (local-exec):[0m [0m=====================================
+
+[0m[1mnull_resource.start_mysql_windows: Creation complete after 8s [id=3401650929038111502][0m
+[0m[1mnull_resource.create_mysql_user_windows: Creating...[0m[0m
+[0m[1mnull_resource.create_mysql_user_windows: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.create_mysql_user_windows (local-exec):[0m [0mExecuting: ["PowerShell" "-Command" "\r\n$ConfigFile = \"..\\..\\config\\windows\\mysql.conf\"\r\n\r\nif (!(Test-Path $ConfigFile)) {\r\n    throw \"MySQL config file not found: $ConfigFile\"\r\n}\r\n\r\n$Config = @{}\r\nGet-Content $ConfigFile | ForEach-Object {\r\n    $Line = $_.Trim()\r\n    if ($Line -and -not $Line.StartsWith(\"#\") -and $Line.Contains(\"=\")) {\r\n        $Key, $Value = $Line.Split(\"=\", 2)\r\n        $Config[$Key.Trim()] = $Value.Trim()\r\n    }\r\n}\r\n\r\n$MysqlHost = $Config[\"MYSQL_HOST\"]\r\n$MysqlPort = $Config[\"MYSQL_PORT\"]\r\n$MysqlUser = $Config[\"MYSQL_USER\"]\r\n$MysqlPassword = $Config[\"MYSQL_PASSWORD\"]\r\n\r\nif (-not $MysqlHost) { throw \"MYSQL_HOST not found in mysql.conf\" }\r\nif (-not $MysqlPort) { throw \"MYSQL_PORT not found in mysql.conf\" }\r\nif (-not $MysqlUser) { throw \"MYSQL_USER not found in mysql.conf\" }\r\n\r\n$MysqlExe = \"..\\..\\databases\\mysql\\server\\bin\\mysql.exe\"\r\n\r\nif (!(Test-Path $MysqlExe)) {\r\n    throw \"mysql.exe not found: $MysqlExe\"\r\n}\r\n\r\n$RootReady = $false\r\n\r\nfor ($i = 1; $i -le 60; $i++) {\r\n    & $MysqlExe `\r\n      --host=$MysqlHost `\r\n      --port=$MysqlPort `\r\n      -u root `\r\n      -e \"SELECT 1;\" 2>$null\r\n\r\n    if ($LASTEXITCODE -eq 0) {\r\n        $RootReady = $true\r\n        break\r\n    }\r\n\r\n    Start-Sleep -Seconds 1\r\n}\r\n\r\nif (-not $RootReady) {\r\n    throw \"MySQL root bootstrap account is not available\"\r\n}\r\n\r\n$EscapedUser = $MysqlUser.Replace(\"'\", \"''\")\r\n$EscapedPassword = \"\"\r\n\r\nif ($MysqlPassword) {\r\n    $EscapedPassword = $MysqlPassword.Replace(\"'\", \"''\")\r\n}\r\n\r\n& $MysqlExe `\r\n  --host=$MysqlHost `\r\n  --port=$MysqlPort `\r\n  -u root `\r\n  -e \"CREATE USER IF NOT EXISTS '$EscapedUser'@'%' IDENTIFIED BY '$EscapedPassword';\r\n      ALTER USER '$EscapedUser'@'%' IDENTIFIED BY '$EscapedPassword';\r\n      GRANT ALL PRIVILEGES ON *.* TO '$EscapedUser'@'%' WITH GRANT OPTION;\r\n      CREATE USER IF NOT EXISTS '$EscapedUser'@'localhost' IDENTIFIED BY '$EscapedPassword';\r\n      ALTER USER '$EscapedUser'@'localhost' IDENTIFIED BY '$EscapedPassword';\r\n      GRANT ALL PRIVILEGES ON *.* TO '$EscapedUser'@'localhost' WITH GRANT OPTION;\r\n      FLUSH PRIVILEGES;\"\r\n\r\nif ($LASTEXITCODE -ne 0) {\r\n    throw \"MySQL repository user creation failed\"\r\n}\r\n\r\nWrite-Host \"MySQL repository user created successfully\"\r\n\r\n"]
+[0m[1mnull_resource.create_mysql_user_windows (local-exec):[0m [0m1
+[0m[1mnull_resource.create_mysql_user_windows (local-exec):[0m [0m1
+[0m[1mnull_resource.create_mysql_user_windows (local-exec):[0m [0mMySQL repository user created successfully
+[0m[1mnull_resource.create_mysql_user_windows: Creation complete after 2s [id=7594770929836439725][0m
+[33m╷[0m[0m
+[33m│[0m [0m[1m[33mWarning: [0m[0m[1mResource targeting is in effect[0m
+[33m│[0m [0m
+[33m│[0m [0m[0mYou are creating a plan with the -target option, which means that the
+[33m│[0m [0mresult of this plan may not represent all of the changes requested by the
+[33m│[0m [0mcurrent configuration.
+[33m│[0m [0m
+[33m│[0m [0mThe -target option is not for routine use, and is provided only for
+[33m│[0m [0mexceptional situations such as recovering from errors or mistakes, or when
+[33m│[0m [0mTerraform specifically suggests to use it as part of an error message.
+[33m╵[0m[0m
+[33m╷[0m[0m
+[33m│[0m [0m[1m[33mWarning: [0m[0m[1mApplied changes may be incomplete[0m
+[33m│[0m [0m
+[33m│[0m [0m[0mThe plan was created with the -target option in effect, so some changes
+[33m│[0m [0mrequested in the configuration may have been ignored and the output values
+[33m│[0m [0mmay not be fully updated. Run the following command to verify that no other
+[33m│[0m [0mchanges are pending:
+[33m│[0m [0m    terraform plan
+[33m│[0m [0m
+[33m│[0m [0mNote that the -target option is not suitable for routine use, and is
+[33m│[0m [0mprovided only for exceptional situations such as recovering from errors or
+[33m│[0m [0mmistakes, or when Terraform specifically suggests to use it as part of an
+[33m│[0m [0merror message.
+[33m╵[0m[0m
+[0m[1m[32m
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
+[0m
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Deploy MySQL"             --status SUCCESS 
+Stage completed: Deploy MySQL
+Stage Status: SUCCESS
+Stage Duration: 88.74 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Start MySQL)
+[Pipeline] bat
+Stage "Start MySQL" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate MySQL Instance)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Validate MySQL Instance" 
+Stage started: Validate MySQL Instance
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\validate_mysql.bat
+
+=====================================
+VALIDATING MYSQL
+=====================================
+
+PROJECT_ROOT=C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1
+PYTHONPATH=C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1;
+
+
+==================================================
+MYSQL INSTANCE VALIDATION SUCCESS
+==================================================
+Host    : 127.0.0.1
+Port    : 3306
+Version : 9.7.0
+==================================================
+
+MYSQL INSTANCE VALIDATION SUCCESSFUL
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Validate MySQL Instance"             --status SUCCESS 
+Stage completed: Validate MySQL Instance
+Stage Status: SUCCESS
+Stage Duration: 3.07 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Configure MySQL Service)
+[Pipeline] readFile
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Configure MySQL Service" 
+Stage started: Configure MySQL Service
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\configure_mysql_service.bat
+
+=====================================
+CONFIGURING MYSQL WINDOWS SERVICE
+=====================================
+
+
+=====================================
+CONFIGURING MYSQL WINDOWS SERVICE
+=====================================
+
+Project Root : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1
+MySQL        : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\server\bin\mysqld.exe
+BaseDir      : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\server
+DataDir      : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\data
+Host         : 127.0.0.1
+Port         : 3306
+Service      : MySQLAutomation
+
+Creating MySQL configuration file...
+Configuration : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\my.ini
+
+Checking MySQL instance on configured port 3306...
+Process found on configured port.
+Port       : 3306
+Process ID : 10620
+Stopping MySQL process PID: 10620
+
+Checking existing MySQL Windows Service...
+Existing MySQL service detected.
+Removing existing MySQL service...
+[SC] DeleteService SUCCESS
+Existing MySQL service removed successfully.
+
+Installing MySQL Windows Service...
+Service successfully installed.
+MySQL Windows Service installed successfully.
+MySQL Windows Service validation successful.
+
+Configuring MySQL service automatic startup...
+[SC] ChangeServiceConfig SUCCESS
+Automatic startup configured successfully.
+
+Starting MySQL Windows Service...
+WARNING: Waiting for service 'MySQLAutomation (MySQLAutomation)' to start...
+MySQL Windows Service started successfully.
+
+Waiting for MySQL port 3306...
+
+=====================================
+MYSQL WINDOWS SERVICE CONFIGURED
+=====================================
+
+Service : MySQLAutomation
+Status  : Running
+Startup : Automatic
+Host    : 127.0.0.1
+Port    : 3306
+
+
+=====================================
+MYSQL WINDOWS SERVICE SUCCESSFUL
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Configure MySQL Service"             --status SUCCESS 
+Stage completed: Configure MySQL Service
+Stage Status: SUCCESS
+Stage Duration: 15.56 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Configure Global MySQL)
+[Pipeline] readFile
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Configure Global MySQL" 
+Stage started: Configure Global MySQL
+[Pipeline] echo
+Administrator privileges available.
+[Pipeline] echo
+Configuring Global MySQL command...
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\configure_global_mysql.bat
+
+=====================================
+CONFIGURING GLOBAL MYSQL COMMAND
+=====================================
+
+
+=====================================
+CONFIGURING GLOBAL MYSQL COMMAND
+=====================================
+
+MySQL Client : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\server\bin\mysql.exe
+Host         : 127.0.0.1
+Port         : 3306
+Database     : ecommerce_mysql
+User         : rootuser
+
+MySQL bin directory added to beginning of System PATH
+
+=====================================
+GLOBAL MYSQL CONFIGURED SUCCESSFULLY
+=====================================
+
+MySQL client has been added to the System PATH.
+
+Examples:
+
+    mysql -u root
+
+or
+
+    mysql -u <username>
+
+Open a NEW CMD window before testing.
+
+The PATH configuration is complete.
+Authentication depends on the MySQL user specified.
+
+
+GLOBAL MYSQL CONFIGURATION SUCCESSFUL
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Configure Global MySQL"             --status SUCCESS 
+Stage completed: Configure Global MySQL
+Stage Status: SUCCESS
+Stage Duration: 4.51 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Configure MySQL User)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Configure MySQL User" 
+Stage started: Configure MySQL User
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\configure_mysql_user.bat
+
+=====================================
+CONFIGURING MYSQL USER
+=====================================
+
+
+=====================================
+CONFIGURING MYSQL USER
+=====================================
+
+Project Root : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1
+Host         : 127.0.0.1
+Port         : 3306
+User         : rootuser
+
+mysql.exe    : C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\databases\mysql\server\bin\mysql.exe
+
+Checking whether user exists...
+User 'rootuser' already exists.
+Skipping user creation.
+
+=====================================
+MYSQL USER CONFIGURED SUCCESSFULLY
+=====================================
+
+
+=====================================
+MYSQL USER CONFIGURATION SUCCESSFUL
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Configure MySQL User"             --status SUCCESS 
+Stage completed: Configure MySQL User
+Stage Status: SUCCESS
+Stage Duration: 3.1 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Environment)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-start         --database mysql         --action setup         --build-number "1"         --stage-name "Validate Environment" 
+Stage started: Validate Environment
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>scripts\batch\mysql\setup\validate_environment.bat
+
+=====================================
+ENVIRONMENT VALIDATION STARTED
+=====================================
+
+[1/5] Validating Python Runtime...
+
+=====================================
+VALIDATING PYTHON RUNTIME
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+Python 3.13.4
+
+=====================================
+PYTHON RUNTIME VALIDATED
+=====================================
+
+[2/5] Validating Python Requirements...
+
+=====================================
+VALIDATING PYTHON REQUIREMENTS
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+
+Python Version:
+Python 3.13.4
+
+Checking PyYAML...
+Checking python-dotenv...
+Checking mysql-connector-python...
+Checking pandas...
+
+=====================================
+PYTHON REQUIREMENTS VALIDATED
+=====================================
+
+[3/5] Validating Tools...
+
+=====================================
+VALIDATING TOOLS
+=====================================
+
+Checking Terraform...
+Terraform v1.13.0
+on windows_amd64
+
+Your version of Terraform is out of date! The latest version
+is 1.15.8. You can update by downloading from https://developer.hashicorp.com/terraform/install
+Checking Liquibase...
+
+=====================================
+VALIDATING LIQUIBASE
+=====================================
+
+Expected Liquibase Version : 5.0.3
+
+Java Found:
+D:\java21-install\bin\java.exe
+D:\bin\java.exe
+C:\Program Files\java\jdk1.8.0_202\bin\java.exe
+
+Checking Liquibase Version...
+
+####################################################
+##   _     _             _ _                      ##
+##  | |   (_)           (_) |                     ##
+##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##
+##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##
+##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##
+##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##
+##              | |                               ##
+##              |_|                               ##
+##                                                ## 
+##  Get documentation at docs.liquibase.com       ##
+##  Get certified courses at learn.liquibase.com  ## 
+##                                                ##
+####################################################
+Starting Liquibase at 11:14:42 using Java 21.0.11 (version 5.0.3 #10665 built at 2026-05-13 17:55+0000)
+Liquibase Home: C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\liquibase
+Java Home D:\java21-install (Version 21.0.11)
+Libraries:
+- internal\lib\commons-collections4.jar: Apache Commons Collections 4.5.0 By The Apache Software Foundation
+- internal\lib\commons-io.jar: Apache Commons IO 2.22.0 By The Apache Software Foundation
+- internal\lib\commons-lang3.jar: Apache Commons Lang 3.20.0 By The Apache Software Foundation
+- internal\lib\commons-text.jar: Apache Commons Text 1.15.0 By The Apache Software Foundation
+- internal\lib\h2.jar: H2 Database Engine 2.4.240 By H2 Group
+- internal\lib\opencsv.jar: opencsv 5.12.0
+- internal\lib\picocli.jar: picocli 4.7.7 By Remko Popma
+- internal\lib\snakeyaml.jar: SnakeYAML 2.6.0
+
+
+Liquibase Version: 5.0.3
+
+
+=====================================
+LIQUIBASE VALIDATED
+=====================================
+
+Checking MySQL Driver...
+
+=====================================
+VALIDATING MYSQL JDBC DRIVER
+=====================================
+
+Expected Driver Version : 9.5.0
+
+Driver Found:
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1\tools\drivers\mysql-connector-j-9.5.0.jar
+
+=====================================
+MYSQL JDBC DRIVER VALIDATED
+=====================================
+
+TERRAFORM VALIDATED
+
+=====================================
+TOOLS VALIDATED SUCCESSFULLY
+=====================================
+
+[4/5] Validating MySQL Port...
+
+=====================================
+VALIDATING MYSQL PORT
+=====================================
+
+
+==================================================
+PORT VALIDATION SUCCESS
+==================================================
+Configured Host : 127.0.0.1
+Configured Port : 3306
+Status          : LISTENING
+==================================================
+
+PORT VALIDATION SUCCESSFUL
+
+[5/5] Validating MySQL...
+
+=====================================
+VALIDATING MYSQL
+=====================================
+
+PROJECT_ROOT=C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1
+PYTHONPATH=C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1;
+
+
+==================================================
+MYSQL INSTANCE VALIDATION SUCCESS
+==================================================
+Host    : 127.0.0.1
+Port    : 3306
+Version : 9.7.0
+==================================================
+
+MYSQL INSTANCE VALIDATION SUCCESSFUL
+
+
+=====================================
+ENVIRONMENT VALIDATION SUCCESSFUL
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py stage-end             --database mysql             --action setup             --build-number "1"             --stage-name "Validate Environment"             --status SUCCESS 
+Stage completed: Validate Environment
+Stage Status: SUCCESS
+Stage Duration: 10.74 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+FINALIZING MYSQL SETUP LOGGING AND REPORTING
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\logging\logger.py finalize                         --database mysql                         --action setup                         --build-number "1"                         --status "SUCCESS" 
+Execution log finalized: logs\mysql\setup\build_1\execution.json
+Final Status: SUCCESS
+Duration: 341.03 seconds
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\reporting\generate_report.py                         --database mysql                         --action setup                         --build-number "1" 
+Reports generated successfully.
+JSON Report: reports\mysql\setup\build_1\report.json
+HTML Report: reports\mysql\setup\build_1\report.html
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mysql-setup-1>python scripts\reporting\generate_history.py                         --database mysql                         --action setup                         --build-number "1" 
+Execution history generated successfully.
+History Record: ADDED
+Total Executions: 1
+JSON History: reports\history\execution_history.json
+HTML History: reports\history\execution_history.html
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] archiveArtifacts
+Archiving artifacts
+Recording fingerprints
+[Pipeline] echo
+MYSQL SETUP PIPELINE COMPLETED
+[Pipeline] echo
+MYSQL SETUP SUCCESSFUL
+[Pipeline] script
+[Pipeline] {
+[Pipeline] readFile
+[Pipeline] echo
+MySQL Windows Service configured successfully.
+[Pipeline] echo
+Global MySQL configuration completed successfully.
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS

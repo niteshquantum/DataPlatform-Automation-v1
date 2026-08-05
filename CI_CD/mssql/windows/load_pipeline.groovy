@@ -221,7 +221,7 @@ pipeline {
 
                         echo 'Deploying project-local MSSQL instance.'
 
-                        bat 'scripts\\batch\\mssql\\setup\\deploy_mssql_gdrive.bat'
+                        bat 'scripts\\batch\\mssql\\setup\\deploy_mssql.bat'
 
                         def adminStatus = bat(
                             script: 'scripts\\batch\\common\\check_admin_privileges.bat',
