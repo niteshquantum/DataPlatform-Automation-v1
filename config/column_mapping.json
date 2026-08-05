@@ -1,0 +1,14 @@
+{
+  "manual": {
+    "CustID": "customer_id",
+    "DOB": "date_of_birth"
+  },
+  "dictionary": {
+    "phone": "phone_no",
+    "mobile": "mobile_no",
+    "dob": "date_of_birth",
+    "fname": "first_name",
+    "lname": "last_name",
+    "addr": "address"
+  }
+}

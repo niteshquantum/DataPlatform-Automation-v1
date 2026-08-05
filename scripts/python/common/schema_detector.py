@@ -11,6 +11,12 @@ import json
 import logging
 from pathlib import Path
 import csv
+from decimal import Decimal
+from functools import lru_cache
+
+from column_mapper import map_columns
+from datatype_detector import detect_datatype
+from datatype_override import resolve_datatype
 
 # Configure logging
 logging.basicConfig(
@@ -18,6 +24,44 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+DEFAULT_SAMPLING_SIZE = 100
+DEFAULT_DATATYPE = "VARCHAR"
+
+
+@lru_cache(maxsize=1)
+def _load_datatype_rules():
+    """Load datatype rules once, falling back to the existing defaults."""
+    config_path = (
+        Path(__file__).parent.parent.parent.parent
+        / "config"
+        / "datatype_rules.json"
+    )
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            rules = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.error(f"Error reading datatype rules {config_path}: {e}")
+        return DEFAULT_SAMPLING_SIZE, DEFAULT_DATATYPE
+
+    if not isinstance(rules, dict):
+        logger.error(f"Invalid datatype rules configuration: {config_path}")
+        return DEFAULT_SAMPLING_SIZE, DEFAULT_DATATYPE
+
+    sampling_size = rules.get("sampling_size")
+    default_type = rules.get("default_type")
+
+    if (
+        not isinstance(sampling_size, int)
+        or isinstance(sampling_size, bool)
+        or sampling_size <= 0
+        or not isinstance(default_type, str)
+        or not default_type.strip()
+    ):
+        logger.error(f"Invalid datatype rules configuration: {config_path}")
+        return DEFAULT_SAMPLING_SIZE, DEFAULT_DATATYPE
+
+    return sampling_size, default_type
 
 
 def get_csv_headers(file_path):
@@ -78,6 +122,116 @@ def get_json_keys(file_path):
         return []
 
 
+def get_csv_column_samples(file_path, headers):
+    """Collect up to the configured number of values for every CSV column."""
+    samples = {header: [] for header in headers}
+    sampling_size, _ = _load_datatype_rules()
+
+    try:
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            reader = csv.reader(f)
+            next(reader, None)
+
+            for record_number, row in enumerate(reader):
+                if record_number >= sampling_size:
+                    break
+                for index, header in enumerate(headers):
+                    if index < len(row):
+                        samples[header].append(row[index])
+    except Exception as e:
+        logger.error(f"Error sampling CSV file {file_path}: {e}")
+
+    return samples
+
+
+def get_json_column_samples(file_path, keys):
+    """Collect up to the configured number of values for every JSON key."""
+    samples = {key: [] for key in keys}
+    sampling_size, _ = _load_datatype_rules()
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f, parse_float=Decimal)
+
+        records = data if isinstance(data, list) else [data]
+        for record in records[:sampling_size]:
+            if not isinstance(record, dict):
+                continue
+            for key in keys:
+                samples[key].append(record.get(key))
+    except Exception as e:
+        logger.error(f"Error sampling JSON file {file_path}: {e}")
+
+    return samples
+
+
+def get_mapped_column_samples(columns, mapped_columns, samples):
+    """Combine source samples that resolve to the same mapped column name."""
+    mapped_samples = {}
+
+    for column, mapped_column in zip(columns, mapped_columns):
+        mapped_samples.setdefault(mapped_column, []).extend(samples.get(column, []))
+
+    return mapped_samples
+
+
+def update_datatype_metadata(table_name, datatypes, metadata_path):
+    """Create or update the datatype metadata without affecting schema registry."""
+    try:
+        metadata_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if metadata_path.exists():
+            with open(metadata_path, 'r', encoding='utf-8') as f:
+                metadata = json.load(f)
+        else:
+            metadata = {}
+
+        existing_datatypes = metadata.get(table_name, {})
+        if not isinstance(existing_datatypes, dict):
+            existing_datatypes = {}
+        existing_datatypes = {
+            column: (
+                datatype
+                if isinstance(datatype, dict)
+                else {"detected_type": datatype}
+            )
+            for column, datatype in existing_datatypes.items()
+        }
+        existing_datatypes.update(datatypes)
+        metadata[table_name] = existing_datatypes
+
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error updating datatype metadata: {e}")
+
+
+def detect_and_update_datatypes(table_name, columns, mapped_columns, samples, metadata_path):
+    """Detect mapped-column datatypes and save them to datatype metadata."""
+    mapped_samples = get_mapped_column_samples(columns, mapped_columns, samples)
+    _, default_type = _load_datatype_rules()
+    detected_datatypes = {
+        column: (
+            detected_type
+            if (detected_type := detect_datatype(column, values)) != DEFAULT_DATATYPE
+            else default_type
+        )
+        for column, values in mapped_samples.items()
+    }
+    datatypes = {
+        column: {
+            "detected_type": detected_type,
+            "final_type": resolve_datatype(table_name, column, detected_type),
+        }
+        for column, detected_type in detected_datatypes.items()
+    }
+
+    for column, datatype in detected_datatypes.items():
+        logger.info(f"Column {column} detected datatype: {datatype}")
+
+    update_datatype_metadata(table_name, datatypes, metadata_path)
+
+
 def update_schema_registry(table_name, columns, registry_path):
     """
     Update schema_registry.json with new columns.
@@ -135,6 +289,11 @@ def main():
         / db_type
         / "schema_registry.json"
     )
+    datatype_metadata_path = (
+        project_root.parent
+        / "metadata"
+        / "datatype_metadata.json"
+    )
 
     logger.info(f"Database type: {db_type}")
     
@@ -160,7 +319,12 @@ def main():
         headers = get_csv_headers(csv_file)
 
         if headers:
-            update_schema_registry(table_name, headers, registry_path)
+            mapped_columns = map_columns(headers)
+            samples = get_csv_column_samples(csv_file, headers)
+            detect_and_update_datatypes(
+                table_name, headers, mapped_columns, samples, datatype_metadata_path
+            )
+            update_schema_registry(table_name, mapped_columns, registry_path)
     
     # Process JSON files
     json_files = list(incoming_dir.glob("*.json"))
@@ -177,7 +341,12 @@ def main():
         keys = get_json_keys(json_file)
 
         if keys:
-            update_schema_registry(table_name, keys, registry_path)
+            mapped_columns = map_columns(keys)
+            samples = get_json_column_samples(json_file, keys)
+            detect_and_update_datatypes(
+                table_name, keys, mapped_columns, samples, datatype_metadata_path
+            )
+            update_schema_registry(table_name, mapped_columns, registry_path)
 
 
 if __name__ == "__main__":
