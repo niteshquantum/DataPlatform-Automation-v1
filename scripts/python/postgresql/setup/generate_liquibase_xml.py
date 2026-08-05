@@ -11,6 +11,12 @@ schema_file = (
     / "schema_registry.json"
 )
 
+datatype_file = (
+    ROOT
+    / "metadata"
+    / "postgresql"
+    / "datatype_registry.json"
+)
 liquibase_dir = (
     ROOT
     / "liquibase"
@@ -21,7 +27,9 @@ liquibase_dir.mkdir(parents=True, exist_ok=True)
 
 with open(schema_file, "r", encoding="utf-8") as f:
     schema_registry = json.load(f)
-
+    
+with open(datatype_file, "r", encoding="utf-8") as f:
+    datatype_registry = json.load(f)
 
 existing_files = sorted(
     f for f in liquibase_dir.glob("*.xml")
@@ -143,10 +151,18 @@ for table_name, columns in schema_registry.items():
         column_xml = ""
 
         for col in new_columns:
+    
+            datatype = (
+                datatype_registry
+                .get(table_name, {})
+                .get(col, {})
+                .get("selected_type", "TEXT")
+            )
 
             column_xml += f'''
-        <column name="{col}" type="VARCHAR(255)"/>
-'''
+                <column name="{col}" type="{datatype}"/>
+
+        '''
 
 
         xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -204,10 +220,17 @@ for table_name, columns in schema_registry.items():
 
 
         for col in new_columns:
+            
+            datatype = (
+                datatype_registry
+                .get(table_name, {})
+                .get(col, {})
+                .get("selected_type", "TEXT")
+            )
 
             add_column_xml += f'''
-        <column name="{col}" type="VARCHAR(255)"/>
-'''
+                <column name="{col}" type="{datatype}"/>
+        '''
 
             precondition_checks += f'''
             <not>

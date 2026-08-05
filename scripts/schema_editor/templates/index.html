@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Schema Editor</title>
+
+    <style>
+
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            margin:30px;
+        }
+
+        table{
+            border-collapse: collapse;
+            width:100%;
+            margin-bottom:20px;
+        }
+
+        th,td{
+            border:1px solid #ccc;
+            padding:10px;
+            text-align:left;
+        }
+
+        th{
+            background:#f5f5f5;
+        }
+
+        select{
+            width:180px;
+            padding:5px;
+        }
+
+        button{
+            padding:10px 20px;
+            font-size:15px;
+            cursor:pointer;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h2>Schema Editor</h2>
+
+{% for table, columns in data.items() %}
+
+<h3>{{ table }}</h3>
+
+<form method="POST" action="/save">
+
+<table>
+
+<tr>
+    <th>Column</th>
+    <th>Sample</th>
+    <th>Detected</th>
+    <th>Selected</th>
+</tr>
+
+{% for column, info in columns.items() %}
+
+<tr>
+
+    <td>{{ column }}</td>
+
+    <td>{{ info.sample_value }}</td>
+
+    <td>{{ info.detected_type }}</td>
+
+    <td>
+
+        <select name="{{ table }}__{{ column }}">
+
+            <option value="INTEGER"
+            {% if info.selected_type=="INTEGER" %}selected{% endif %}>
+            INTEGER
+            </option>
+
+            <option value="BIGINT"
+            {% if info.selected_type=="BIGINT" %}selected{% endif %}>
+            BIGINT
+            </option>
+
+            <option value="NUMERIC"
+            {% if info.selected_type=="NUMERIC" %}selected{% endif %}>
+            NUMERIC
+            </option>
+
+            <option value="TEXT"
+            {% if info.selected_type=="TEXT" %}selected{% endif %}>
+            TEXT
+            </option>
+
+            <option value="VARCHAR"
+            {% if info.selected_type=="VARCHAR" %}selected{% endif %}>
+            VARCHAR
+            </option>
+
+            <option value="DATE"
+            {% if info.selected_type=="DATE" %}selected{% endif %}>
+            DATE
+            </option>
+
+            <option value="TIMESTAMP"
+            {% if info.selected_type=="TIMESTAMP" %}selected{% endif %}>
+            TIMESTAMP
+            </option>
+
+            <option value="BOOLEAN"
+            {% if info.selected_type=="BOOLEAN" %}selected{% endif %}>
+            BOOLEAN
+            </option>
+
+        </select>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<button type="submit">
+    Save & Continue
+</button>
+
+</form>
+
+{% endfor %}
+
+</body>
+
+</html>
