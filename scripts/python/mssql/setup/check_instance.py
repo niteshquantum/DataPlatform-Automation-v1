@@ -195,7 +195,7 @@ def check_instance():
     print()
 
     try:
-        conn = get_connection()
+        conn = get_connection("master")
         cursor = conn.cursor()
         cursor.execute("SELECT @@VERSION")
         version = cursor.fetchone()[0]
