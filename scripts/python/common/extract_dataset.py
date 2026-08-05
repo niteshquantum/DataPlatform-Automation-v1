@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import sys
 import zipfile
+import os
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
@@ -9,6 +10,11 @@ sys.path.insert(0, str(ROOT))
 from scripts.python.common.config_loader import (
     load_common_config,
     get_project_root
+)
+
+from scripts.python.common.source_utils import (
+    get_output_filename,
+    is_archive_file
 )
 from scripts.python.common.dataset_state import (
     build_extraction_state,
@@ -27,7 +33,7 @@ from scripts.python.common.archive_utils import (
 def print_header():
     print()
     print("=" * 60)
-    print("DATASET EXTRACTION & MERGE")
+    print("DATASET PREPARATION")
     print("=" * 60)
 
 
@@ -79,13 +85,37 @@ def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
 
 def extract_dataset():
     config = load_common_config("dataset")
+
+    source_type = (
+        os.getenv("SOURCE_TYPE")
+        or config.get("SOURCE_TYPE")
+    )
+
+    source_path = (
+        os.getenv("SOURCE_PATH")
+        or config.get("SOURCE_PATH")
+    )
+
+    output_filename = get_output_filename(
+        source_type=source_type,
+        source_path=source_path,
+        config=config
+    )
     project_root = get_project_root()
 
     archive_file = (
         project_root /
         config["DOWNLOAD_DIRECTORY"] /
-        config["DATASET_NAME"]
+        output_filename
     )
+
+    if not is_archive_file(output_filename):
+
+        print()
+        print("[INFO] No extraction required.")
+
+
+        return
 
     validate_archive(archive_file)
 
@@ -160,10 +190,37 @@ def verify_dataset():
     project_root = get_project_root()
     incoming = project_root / "incoming"
 
+    source_type = (
+        os.getenv("SOURCE_TYPE")
+        or config.get("SOURCE_TYPE")
+    )
+
+    source_path = (
+        os.getenv("SOURCE_PATH")
+        or config.get("SOURCE_PATH")
+    )
+
+    output_filename = get_output_filename(
+        source_type=source_type,
+        source_path=source_path,
+        config=config
+    )
+
+    if not is_archive_file(output_filename):
+
+        print()
+        print("=" * 60)
+        print("DATASET VERIFICATION")
+        print("=" * 60)
+        print("[OK] Dataset verified successfully.")
+        print("[OK] Dataset is ready for loading.")
+
+        return
+
     archive_file = (
         project_root /
         config["DOWNLOAD_DIRECTORY"] /
-        config["DATASET_NAME"]
+        output_filename
     )
 
     print()

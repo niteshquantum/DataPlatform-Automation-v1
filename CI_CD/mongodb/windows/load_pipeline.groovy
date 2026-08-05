@@ -52,6 +52,21 @@ pipeline {
 
     parameters {
 
+        choice(
+            name: 'SOURCE_TYPE',
+            choices: [
+                'google_drive',
+                'local',
+            ],
+            description: 'Select dataset source.'
+        )
+
+        string(
+            name: 'SOURCE_PATH',
+            defaultValue: '',
+            description: 'Dataset location (URL, local path, folder path, etc.)'
+        )
+
         booleanParam(
             name: 'RUN_ASSESSMENT',
             defaultValue: true,
@@ -187,7 +202,14 @@ pipeline {
                         'Download Dataset'
                     ) {
 
-                        bat 'scripts\\batch\\common\\download_dataset.bat'
+                        withEnv([
+                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
+                            "SOURCE_PATH=${params.SOURCE_PATH}",
+                            "DATABASE=mongodb"
+                        ]) {
+
+                            bat 'scripts\\batch\\common\\download_dataset.bat'
+                        }
                     }
                 }
             }
