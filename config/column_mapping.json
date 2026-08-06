@@ -1,14 +1,80 @@
 {
+  "settings": {
+    "enable_mapping": true,
+    "normalize_columns": true,
+    "normalize_table_names": true,
+    "trim_whitespace": true,
+    "convert_to_lowercase": true,
+    "convert_camelcase": true,
+    "remove_duplicate_underscores": true,
+    "remove_leading_trailing_underscores": true
+  },
+
+  "replace": {
+    " ": "_",
+    "-": "_",
+    "/": "_",
+    "\\": "_",
+    ".": "_",
+    ",": "_",
+    ":": "_",
+
+    "#": "",
+    "@": "",
+    "%": "",
+    "*": "",
+    "!": "",
+    "?": "",
+    "$": "",
+    "^": "",
+    "~": "",
+
+    "(": "",
+    ")": "",
+    "[": "",
+    "]": "",
+    "{": "",
+    "}": "",
+
+    "'": "",
+    "\"": "",
+
+    "&": "and",
+    "+": "plus"
+  },
+
   "manual": {
     "CustID": "customer_id",
     "DOB": "date_of_birth"
   },
+
   "dictionary": {
+    "addr": "address",
     "phone": "phone_no",
     "mobile": "mobile_no",
-    "dob": "date_of_birth",
     "fname": "first_name",
     "lname": "last_name",
-    "addr": "address"
+    "dob": "date_of_birth",
+    "dept": "department",
+    "emp": "employee",
+    "acct": "account",
+    "cust": "customer",
+    "org": "organization",
+    "amt": "amount",
+    "qty": "quantity",
+    "num": "number",
+    "desc": "description"
+  },
+
+  "ignore_columns": [
+    "unnamed",
+    "unnamed:_0",
+    "serial_no",
+    "sr_no",
+    "s_no"
+  ],
+
+  "table_mapping": {
+
   }
 }
