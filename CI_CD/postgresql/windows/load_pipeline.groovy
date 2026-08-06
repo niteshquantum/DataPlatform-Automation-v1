@@ -223,7 +223,32 @@ pipeline {
                 }
             }
         }
+        stage('Schema Detection') {
 
+            runTrackedStage('Schema Detection') {
+
+                bat 'python scripts\\schema_detector.py postgresql'
+
+            }
+        }
+
+        stage('Datatype Detection') {
+
+            runTrackedStage('Datatype Detection') {
+
+                bat 'python scripts\\datatype_registry_generator.py postgresql'
+
+            }
+        }
+
+        stage('Schema Editor') {
+
+            runTrackedStage('Schema Editor') {
+
+                bat 'python scripts\\schema_editor\\app.py postgresql'
+
+            }
+        }
 
         stage('Create Database') {
 

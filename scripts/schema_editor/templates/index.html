@@ -42,16 +42,15 @@
     </style>
 
 </head>
-
 <body>
 
 <h2>Schema Editor</h2>
 
+<form method="POST" action="/save">
+
 {% for table, columns in data.items() %}
 
 <h3>{{ table }}</h3>
-
-<form method="POST" action="/save">
 
 <table>
 
@@ -77,44 +76,28 @@
         <select name="{{ table }}__{{ column }}">
 
             <option value="INTEGER"
-            {% if info.selected_type=="INTEGER" %}selected{% endif %}>
-            INTEGER
-            </option>
+            {% if info.selected_type=="INTEGER" %}selected{% endif %}>INTEGER</option>
 
             <option value="BIGINT"
-            {% if info.selected_type=="BIGINT" %}selected{% endif %}>
-            BIGINT
-            </option>
+            {% if info.selected_type=="BIGINT" %}selected{% endif %}>BIGINT</option>
 
             <option value="NUMERIC"
-            {% if info.selected_type=="NUMERIC" %}selected{% endif %}>
-            NUMERIC
-            </option>
+            {% if info.selected_type=="NUMERIC" %}selected{% endif %}>NUMERIC</option>
 
             <option value="TEXT"
-            {% if info.selected_type=="TEXT" %}selected{% endif %}>
-            TEXT
-            </option>
+            {% if info.selected_type=="TEXT" %}selected{% endif %}>TEXT</option>
 
             <option value="VARCHAR"
-            {% if info.selected_type=="VARCHAR" %}selected{% endif %}>
-            VARCHAR
-            </option>
+            {% if info.selected_type=="VARCHAR" %}selected{% endif %}>VARCHAR</option>
 
             <option value="DATE"
-            {% if info.selected_type=="DATE" %}selected{% endif %}>
-            DATE
-            </option>
+            {% if info.selected_type=="DATE" %}selected{% endif %}>DATE</option>
 
             <option value="TIMESTAMP"
-            {% if info.selected_type=="TIMESTAMP" %}selected{% endif %}>
-            TIMESTAMP
-            </option>
+            {% if info.selected_type=="TIMESTAMP" %}selected{% endif %}>TIMESTAMP</option>
 
             <option value="BOOLEAN"
-            {% if info.selected_type=="BOOLEAN" %}selected{% endif %}>
-            BOOLEAN
-            </option>
+            {% if info.selected_type=="BOOLEAN" %}selected{% endif %}>BOOLEAN</option>
 
         </select>
 
@@ -126,13 +109,15 @@
 
 </table>
 
+{% endfor %}
+
+<br>
+
 <button type="submit">
     Save & Continue
 </button>
 
 </form>
-
-{% endfor %}
 
 </body>
 
