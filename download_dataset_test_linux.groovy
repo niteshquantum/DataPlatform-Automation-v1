@@ -94,6 +94,17 @@ pipeline {
         }
 
 
+        stage('Set Permissions') {
+
+            steps {
+
+                sh '''
+                    find scripts/bash -type f -name "*.sh" -exec chmod +x {} \\;
+                '''
+            }
+        }
+
+
         stage('Initialize Logging') {
 
             steps {
