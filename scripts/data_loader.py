@@ -17,6 +17,7 @@ import platform
 
 from scripts.cdc.metadata_manager import update_file_metadata
 from scripts.python.common.config_loader import load_database_config
+from scripts.python.common.column_mapper import map_columns
 from scripts.python.mysql.setup.db_connection import get_connection
 
 
@@ -334,6 +335,27 @@ def read_json_file(path):
             return [item if isinstance(item, dict) else {} for item in data]
         return []
 
+
+def map_row_columns(rows):
+    """Apply shared column mappings to row dictionaries before validation."""
+    source_columns = []
+
+    for row in rows:
+        for column in row:
+            if column is not None and column not in source_columns:
+                source_columns.append(column)
+
+    mapped_columns = map_columns(source_columns)
+    column_mapping = dict(zip(source_columns, mapped_columns))
+
+    return [
+        {
+            column_mapping.get(column, column): value
+            for column, value in row.items()
+        }
+        for row in rows
+    ]
+
 def get_file_hash(file_path):
 
     sha256 = hashlib.sha256()
@@ -449,6 +471,8 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
         rows = read_csv_file(path)
     else:
         rows = read_json_file(path)
+
+    rows = map_row_columns(rows)
 
     if not rows:
         logger.warning(f"No rows found in file {path.name}")
