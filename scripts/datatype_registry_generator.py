@@ -79,8 +79,25 @@ def main():
         sample_data = {}
 
         if csv_file.exists():
+            sample_data = {}
 
-            with open(csv_file, "r", encoding="utf-8-sig") as f:
+            try:
+
+                f = open(
+                    csv_file,
+                    "r",
+                    encoding="utf-8-sig"
+                )
+
+            except UnicodeDecodeError:
+
+                f = open(
+                    csv_file,
+                    "r",
+                    encoding="latin-1"
+                )
+
+            with f:
 
                 reader = csv.DictReader(f)
 
@@ -91,8 +108,9 @@ def main():
 
                     for col in columns:
 
-                        sample_data[col].append(row[col])
-
+                        sample_data[col].append(
+                            row.get(col, "")
+                        )
         for column in columns:
 
             detected = detect_datatype(sample_data.get(column, []))
