@@ -11,6 +11,7 @@ import json
 import logging
 from pathlib import Path
 import csv
+from column_mapper import map_columns
 
 # Configure logging
 logging.basicConfig(
@@ -232,10 +233,14 @@ def main():
         )
 
         headers = get_csv_headers(csv_file)
-
-        
+       
 
         if headers:
+            mapped_headers = map_columns(headers)
+            for original, mapped in zip(headers, mapped_headers):
+                logger.info(
+                    f"Column Mapping | {original} -> {mapped}"
+                )
 
             existing_columns = []
 
@@ -245,7 +250,7 @@ def main():
 
                 existing_columns = registry.get(table_name, [])
 
-                result = detect_schema_changes(existing_columns, headers)
+                result = detect_schema_changes(existing_columns, mapped_headers)
 
                 logger.info(
                     f"CDC Status [{table_name}] : {result['status']}"
@@ -253,7 +258,7 @@ def main():
 
                 cdc_status["tables"][table_name] = result
 
-            update_schema_registry(table_name, headers, registry_path)
+            update_schema_registry(table_name, mapped_headers, registry_path)
     
     # Process JSON files
     json_files = list(incoming_dir.glob("*.json"))
@@ -268,8 +273,15 @@ def main():
         )
 
         keys = get_json_keys(json_file)
+        
+
 
         if keys:
+            mapped_keys = map_columns(keys)
+            for original, mapped in zip(keys, mapped_keys):
+                        logger.info(
+                            f"Column Mapping | {original} -> {mapped}"
+                        )
 
             existing_columns = []
 
@@ -279,13 +291,13 @@ def main():
 
                 existing_columns = registry.get(table_name, [])
 
-            result = detect_schema_changes(existing_columns, keys)
+            result = detect_schema_changes(existing_columns, mapped_keys)
 
             logger.info(
                 f"CDC Status [{table_name}] : {result['status']}"
             )
             cdc_status["tables"][table_name] = result
-        update_schema_registry(table_name, keys, registry_path)
+        update_schema_registry(table_name, mapped_keys, registry_path)
     cdc_path = (
         project_root
         / "metadata"
