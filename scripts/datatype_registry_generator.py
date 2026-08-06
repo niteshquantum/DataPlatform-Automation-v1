@@ -7,8 +7,9 @@ import csv
 import re
 from datetime import datetime
 
+
 def detect_datatype(values):
-    
+
     values = [str(v).strip() for v in values if str(v).strip()]
 
     if not values:
@@ -18,7 +19,7 @@ def detect_datatype(values):
     if all(re.fullmatch(r"-?\d+", v) for v in values):
         return "INTEGER"
 
-    # NUMERIC / DECIMAL
+    # NUMERIC
     if all(re.fullmatch(r"-?\d+(\.\d+)?", v) for v in values):
         return "NUMERIC"
 
@@ -27,7 +28,7 @@ def detect_datatype(values):
         for v in values:
             datetime.strptime(v, "%Y-%m-%d")
         return "DATE"
-    except:
+    except Exception:
         pass
 
     # TIMESTAMP
@@ -35,15 +36,21 @@ def detect_datatype(values):
         for v in values:
             datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
         return "TIMESTAMP"
-    except:
+    except Exception:
         pass
 
     return "TEXT"
+
+
 def main():
 
     project_root = Path(__file__).parent.parent
 
-    db_type = sys.argv[1].lower() if len(sys.argv) > 1 else "mysql"
+    db_type = (
+        sys.argv[1].lower()
+        if len(sys.argv) > 1
+        else "mysql"
+    )
 
     schema_path = (
         project_root
@@ -74,59 +81,115 @@ def main():
 
         datatype_registry[table] = {}
 
+        sample_data = {
+            col: []
+            for col in columns
+        }
+
         csv_file = incoming_dir / f"{table}.csv"
 
-        sample_data = {}
-
         if csv_file.exists():
-            sample_data = {}
 
-            try:
+            encodings = [
+                "utf-8-sig",
+                "utf-8",
+                "cp1252",
+                "latin-1"
+            ]
 
-                f = open(
-                    csv_file,
-                    "r",
-                    encoding="utf-8-sig"
+            file_loaded = False
+
+            for encoding in encodings:
+
+                try:
+
+                    print(
+                        f"Reading {csv_file.name} using {encoding}"
+                    )
+
+                    with open(
+                        csv_file,
+                        "r",
+                        encoding=encoding,
+                        newline=""
+                    ) as f:
+
+                        reader = csv.DictReader(f)
+
+                        for row in reader:
+
+                            for col in columns:
+
+                                sample_data[col].append(
+                                    row.get(col, "")
+                                )
+
+                    print(
+                        f"Successfully loaded using {encoding}"
+                    )
+
+                    file_loaded = True
+
+                    break
+
+                except UnicodeDecodeError:
+
+                    print(
+                        f"Failed with {encoding}"
+                    )
+
+                    sample_data = {
+                        col: []
+                        for col in columns
+                    }
+
+                    continue
+
+            if not file_loaded:
+
+                print(
+                    f"WARNING : Unable to read {csv_file.name}"
                 )
 
-            except UnicodeDecodeError:
-
-                f = open(
-                    csv_file,
-                    "r",
-                    encoding="latin-1"
-                )
-
-            with f:
-
-                reader = csv.DictReader(f)
-
-                for col in columns:
-                    sample_data[col] = []
-
-                for row in reader:
-
-                    for col in columns:
-
-                        sample_data[col].append(
-                            row.get(col, "")
-                        )
         for column in columns:
 
-            detected = detect_datatype(sample_data.get(column, []))
+            detected = detect_datatype(
+                sample_data.get(column, [])
+            )
 
             datatype_registry[table][column] = {
-            "detected_type": detected,
-            "selected_type": detected,
-            "sample_value": sample_data.get(column, [""])[0] if sample_data.get(column) else ""
+
+                "detected_type": detected,
+
+                "selected_type": detected,
+
+                "sample_value":
+                    sample_data.get(column, [""])[0]
+                    if sample_data.get(column)
+                    else ""
             }
 
-    datatype_path.parent.mkdir(parents=True, exist_ok=True)
+    datatype_path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
-    with open(datatype_path, "w", encoding="utf-8") as f:
-        json.dump(datatype_registry, f, indent=4)
+    with open(
+        datatype_path,
+        "w",
+        encoding="utf-8"
+    ) as f:
 
-    print(f"Datatype Registry Generated : {datatype_path}")
+        json.dump(
+            datatype_registry,
+            f,
+            indent=4
+        )
+
+
+    print(
+        f"Datatype Registry Generated : {datatype_path}"
+    )
 
 
 if __name__ == "__main__":
