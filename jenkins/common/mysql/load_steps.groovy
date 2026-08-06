@@ -90,7 +90,7 @@ def execute(Map context) {
                 'Schema Detection'
             ) {
 
-                bat 'python scripts\\schema_detector.py mysql'
+               sh 'python3 scripts/schema_detector.py mysql'
             }
         }
 
@@ -100,7 +100,7 @@ def execute(Map context) {
                 'Datatype Detection'
             ) {
 
-                bat 'python scripts\\datatype_registry_generator.py mysql'
+                sh 'python3 scripts/datatype_registry_generator.py mysql'
             }
         }
 
@@ -110,7 +110,7 @@ def execute(Map context) {
                 'Schema Editor'
             ) {
 
-                bat 'python scripts\\schema_editor\\app.py mysql'
+                sh 'python3 scripts/schema_editor/app.py mysql'
             }
         }
 

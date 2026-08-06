@@ -108,7 +108,7 @@ def execute(Map context) {
                 'Schema Detection'
             ) {
 
-                bat 'python scripts\\schema_detector.py mssql'
+                sh 'python3 scripts/schema_detector.py mssql'
             }
         }
 
@@ -118,7 +118,7 @@ def execute(Map context) {
                 'Datatype Detection'
             ) {
 
-                bat 'python scripts\\datatype_registry_generator.py mssql'
+                sh 'python3 scripts/datatype_registry_generator.py mssql'
             }
         }
 
@@ -128,7 +128,7 @@ def execute(Map context) {
                 'Schema Editor'
             ) {
 
-                bat 'python scripts\\schema_editor\\app.py mssql'
+                sh 'python3 scripts/schema_editor/app.py mssql'
             }
         }
 
