@@ -11,6 +11,11 @@ import json
 import logging
 from pathlib import Path
 import csv
+
+COMMON_MODULE_DIR = Path(__file__).resolve().parent / "python" / "common"
+if str(COMMON_MODULE_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMON_MODULE_DIR))
+
 from column_mapper import map_columns
 
 # Configure logging
