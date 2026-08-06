@@ -128,7 +128,26 @@ def extract_dataset():
 
     force = config.get("FORCE_EXTRACT", "false").lower() == "true"
 
-    if not force and state.get("extraction_status") == "EXTRACTED_COMPLETE":
+    download_ts = state.get("download_timestamp")
+    extraction_ts = state.get("extraction_timestamp")
+    fresh_download = bool(
+        download_ts
+        and (not extraction_ts or download_ts > extraction_ts)
+    )
+
+    can_skip = (
+        not force
+        and not fresh_download
+        and state.get("extraction_status") == "EXTRACTED_COMPLETE"
+    )
+
+    if fresh_download:
+        print()
+        print("[INFO] Fresh archive download detected:")
+        print(f"[INFO] Last Download   : {download_ts}")
+        print("[INFO] Forcing extraction of the freshly downloaded archive.")
+
+    if can_skip:
         current_state_archive = state.get("archive_path")
         current_state_identity = state.get("dataset_identity")
         actual_identity = None

@@ -35,15 +35,31 @@ def download(config, output_path):
             exist_ok=True
         )
 
+        target = destination
+
+        if target.exists():
+            action = "OVERWRITE"
+            verb = "replaced"
+        else:
+            action = "NEW"
+            verb = "copied"
+
         print()
         print(f"Source File : {source.name}")
 
-        shutil.copy2(
-            source,
-            destination
-        )
+        try:
+            shutil.copy2(
+                source,
+                target
+            )
+        except Exception as exc:
+            print(f"[{action}] FAILED")
+            print(f"File   : {source.name}")
+            print(f"Reason : {exc}")
+            raise
 
-        print(f"Copied File : {destination.name}")
+        print(f"[{action}]")
+        print(f"{source.name} {verb}.")
 
         return
 
@@ -54,7 +70,8 @@ def download(config, output_path):
             exist_ok=True
         )
 
-        copied = 0
+        new_count = 0
+        overwrite_count = 0
         csv_count = 0
         json_count = 0
 
@@ -71,12 +88,30 @@ def download(config, output_path):
                 )
             ):
 
-                shutil.copy2(
-                    file,
-                    destination / file.name
-                )
+                target = destination / file.name
 
-                copied += 1
+                if target.exists():
+                    action = "OVERWRITE"
+                    verb = "replaced"
+                    overwrite_count += 1
+                else:
+                    action = "NEW"
+                    verb = "copied"
+                    new_count += 1
+
+                try:
+                    shutil.copy2(
+                        file,
+                        target
+                    )
+                except Exception as exc:
+                    print(f"[{action}] FAILED")
+                    print(f"File   : {file.name}")
+                    print(f"Reason : {exc}")
+                    raise
+
+                print(f"[{action}]")
+                print(f"{file.name} {verb}.")
 
                 if file.suffix.lower() == ".csv":
                     csv_count += 1
@@ -84,7 +119,9 @@ def download(config, output_path):
                 if file.suffix.lower() == ".json":
                     json_count += 1
 
-        if copied == 0:
+        total = new_count + overwrite_count
+
+        if total == 0:
             raise ValueError(
                 f"No CSV/JSON files found in: {source}"
             )
@@ -92,10 +129,12 @@ def download(config, output_path):
         print()
         print("Local Dataset Summary")
         print("---------------------")
-        print(f"CSV Files   : {csv_count}")
-        print(f"JSON Files  : {json_count}")
-        print(f"Total Files : {copied}")
-        print(f"Target Folder     : {destination}")
+        print(f"CSV Files              : {csv_count}")
+        print(f"JSON Files             : {json_count}")
+        print(f"Total Files            : {total}")
+        print(f"Total Files Copied     : {new_count}")
+        print(f"Total Files Overwritten: {overwrite_count}")
+        print(f"Target Folder          : {destination}")
 
         return
 
