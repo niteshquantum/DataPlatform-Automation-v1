@@ -93,6 +93,32 @@ def execute(Map context) {
         }
 
 
+        stage('Verify Download') {
+
+
+
+                    runTrackedStage('Verify Download') {
+
+                        withEnv(["DATABASE=${context.database}"]) {
+                            sh 'python3 scripts/python/common/verify_download.py'
+                        }
+                    }
+        }
+
+
+        stage('Verify Incoming Folder') {
+
+
+
+                    runTrackedStage('Verify Incoming Folder') {
+
+                        withEnv(["DATABASE=${context.database}"]) {
+                            sh 'python3 scripts/python/common/verify_incoming.py'
+                        }
+                    }
+        }
+
+
         stage('Profile Source Data') {
 
 
