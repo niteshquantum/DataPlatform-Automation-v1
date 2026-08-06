@@ -167,6 +167,40 @@ pipeline {
         }
 
 
+        stage('Verify Download') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Verify Download') {
+
+                        withEnv(["DATABASE=postgresql"]) {
+                            sh 'python3 scripts/python/common/verify_download.py'
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Verify Incoming Folder') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Verify Incoming Folder') {
+
+                        withEnv(["DATABASE=postgresql"]) {
+                            sh 'python3 scripts/python/common/verify_incoming.py'
+                        }
+                    }
+                }
+            }
+        }
+
+
         stage('Profile Source Data') {
 
             steps {
