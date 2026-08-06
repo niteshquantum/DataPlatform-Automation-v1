@@ -6,7 +6,6 @@ import webbrowser
 import threading
 import webbrowser
 import os
-from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -14,7 +13,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 import sys
 
-DATABASE = sys.argv[1] if len(sys.argv) > 1 else "postgresql"
+DATABASE = (
+    sys.argv[1].lower()
+    if len(sys.argv) > 1
+    else "postgresql"
+)
 
 DATA_FILE = (
     PROJECT_ROOT
@@ -26,7 +29,8 @@ DATA_FILE = (
 
 @app.route("/")
 def home():
-
+    if not DATA_FILE.exists():
+        return f"Datatype registry not found: {DATA_FILE}", 404
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -88,7 +92,7 @@ def open_browser():
 
 if __name__ == "__main__":
 
-    threading.Timer(1, open_browser).start()
+    #threading.Timer(1, open_browser).start()
     import socket
 
     hostname = socket.gethostname()

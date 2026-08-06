@@ -2,7 +2,7 @@
     "employee": {
         "id": {
             "detected_type": "INTEGER",
-            "selected_type": "INTEGER",
+            "selected_type": "BIGINT",
             "sample_value": "1"
         },
         "name": {
