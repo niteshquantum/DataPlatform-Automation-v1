@@ -49,19 +49,34 @@ def log_column_mapping(columns, mapped_columns):
 def log_schema_status(result):
     """Log schema-change details in a readable format."""
     status = result["status"]
+    if status == "UNCHANGED":
+        logger.info(f"Schema Status : {status}")
+        logger.info("No schema changes detected.")
+        return
+
+    logger.info("\nSchema Comparison\n------------------------------------------")
     logger.info(f"Schema Status : {status}")
 
-    if status in {"CHANGED", "DELETED"}:
+    if status == "DELETED":
+        logger.info("\nTarget columns missing in current dataset:")
+        for column in result["deleted_columns"]:
+            logger.info(f" - {column}")
+        logger.info(
+            "\nReason:\n"
+            "These columns existed in the previous schema but are not present "
+            "in the current source dataset."
+        )
+    else:
         if result["added_columns"]:
-            logger.info("New Columns:")
+            logger.info("\nNew Columns:")
             for column in result["added_columns"]:
-                logger.info(f"- {column}")
+                logger.info(f" + {column}")
         if result["deleted_columns"]:
-            logger.info("Deleted Columns:")
+            logger.info("\nDeleted Columns:")
             for column in result["deleted_columns"]:
-                logger.info(f"- {column}")
-    elif status == "UNCHANGED":
-        logger.info("No schema changes detected.")
+                logger.info(f" - {column}")
+
+    logger.info("------------------------------------------")
 
 
 def log_mapping_summary(summary):
@@ -73,11 +88,17 @@ def log_mapping_summary(summary):
         f"Files Processed : {summary['files_processed']}\n"
         f"CSV Files       : {summary['csv_files']}\n"
         f"JSON Files      : {summary['json_files']}\n"
-        f"Mapped Columns  : {summary['mapped_columns']}\n"
-        f"Schema Changed  : {summary['changed']}\n"
-        f"Schema New      : {summary['new']}\n"
-        f"Schema Deleted  : {summary['deleted']}\n"
-        f"Unchanged       : {summary['unchanged']}\n"
+        "\n"
+        f"Total Columns       : {summary['total_columns']}\n"
+        f"Mapped Successfully : {summary['mapped_columns']}\n"
+        f"Unmapped Columns    : {summary['unmapped_columns']}\n"
+        "\n"
+        "Schema Status\n"
+        "-------------\n"
+        f"New Tables          : {summary['new']}\n"
+        f"Changed Tables      : {summary['changed']}\n"
+        f"Deleted Tables      : {summary['deleted']}\n"
+        f"Unchanged Tables    : {summary['unchanged']}\n"
         "=================================================="
     )
 
@@ -251,7 +272,9 @@ def main():
         "files_processed": 0,
         "csv_files": 0,
         "json_files": 0,
+        "total_columns": 0,
         "mapped_columns": 0,
+        "unmapped_columns": 0,
         "changed": 0,
         "new": 0,
         "deleted": 0,
@@ -299,7 +322,9 @@ def main():
 
         if headers:
             mapped_headers = map_columns(headers)
+            summary["total_columns"] += len(headers)
             summary["mapped_columns"] += len(mapped_headers)
+            summary["unmapped_columns"] += max(len(headers) - len(mapped_headers), 0)
             log_column_mapping(headers, mapped_headers)
 
             existing_columns = []
@@ -319,7 +344,7 @@ def main():
             summary[result["status"].lower()] += 1
 
             update_schema_registry(table_name, mapped_headers, registry_path)
-            logger.info("Schema registry updated successfully.")
+            logger.info("Schema Registry Updated Successfully.")
     
     # Process JSON files
     json_files = list(incoming_dir.glob("*.json"))
@@ -340,7 +365,9 @@ def main():
 
         if keys:
             mapped_keys = map_columns(keys)
+            summary["total_columns"] += len(keys)
             summary["mapped_columns"] += len(mapped_keys)
+            summary["unmapped_columns"] += max(len(keys) - len(mapped_keys), 0)
             log_column_mapping(keys, mapped_keys)
 
             existing_columns = []
@@ -357,7 +384,7 @@ def main():
             log_schema_status(result)
             summary[result["status"].lower()] += 1
         update_schema_registry(table_name, mapped_keys, registry_path)
-        logger.info("Schema registry updated successfully.")
+        logger.info("Schema Registry Updated Successfully.")
     cdc_path = (
         project_root
         / "metadata"
