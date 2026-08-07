@@ -351,6 +351,11 @@ def main():
         table_name = map_table_name(json_file.stem)
 
         keys = get_json_keys(json_file)
+        if not keys:
+            logger.warning(f"No columns found in {json_file.name}. Skipping.")
+            continue
+
+       
         log_file_details(json_file, table_name, len(keys))
 
         if keys:
@@ -368,8 +373,7 @@ def main():
 
                 existing_columns = registry.get(table_name, [])
 
-            result = detect_schema_changes(existing_columns, mapped_keys)
-
+            result = detect_schema_changes(existing_columns, mapped_headers)
             cdc_status["tables"][table_name] = result
             log_schema_status(result)
             summary[result["status"].lower()] += 1
