@@ -193,32 +193,59 @@ pipeline {
             }
         }
 
-        stage('Schema Detection') {
+stage('Schema Detection') {
 
-        runTrackedStage(
-            'Schema Detection'
-        ) {
-            bat 'python scripts\\schema_detector.py mongodb'
+    steps {
+
+        script {
+
+            runTrackedStage('Schema Detection') {
+
+                bat 'python scripts\\schema_detector.py mongodb'
+
             }
+
         }
 
-        stage('Datatype Detection') {
+    }
 
-            runTrackedStage(
-                'Datatype Detection'
-            ) {
+}
+
+stage('Datatype Detection') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Datatype Detection') {
+
                 bat 'python scripts\\datatype_registry_generator.py mongodb'
+
             }
+
         }
 
-        stage('Schema Editor') {
+    }
 
-            runTrackedStage(
-                'Schema Editor'
-            ) {
+}
+
+stage('Schema Editor') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Schema Editor') {
+
                 bat 'python scripts\\schema_editor\\app.py mongodb'
+
             }
+
         }
+
+    }
+
+}
         stage('Load Data') {
 
             steps {
