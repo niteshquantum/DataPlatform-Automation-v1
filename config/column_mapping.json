@@ -75,6 +75,7 @@
   ],
 
   "table_mapping": {
+    "Customer Data": "customers"
 
   }
 }
