@@ -55,31 +55,6 @@ pipeline {
     }
 
 
-    parameters {
-
-        choice(
-            name: 'SOURCE_TYPE',
-            choices: [
-                'google_drive',
-                'local',
-            ],
-            description: 'Select dataset source.'
-        )
-
-        string(
-            name: 'SOURCE_PATH',
-            defaultValue: '',
-            description: 'Dataset location (URL, local path, folder path, etc.)'
-        )
-
-        booleanParam(
-            name: 'RUN_ASSESSMENT',
-            defaultValue: true,
-            description: 'Run database assessment after successful load.'
-        )
-    }
-
-
     stages {
 
         stage('Initialize Logging') {
@@ -171,48 +146,7 @@ pipeline {
 
                     runTrackedStage('Download Dataset') {
 
-                        withEnv([
-                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
-                            "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "DATABASE=mongodb"
-                        ]) {
-
-                            sh './scripts/bash/common/download_dataset.sh'
-                        }
-                    }
-                }
-            }
-        }
-
-
-        stage('Verify Download') {
-
-            steps {
-
-                script {
-
-                    runTrackedStage('Verify Download') {
-
-                        withEnv(["DATABASE=mongodb"]) {
-                            sh 'python3 scripts/python/common/verify_download.py'
-                        }
-                    }
-                }
-            }
-        }
-
-
-        stage('Verify Incoming Folder') {
-
-            steps {
-
-                script {
-
-                    runTrackedStage('Verify Incoming Folder') {
-
-                        withEnv(["DATABASE=mongodb"]) {
-                            sh 'python3 scripts/python/common/verify_incoming.py'
-                        }
+                        sh './scripts/bash/common/download_dataset.sh'
                     }
                 }
             }
@@ -232,7 +166,59 @@ pipeline {
                 }
             }
         }
+                       stage('Schema Detection') {
 
+            steps {
+
+                script {
+
+                    runTrackedStage('Schema Detection') {
+
+                        sh 'python3 scripts/schema_detector.py mongodb'
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        stage('Datatype Detection') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Datatype Detection') {
+
+                        sh 'python3 scripts/datatype_registry_generator.py mongodb'
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        stage('Schema Editor') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Schema Editor') {
+
+                        sh 'python3 scripts/schema_editor/app.py mongodb'
+
+                    }
+
+                }
+
+            }
+
+        }
 
         stage('Load MongoDB Data') {
 
@@ -267,14 +253,6 @@ pipeline {
 
         stage('Database Assessment') {
 
-            when {
-
-                expression {
-
-                    return params.RUN_ASSESSMENT == true
-                }
-            }
-
             steps {
 
                 script {
@@ -289,14 +267,6 @@ pipeline {
 
 
         stage('Assessment Report') {
-
-            when {
-
-                expression {
-
-                    return params.RUN_ASSESSMENT == true
-                }
-            }
 
             steps {
 
