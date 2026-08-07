@@ -45,4 +45,4 @@ echo "MONGODB AUTOMATION PIPELINE COMPLETED"
 echo "====================================="
 echo
 
-exit 0
+exit 0

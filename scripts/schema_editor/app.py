@@ -89,51 +89,69 @@ def shutdown_server():
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
-
 if __name__ == "__main__":
 
-    #threading.Timer(1, open_browser).start()
-    
+    # threading.Timer(1, open_browser).start()
+
     import socket
+    import configparser
 
     print("\n" + "=" * 60)
     print("ACTION REQUIRED")
     print("=" * 60)
     print("Schema Editor is ready.")
-    print("Open any of the following URLs:\n")
+    print("Open the following URL:\n")
 
     try:
 
-        hostname = socket.gethostname()
+        config = configparser.ConfigParser()
 
-        addresses = socket.gethostbyname_ex(hostname)[2]
+        network_conf = (
+            PROJECT_ROOT
+            / "config"
+            / "common"
+            / "network.conf"
+        )
 
-        shown = set()
+        if network_conf.exists():
 
-        for ip in addresses:
+            config.read(network_conf)
 
-            if ip.startswith("127."):
-                continue
+            host = config["DEFAULT"]["JENKINS_HOST"]
+            port = config["DEFAULT"].get(
+                "SCHEMA_EDITOR_PORT",
+                "5000"
+            )
 
-            if ip in shown:
-                continue
+            print(f"http://{host}:{port}")
 
-            shown.add(ip)
+        else:
+
+            s = socket.socket(
+                socket.AF_INET,
+                socket.SOCK_DGRAM
+            )
+
+            s.connect(("8.8.8.8", 80))
+
+            ip = s.getsockname()[0]
+
+            s.close()
 
             print(f"http://{ip}:5000")
 
     except Exception:
 
-        print("Unable to determine network IP address.")
-        print("Use: http://127.0.0.1:5000")
+        print("http://127.0.0.1:5000")
 
     print("")
     print("After clicking 'Save & Continue',")
     print("the Jenkins pipeline will continue automatically.")
     print("=" * 60 + "\n")
+
     app.run(
-    host="0.0.0.0",
-    port=5000,
-    debug=False,
-    use_reloader=False
-)
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+        use_reloader=False
+    )

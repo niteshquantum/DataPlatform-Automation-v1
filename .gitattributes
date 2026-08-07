@@ -1,0 +1,2 @@
+# Bash scripts must retain LF line endings so their shebangs and commands run on Ubuntu.
+scripts/bash/**/*.sh text eol=lf
