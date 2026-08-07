@@ -225,30 +225,57 @@ pipeline {
         }
         stage('Schema Detection') {
 
+    steps {
+
+        script {
+
             runTrackedStage('Schema Detection') {
 
                 bat 'python scripts\\schema_detector.py postgresql'
 
             }
+
         }
 
-        stage('Datatype Detection') {
+    }
+
+}
+
+stage('Datatype Detection') {
+
+    steps {
+
+        script {
 
             runTrackedStage('Datatype Detection') {
 
                 bat 'python scripts\\datatype_registry_generator.py postgresql'
 
             }
+
         }
 
-        stage('Schema Editor') {
+    }
+
+}
+
+stage('Schema Editor') {
+
+    steps {
+
+        script {
 
             runTrackedStage('Schema Editor') {
 
                 bat 'python scripts\\schema_editor\\app.py postgresql'
 
             }
+
         }
+
+    }
+
+}
 
         stage('Create Database') {
 
