@@ -180,7 +180,59 @@ pipeline {
                 }
             }
         }
+                stage('Schema Detection') {
 
+            steps {
+
+                script {
+
+                    runTrackedStage('Schema Detection') {
+
+                        sh 'python3 scripts/schema_detector.py postgresql'
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        stage('Datatype Detection') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Datatype Detection') {
+
+                        sh 'python3 scripts/datatype_registry_generator.py postgresql'
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        stage('Schema Editor') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Schema Editor') {
+
+                        sh 'python3 scripts/schema_editor/app.py postgresql'
+
+                    }
+
+                }
+
+            }
+
+        }
 
         stage('Create Database') {
 
