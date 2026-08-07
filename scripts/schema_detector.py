@@ -12,12 +12,95 @@ import logging
 from pathlib import Path
 import csv
 
+COMMON_MODULE_DIR = Path(__file__).resolve().parent / "python" / "common"
+if str(COMMON_MODULE_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMON_MODULE_DIR))
+
+from column_mapper import map_columns, map_table_name
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+logging.getLogger("column_mapper").setLevel(logging.WARNING)
+
+
+def log_file_details(file_path, table_name, column_count):
+    """Log a concise overview before processing a source file."""
+    logger.info(
+        "\n==================================================\n"
+        f"Processing File : {file_path.name}\n"
+        f"Table Name      : {table_name}\n"
+        f"Columns Found   : {column_count}\n"
+        "=================================================="
+    )
+
+
+def log_column_mapping(columns, mapped_columns):
+    """Log each source-to-standardized column mapping once."""
+    logger.info("\nColumn Mapping\n------------------------------------------")
+    for column, mapped_column in zip(columns, mapped_columns):
+        logger.info(f"{column:<15} -> {mapped_column}")
+    logger.info("------------------------------------------")
+
+
+def log_schema_status(result):
+    """Log schema-change details in a readable format."""
+    status = result["status"]
+    if status == "UNCHANGED":
+        logger.info(f"Schema Status : {status}")
+        logger.info("No schema changes detected.")
+        return
+
+    logger.info("\nSchema Comparison\n------------------------------------------")
+    logger.info(f"Schema Status : {status}")
+
+    if status == "DELETED":
+        logger.info("\nTarget columns missing in current dataset:")
+        for column in result["deleted_columns"]:
+            logger.info(f" - {column}")
+        logger.info(
+            "\nReason:\n"
+            "These columns existed in the previous schema but are not present "
+            "in the current source dataset."
+        )
+    else:
+        if result["added_columns"]:
+            logger.info("\nNew Columns:")
+            for column in result["added_columns"]:
+                logger.info(f" + {column}")
+        if result["deleted_columns"]:
+            logger.info("\nDeleted Columns:")
+            for column in result["deleted_columns"]:
+                logger.info(f" - {column}")
+
+    logger.info("------------------------------------------")
+
+
+def log_mapping_summary(summary):
+    """Log totals for all processed source files."""
+    logger.info(
+        "\n==================================================\n"
+        "COLUMN MAPPING SUMMARY\n"
+        "==================================================\n"
+        f"Files Processed : {summary['files_processed']}\n"
+        f"CSV Files       : {summary['csv_files']}\n"
+        f"JSON Files      : {summary['json_files']}\n"
+        "\n"
+        f"Total Columns       : {summary['total_columns']}\n"
+        f"Mapped Successfully : {summary['mapped_columns']}\n"
+        f"Unmapped Columns    : {summary['unmapped_columns']}\n"
+        "\n"
+        "Schema Status\n"
+        "-------------\n"
+        f"New Tables          : {summary['new']}\n"
+        f"Changed Tables      : {summary['changed']}\n"
+        f"Deleted Tables      : {summary['deleted']}\n"
+        f"Unchanged Tables    : {summary['unchanged']}\n"
+        "=================================================="
+    )
 
 
 def get_csv_headers(file_path):
@@ -39,7 +122,6 @@ def get_csv_headers(file_path):
                 h.replace('\ufeff', '').strip()
                 for h in next(reader)
             ]
-            logger.info(f"Extracted headers from {file_path.name}: {headers}")
             return headers
     except Exception as e:
         logger.error(f"Error reading CSV file {file_path}: {e}")
@@ -71,7 +153,6 @@ def get_json_keys(file_path):
             else:
                 keys = []
                 
-            logger.info(f"Extracted keys from {file_path.name}: {keys}")
             return keys
     except Exception as e:
         logger.error(f"Error reading JSON file {file_path}: {e}")
@@ -157,18 +238,8 @@ def update_schema_registry(table_name, columns, registry_path):
             
             
 
-            logger.info(
-                f"Updated table '{table_name}' "
-                f"with new columns: {added_columns}"
-            )
-
         else:
             registry[table_name] = columns
-
-            logger.info(
-                f"Created new table '{table_name}' "
-                f"with columns: {columns}"
-            )
 
         with open(registry_path, 'w', encoding='utf-8') as f:
             json.dump(registry, f, indent=2)
@@ -197,6 +268,18 @@ def main():
         / db_type
         / "schema_registry.json"
     )
+    summary = {
+        "files_processed": 0,
+        "csv_files": 0,
+        "json_files": 0,
+        "total_columns": 0,
+        "mapped_columns": 0,
+        "unmapped_columns": 0,
+        "changed": 0,
+        "new": 0,
+        "deleted": 0,
+        "unchanged": 0,
+    }
 
     logger.info(f"Database type: {db_type}")
     
@@ -213,6 +296,7 @@ def main():
             json.dump(cdc_status, f, indent=4)
         logger.info(f"Initialized empty schema registry at {registry_path}")
         logger.info(f"CDC metadata written to {cdc_path}")
+        log_mapping_summary(summary)
         return
     
     logger.info(f"Scanning incoming directory: {incoming_dir}")
@@ -224,18 +308,19 @@ def main():
     logger.info(f"Found {len(csv_files)} CSV file(s)")
     
     for csv_file in csv_files:
-        table_name = (
-            csv_file.stem
-            .strip()
-            .lower()
-            .replace(' ', '_')
-        )
+        summary["files_processed"] += 1
+        summary["csv_files"] += 1
+        table_name = map_table_name(csv_file.stem)
 
         headers = get_csv_headers(csv_file)
-
-        
+        log_file_details(csv_file, table_name, len(headers))
 
         if headers:
+            mapped_headers = map_columns(headers)
+            summary["total_columns"] += len(headers)
+            summary["mapped_columns"] += len(mapped_headers)
+            summary["unmapped_columns"] += max(len(headers) - len(mapped_headers), 0)
+            log_column_mapping(headers, mapped_headers)
 
             existing_columns = []
 
@@ -245,31 +330,40 @@ def main():
 
                 existing_columns = registry.get(table_name, [])
 
-                result = detect_schema_changes(existing_columns, headers)
-
-                logger.info(
-                    f"CDC Status [{table_name}] : {result['status']}"
+                cdc_status["tables"][table_name] = detect_schema_changes(
+                    existing_columns, mapped_headers
                 )
 
-                cdc_status["tables"][table_name] = result
+            result = detect_schema_changes(existing_columns, mapped_headers)
+            log_schema_status(result)
+            summary[result["status"].lower()] += 1
 
-            update_schema_registry(table_name, headers, registry_path)
+            update_schema_registry(table_name, mapped_headers, registry_path)
+            logger.info("Schema Registry Updated Successfully.")
     
     # Process JSON files
     json_files = list(incoming_dir.glob("*.json"))
     logger.info(f"Found {len(json_files)} JSON file(s)")
     
     for json_file in json_files:
-        table_name = (
-            json_file.stem
-            .strip()
-            .lower()
-            .replace(' ', '_')
-        )
+        summary["files_processed"] += 1
+        summary["json_files"] += 1
+        table_name = map_table_name(json_file.stem)
 
         keys = get_json_keys(json_file)
+        if not keys:
+            logger.warning(f"No columns found in {json_file.name}. Skipping.")
+            continue
+
+       
+        log_file_details(json_file, table_name, len(keys))
 
         if keys:
+            mapped_keys = map_columns(keys)
+            summary["total_columns"] += len(keys)
+            summary["mapped_columns"] += len(mapped_keys)
+            summary["unmapped_columns"] += max(len(keys) - len(mapped_keys), 0)
+            log_column_mapping(keys, mapped_keys)
 
             existing_columns = []
 
@@ -279,13 +373,12 @@ def main():
 
                 existing_columns = registry.get(table_name, [])
 
-            result = detect_schema_changes(existing_columns, keys)
-
-            logger.info(
-                f"CDC Status [{table_name}] : {result['status']}"
-            )
+            result = detect_schema_changes(existing_columns, mapped_headers)
             cdc_status["tables"][table_name] = result
-        update_schema_registry(table_name, keys, registry_path)
+            log_schema_status(result)
+            summary[result["status"].lower()] += 1
+        update_schema_registry(table_name, mapped_keys, registry_path)
+        logger.info("Schema Registry Updated Successfully.")
     cdc_path = (
         project_root
         / "metadata"
@@ -297,6 +390,7 @@ def main():
         json.dump(cdc_status, f, indent=4)
 
     logger.info(f"CDC metadata written to {cdc_path}")
+    log_mapping_summary(summary)
 
 if __name__ == "__main__":
     try:

@@ -20,28 +20,66 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_schema_changes(changes_path):
-    """
-    Load schema_changes.json.
-    
-    Args:
-        changes_path: Path to schema_changes.json
-        
-    Returns:
-        Dictionary with schema changes
-    """
+def load_metadata_resource(resource_path, resource_name):
+    """Load one JSON metadata resource without interrupting generation."""
     try:
-        if changes_path.exists():
-            with open(changes_path, 'r', encoding='utf-8') as f:
-                changes = json.load(f)
-                logger.info(f"Loaded schema changes: {len(changes)} table(s)")
-                return changes
-        else:
-            logger.warning(f"Schema changes file not found: {changes_path}")
+        if not resource_path.exists():
+            logger.warning(f"{resource_name} file not found: {resource_path}")
             return {}
+
+        with open(resource_path, 'r', encoding='utf-8') as f:
+            resource = json.load(f)
     except Exception as e:
-        logger.error(f"Error loading schema changes: {e}")
+        logger.warning(f"Error loading {resource_name}: {e}")
         return {}
+
+    if not isinstance(resource, dict):
+        logger.warning(f"Invalid {resource_name} metadata: {resource_path}")
+        return {}
+
+    logger.info(f"Loaded {resource_name}: {len(resource)} item(s)")
+    return resource
+
+
+def load_metadata_resources(resource_paths):
+    """Load the metadata resources required by the Liquibase generator."""
+    return {
+        resource_name: load_metadata_resource(resource_path, resource_name)
+        for resource_name, resource_path in resource_paths.items()
+    }
+
+
+def load_default_datatype(datatype_rules, rules_path):
+    """Load the configured default datatype used when metadata is unavailable."""
+    default_type = datatype_rules.get("default_type")
+    if isinstance(default_type, str) and default_type.strip():
+        return default_type
+
+    logger.warning(f"Configured default datatype unavailable: {rules_path}")
+    return ""
+
+
+def get_column_datatype(table_name, column_name, table_metadata, default_type):
+    """Return a column final type from metadata or the configured fallback."""
+    column_metadata = (
+        table_metadata.get(column_name, {})
+        if isinstance(table_metadata, dict)
+        else {}
+    )
+    final_type = (
+        column_metadata.get("final_type")
+        if isinstance(column_metadata, dict)
+        else None
+    )
+
+    if isinstance(final_type, str) and final_type.strip():
+        return final_type
+
+    logger.warning(
+        f"Datatype metadata missing for {table_name}.{column_name}; "
+        f"using configured default datatype: {default_type}"
+    )
+    return default_type
 
 
 def generate_unique_id(table_name):
@@ -73,7 +111,7 @@ def create_xml_root():
     return root
 
 
-def create_table_xml(table_name, columns):
+def create_table_xml(table_name, columns, table_metadata, default_type):
     """
     Generate XML for CREATE TABLE statement.
     
@@ -93,33 +131,18 @@ def create_table_xml(table_name, columns):
     create_table.set('tableName', table_name)
     
     # Add columns
-    for i, column in enumerate(columns):
+    for column in columns:
         column_elem = SubElement(create_table, 'column')
         column_elem.set('name', column)
-        
-        # Infer type based on column name (simple heuristic)
-        if column.lower() in ['id', 'customerid', 'userid', 'orderid', 'productid', 'sellerid']:
-            column_elem.set('type', 'INT')
-            # Add primary key constraint for ID columns
-            constraints = SubElement(column_elem, 'constraints')
-            constraints.set('primaryKey', 'true')
-            constraints.set('nullable', 'false')
-        elif column.lower() in ['email', 'firstname', 'lastname', 'city', 'state', 'name']:
-            column_elem.set('type', 'VARCHAR(255)')
-        elif column.lower() in ['joindate', 'createddate', 'modifieddate']:
-            column_elem.set('type', 'DATETIME')
-        elif column.lower() in ['salary', 'price', 'amount', 'total']:
-            column_elem.set('type', 'DECIMAL(10,2)')
-        elif column.lower() in ['phone']:
-            column_elem.set('type', 'VARCHAR(20)')
-        else:
-            # Default type
-            column_elem.set('type', 'VARCHAR(255)')
+        column_elem.set(
+            'type',
+            get_column_datatype(table_name, column, table_metadata, default_type)
+        )
     
     return ElementTree(root)
 
 
-def alter_table_xml(table_name, new_columns):
+def alter_table_xml(table_name, new_columns, table_metadata, default_type):
     """
     Generate XML for ALTER TABLE statement (add columns).
     
@@ -142,17 +165,10 @@ def alter_table_xml(table_name, new_columns):
     for column in new_columns:
         column_elem = SubElement(add_column, 'column')
         column_elem.set('name', column)
-        
-        # Infer type based on column name (simple heuristic)
-        if column.lower() in ['email']:
-            column_elem.set('type', 'VARCHAR(255)')
-        elif column.lower() in ['phone']:
-            column_elem.set('type', 'VARCHAR(20)')
-        elif column.lower() in ['salary', 'price', 'amount', 'total']:
-            column_elem.set('type', 'DECIMAL(10,2)')
-        else:
-            # Default type
-            column_elem.set('type', 'VARCHAR(255)')
+        column_elem.set(
+            'type',
+            get_column_datatype(table_name, column, table_metadata, default_type)
+        )
     
     return ElementTree(root)
 
@@ -182,14 +198,26 @@ def main():
     # Define paths
     project_root = Path(__file__).parent.parent
     changes_path = project_root / "metadata" / "schema_changes.json"
+    datatype_metadata_path = project_root / "metadata" / "datatype_metadata.json"
+    datatype_rules_path = project_root / "config" / "datatype_rules.json"
     output_dir = project_root / "liquibase" / "generated"
     
     # Create output directory if needed
     output_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Using output directory: {output_dir}")
     
-    # Load schema changes
-    schema_changes = load_schema_changes(changes_path)
+    metadata_resources = load_metadata_resources(
+        {
+            "schema changes": changes_path,
+            "datatype metadata": datatype_metadata_path,
+            "datatype rules": datatype_rules_path,
+        }
+    )
+    schema_changes = metadata_resources["schema changes"]
+    datatype_metadata = metadata_resources["datatype metadata"]
+    default_type = load_default_datatype(
+        metadata_resources["datatype rules"], datatype_rules_path
+    )
     
     if not schema_changes:
         logger.warning("No schema changes found")
@@ -198,6 +226,9 @@ def main():
     # Process each table
     for table_name, changes in schema_changes.items():
         logger.info(f"Processing table: {table_name}")
+        table_metadata = datatype_metadata.get(table_name, {})
+        if not isinstance(table_metadata, dict):
+            table_metadata = {}
         
         new_columns = changes.get("new_columns", [])
         existing_columns = changes.get("existing_columns", [])
@@ -216,7 +247,9 @@ def main():
                 logger.warning(f"  Skipping {output_file.name}: file already exists")
             else:
                 all_columns = new_columns
-                xml_tree = create_table_xml(table_name, all_columns)
+                xml_tree = create_table_xml(
+                    table_name, all_columns, table_metadata, default_type
+                )
                 save_xml(xml_tree, output_file)
                 logger.info(f"  Created CREATE TABLE for {table_name}: {len(all_columns)} column(s)")
         
@@ -228,7 +261,9 @@ def main():
             if output_file.exists():
                 logger.warning(f"  Skipping {output_file.name}: file already exists")
             else:
-                xml_tree = alter_table_xml(table_name, new_columns)
+                xml_tree = alter_table_xml(
+                    table_name, new_columns, table_metadata, default_type
+                )
                 save_xml(xml_tree, output_file)
                 logger.info(f"  Created ALTER TABLE for {table_name}: {len(new_columns)} new column(s)")
     

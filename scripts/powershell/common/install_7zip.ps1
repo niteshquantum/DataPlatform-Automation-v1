@@ -30,12 +30,12 @@ $InstallPath = $Config["SEVENZIP_INSTALL_PATH"]
 
 Write-Host ""
 Write-Host "====================================="
-Write-Host "INSTALLING 7-ZIP"
+Write-Host "CHECKING 7-ZIP"
 Write-Host "====================================="
 Write-Host ""
 
 if (Test-Path $InstallPath) {
-    Write-Host "[SUCCESS] 7-Zip already installed."
+    Write-Host "[SUCCESS] 7-Zip is available."
     exit 0
 }
 
@@ -45,7 +45,9 @@ if (Test-Path $InstallPath) {
 
 $Installer = Join-Path $env:TEMP "7zip-installer.exe"
 
+Write-Host "[INFO] 7-Zip not found."
 Write-Host "[INFO] Downloading 7-Zip..."
+
 Invoke-WebRequest `
     -Uri $SevenZipUrl `
     -OutFile $Installer `
@@ -75,7 +77,7 @@ Remove-Item $Installer -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "====================================="
-Write-Host "7-ZIP INSTALLED"
+Write-Host "7-ZIP READY"
 Write-Host "====================================="
 Write-Host "Path : $InstallPath"
 Write-Host "====================================="
