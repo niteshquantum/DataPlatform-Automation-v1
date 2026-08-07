@@ -181,34 +181,58 @@ pipeline {
                 }
             }
         }
-        stage('Schema Detection') {
+                stage('Schema Detection') {
 
-            runTrackedStage(
-                'Schema Detection'
-            ) {
+            steps {
 
-               sh 'python3 scripts/schema_detector.py mysql'
+                script {
+
+                    runTrackedStage('Schema Detection') {
+
+                        sh 'python3 scripts/schema_detector.py mysql'
+
+                    }
+
+                }
+
             }
+
         }
 
         stage('Datatype Detection') {
 
-            runTrackedStage(
-                'Datatype Detection'
-            ) {
+            steps {
 
-                sh 'python3 scripts/datatype_registry_generator.py mysql'
+                script {
+
+                    runTrackedStage('Datatype Detection') {
+
+                        sh 'python3 scripts/datatype_registry_generator.py mysql'
+
+                    }
+
+                }
+
             }
+
         }
 
         stage('Schema Editor') {
 
-            runTrackedStage(
-                'Schema Editor'
-            ) {
+            steps {
 
-                sh 'python3 scripts/schema_editor/app.py mysql'
+                script {
+
+                    runTrackedStage('Schema Editor') {
+
+                        sh 'python3 scripts/schema_editor/app.py mysql'
+
+                    }
+
+                }
+
             }
+
         }
 
         stage('Create Database') {
