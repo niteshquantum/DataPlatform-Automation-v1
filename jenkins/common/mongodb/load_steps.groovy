@@ -123,7 +123,32 @@ def execute(Map context) {
             bat 'python scripts\\profiling\\data_profiler.py --database mongodb'
         }
     }
+        stage('Schema Detection') {
 
+        runTrackedStage(
+            'Schema Detection'
+        ) {
+            bat 'python scripts\\schema_detector.py mongodb'
+        }
+    }
+
+    stage('Datatype Detection') {
+
+        runTrackedStage(
+            'Datatype Detection'
+        ) {
+            bat 'python scripts\\datatype_registry_generator.py mongodb'
+        }
+    }
+
+    stage('Schema Editor') {
+
+        runTrackedStage(
+            'Schema Editor'
+        ) {
+            bat 'python scripts\\schema_editor\\app.py mongodb'
+        }
+    }
     if (env.SKIP_DATA_LOAD != 'true') {
 
         stage('Load Data') {

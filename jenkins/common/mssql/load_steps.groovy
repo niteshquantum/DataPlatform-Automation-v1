@@ -128,7 +128,35 @@ def execute(Map context) {
                         sh './scripts/bash/common/run_data_profiling.sh mssql'
                     }
         }
+        stage('Schema Detection') {
 
+            runTrackedStage(
+                'Schema Detection'
+            ) {
+
+                sh 'python3 scripts/schema_detector.py mssql'
+            }
+        }
+
+        stage('Datatype Detection') {
+
+            runTrackedStage(
+                'Datatype Detection'
+            ) {
+
+                sh 'python3 scripts/datatype_registry_generator.py mssql'
+            }
+        }
+
+        stage('Schema Editor') {
+
+            runTrackedStage(
+                'Schema Editor'
+            ) {
+
+                sh 'python3 scripts/schema_editor/app.py mssql'
+            }
+        }
 
         stage('Create Database') {
 

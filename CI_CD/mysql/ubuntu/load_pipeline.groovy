@@ -247,7 +247,59 @@ pipeline {
                 }
             }
         }
+                stage('Schema Detection') {
 
+            steps {
+
+                script {
+
+                    runTrackedStage('Schema Detection') {
+
+                        sh 'python3 scripts/schema_detector.py mysql'
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        stage('Datatype Detection') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Datatype Detection') {
+
+                        sh 'python3 scripts/datatype_registry_generator.py mysql'
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        stage('Schema Editor') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Schema Editor') {
+
+                        sh 'python3 scripts/schema_editor/app.py mysql'
+
+                    }
+
+                }
+
+            }
+
+        }
 
         stage('Create Database') {
 

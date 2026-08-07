@@ -277,7 +277,59 @@ pipeline {
             }
         }
 
+        stage('Schema Detection') {
 
+    steps {
+
+        script {
+
+            runTrackedStage('Schema Detection') {
+
+                sh 'python3 scripts/schema_detector.py mssql'
+
+            }
+
+        }
+
+    }
+
+}
+
+stage('Datatype Detection') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Datatype Detection') {
+
+                sh 'python3 scripts/datatype_registry_generator.py mssql'
+
+            }
+
+        }
+
+    }
+
+}
+
+stage('Schema Editor') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Schema Editor') {
+
+                sh 'python3 scripts/schema_editor/app.py mssql'
+
+            }
+
+        }
+
+    }
+
+}
         stage('Create Database') {
 
             steps {
