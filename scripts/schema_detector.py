@@ -16,7 +16,7 @@ COMMON_MODULE_DIR = Path(__file__).resolve().parent / "python" / "common"
 if str(COMMON_MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(COMMON_MODULE_DIR))
 
-from column_mapper import map_columns
+from column_mapper import map_columns, map_table_name
 
 # Configure logging
 logging.basicConfig(
@@ -310,12 +310,7 @@ def main():
     for csv_file in csv_files:
         summary["files_processed"] += 1
         summary["csv_files"] += 1
-        table_name = (
-            csv_file.stem
-            .strip()
-            .lower()
-            .replace(' ', '_')
-        )
+        table_name = map_table_name(csv_file.stem)
 
         headers = get_csv_headers(csv_file)
         log_file_details(csv_file, table_name, len(headers))
@@ -353,12 +348,7 @@ def main():
     for json_file in json_files:
         summary["files_processed"] += 1
         summary["json_files"] += 1
-        table_name = (
-            json_file.stem
-            .strip()
-            .lower()
-            .replace(' ', '_')
-        )
+        table_name = map_table_name(json_file.stem)
 
         keys = get_json_keys(json_file)
         log_file_details(json_file, table_name, len(keys))

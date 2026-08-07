@@ -87,3 +87,5 @@ def map_columns(columns: List[str]) -> List[str]:
         mapped_columns.append(mapped_column)
 
     return mapped_columns
+def map_table_name(table_name):
+    return map_columns([table_name])[0]
