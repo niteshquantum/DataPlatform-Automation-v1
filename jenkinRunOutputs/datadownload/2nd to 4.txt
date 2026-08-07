@@ -1,0 +1,1350 @@
+1st run ka ye hai
+Started by user Nitesh Patel
+
+Obtained download_dataset_test.groovy from git https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins
+ in C:\Users\Admin\.jenkins\workspace\downlod_test_01
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\downlod_test_01\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/multiple-dataset-source-v2^{commit}" # timeout=10
+Checking out Revision 57ddeeff2287c4435e0b1d10de64028b36efa84a (refs/remotes/origin/multiple-dataset-source-v2)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+Commit message: "add test groovy"
+ > git.exe rev-list --no-walk 6d0e2670c08ea7583b8bd85ba9eb317041cb7016 # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\downlod_test_01\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/multiple-dataset-source-v2^{commit}" # timeout=10
+Checking out Revision 57ddeeff2287c4435e0b1d10de64028b36efa84a (refs/remotes/origin/multiple-dataset-source-v2)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+Commit message: "add test groovy"
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Initialize Logging)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py init                         --database postgresql                         --action download-test                         --os windows                         --build-number "2"                         --job-name "downlod_test_01"                         --build-url "http://localhost:8080/job/downlod_test_01/2/" 
+Execution log initialized: logs\postgresql\download-test\build_2\execution.json
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Download Dataset)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "2"         --stage-name "Download Dataset" 
+Stage started: Download Dataset
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>scripts\batch\common\download_dataset.bat
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+=====================================
+INSTALLING 7-ZIP
+=====================================
+
+[SUCCESS] 7-Zip already installed.
+
+[SUCCESS] 7-ZIP READY
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+============================================================
+DATASET DOWNLOAD
+============================================================
+
+Source Type : GOOGLE_DRIVE
+Database    : postgresql
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive
+
+Downloading dataset from Google Drive...
+
+
+Google Drive Download
+---------------------
+Source URL  : https://drive.google.com/file/d/1TYTRnsnRP-X4voxgit_QAOma2lQUyyU_/view?usp=drive_link
+Output File : tmpz_ir8fxu.tmp
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive
+
+Downloading...
+From (original): https://drive.google.com/uc?id=1TYTRnsnRP-X4voxgit_QAOma2lQUyyU_
+From (redirected): https://drive.google.com/uc?id=1TYTRnsnRP-X4voxgit_QAOma2lQUyyU_&confirm=t&uuid=e53cbfc9-fb4f-41a0-bc39-866a29b58a44
+To: C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive\tmpz_ir8fxu.tmp
+
+  0%|          | 0.00/145M [00:00<?, ?B/s]
+  0%|          | 524k/145M [00:00<03:48, 633kB/s]
+  1%|          | 1.05M/145M [00:01<03:05, 776kB/s]
+  1%|1         | 1.57M/145M [00:01<02:39, 901kB/s]
+  1%|1         | 2.10M/145M [00:02<02:19, 1.02MB/s]
+  2%|1         | 2.62M/145M [00:02<02:06, 1.13MB/s]
+  2%|2         | 3.15M/145M [00:03<02:14, 1.05MB/s]
+  3%|2         | 3.67M/145M [00:04<02:42, 871kB/s] 
+  3%|2         | 4.19M/145M [00:04<02:26, 964kB/s]
+  3%|3         | 4.72M/145M [00:04<02:15, 1.04MB/s]
+  4%|3         | 5.24M/145M [00:05<02:00, 1.17MB/s]
+  4%|3         | 5.77M/145M [00:05<01:54, 1.22MB/s]
+  4%|4         | 6.29M/145M [00:05<01:51, 1.24MB/s]
+  5%|4         | 6.82M/145M [00:06<01:55, 1.20MB/s]
+  5%|5         | 7.34M/145M [00:07<02:04, 1.11MB/s]
+  5%|5         | 7.86M/145M [00:07<02:19, 983kB/s] 
+  6%|5         | 8.39M/145M [00:08<02:40, 852kB/s]
+  6%|6         | 8.91M/145M [00:08<02:31, 901kB/s]
+  6%|6         | 9.44M/145M [00:09<02:36, 867kB/s]
+  7%|6         | 9.96M/145M [00:10<02:29, 908kB/s]
+  7%|7         | 10.5M/145M [00:10<02:31, 889kB/s]
+  8%|7         | 11.0M/145M [00:11<02:16, 983kB/s]
+  8%|7         | 11.5M/145M [00:11<02:32, 880kB/s]
+  8%|8         | 12.1M/145M [00:12<02:17, 971kB/s]
+  9%|8         | 12.6M/145M [00:12<02:04, 1.07MB/s]
+  9%|9         | 13.1M/145M [00:13<01:51, 1.18MB/s]
+  9%|9         | 13.6M/145M [00:13<01:48, 1.22MB/s]
+ 10%|9         | 14.2M/145M [00:13<01:42, 1.28MB/s]
+ 10%|#         | 14.7M/145M [00:14<01:33, 1.40MB/s]
+ 10%|#         | 15.2M/145M [00:14<01:28, 1.48MB/s]
+ 11%|#         | 15.7M/145M [00:14<01:22, 1.57MB/s]
+ 11%|#1        | 16.3M/145M [00:14<01:16, 1.68MB/s]
+ 12%|#1        | 16.8M/145M [00:15<01:09, 1.85MB/s]
+ 12%|#1        | 17.3M/145M [00:15<01:04, 1.98MB/s]
+ 12%|#2        | 17.8M/145M [00:15<01:11, 1.79MB/s]
+ 13%|#2        | 18.4M/145M [00:15<01:05, 1.94MB/s]
+ 13%|#2        | 18.9M/145M [00:16<01:13, 1.72MB/s]
+ 13%|#3        | 19.4M/145M [00:16<01:05, 1.92MB/s]
+ 14%|#3        | 19.9M/145M [00:16<01:02, 2.00MB/s]
+ 14%|#4        | 20.4M/145M [00:17<01:01, 2.03MB/s]
+ 14%|#4        | 21.0M/145M [00:17<01:03, 1.96MB/s]
+ 15%|#4        | 21.5M/145M [00:17<00:59, 2.08MB/s]
+ 15%|#5        | 22.0M/145M [00:17<00:57, 2.13MB/s]
+ 16%|#5        | 22.5M/145M [00:18<01:01, 1.99MB/s]
+ 16%|#5        | 23.1M/145M [00:18<00:58, 2.08MB/s]
+ 16%|#6        | 23.6M/145M [00:18<00:58, 2.08MB/s]
+ 17%|#6        | 24.1M/145M [00:18<01:00, 2.00MB/s]
+ 17%|#6        | 24.6M/145M [00:19<00:55, 2.19MB/s]
+ 17%|#7        | 25.2M/145M [00:19<00:53, 2.23MB/s]
+ 18%|#7        | 25.7M/145M [00:19<01:01, 1.94MB/s]
+ 18%|#8        | 26.2M/145M [00:19<00:55, 2.14MB/s]
+ 18%|#8        | 26.7M/145M [00:19<00:53, 2.24MB/s]
+ 19%|#8        | 27.3M/145M [00:20<00:53, 2.20MB/s]
+ 19%|#9        | 27.8M/145M [00:20<00:56, 2.09MB/s]
+ 19%|#9        | 28.3M/145M [00:20<00:53, 2.20MB/s]
+ 20%|#9        | 28.8M/145M [00:20<00:53, 2.18MB/s]
+ 20%|##        | 29.4M/145M [00:21<00:55, 2.09MB/s]
+ 21%|##        | 29.9M/145M [00:21<01:06, 1.75MB/s]
+ 21%|##        | 30.4M/145M [00:22<01:07, 1.69MB/s]
+ 21%|##1       | 30.9M/145M [00:22<01:01, 1.86MB/s]
+ 22%|##1       | 31.5M/145M [00:22<00:57, 2.00MB/s]
+ 22%|##2       | 32.0M/145M [00:22<00:55, 2.03MB/s]
+ 22%|##2       | 32.5M/145M [00:22<00:57, 1.96MB/s]
+ 23%|##2       | 33.0M/145M [00:23<00:53, 2.11MB/s]
+ 23%|##3       | 33.6M/145M [00:23<00:57, 1.96MB/s]
+ 23%|##3       | 34.1M/145M [00:23<00:56, 1.97MB/s]
+ 24%|##3       | 34.6M/145M [00:24<00:58, 1.88MB/s]
+ 24%|##4       | 35.1M/145M [00:24<01:07, 1.64MB/s]
+ 25%|##4       | 35.7M/145M [00:24<01:02, 1.76MB/s]
+ 25%|##4       | 36.2M/145M [00:24<00:58, 1.87MB/s]
+ 25%|##5       | 36.7M/145M [00:25<00:52, 2.06MB/s]
+ 26%|##5       | 37.2M/145M [00:25<00:55, 1.94MB/s]
+ 26%|##5       | 37.7M/145M [00:25<00:53, 2.01MB/s]
+ 26%|##6       | 38.3M/145M [00:25<00:54, 1.97MB/s]
+ 27%|##6       | 38.8M/145M [00:26<00:49, 2.14MB/s]
+ 27%|##7       | 39.3M/145M [00:26<00:50, 2.12MB/s]
+ 27%|##7       | 39.8M/145M [00:26<00:48, 2.18MB/s]
+ 28%|##7       | 40.4M/145M [00:26<00:50, 2.08MB/s]
+ 28%|##8       | 40.9M/145M [00:27<00:45, 2.31MB/s]
+ 28%|##8       | 41.4M/145M [00:27<00:42, 2.43MB/s]
+ 29%|##8       | 41.9M/145M [00:27<00:42, 2.45MB/s]
+ 29%|##9       | 42.5M/145M [00:27<00:43, 2.34MB/s]
+ 30%|##9       | 43.0M/145M [00:28<00:47, 2.15MB/s]
+ 30%|##9       | 43.5M/145M [00:28<00:47, 2.15MB/s]
+ 30%|###       | 44.0M/145M [00:28<00:48, 2.08MB/s]
+ 31%|###       | 44.6M/145M [00:28<00:46, 2.17MB/s]
+ 31%|###1      | 45.1M/145M [00:29<00:47, 2.12MB/s]
+ 31%|###1      | 45.6M/145M [00:29<00:51, 1.92MB/s]
+ 32%|###1      | 46.1M/145M [00:29<00:50, 1.95MB/s]
+ 32%|###2      | 46.7M/145M [00:30<00:58, 1.70MB/s]
+ 32%|###2      | 47.2M/145M [00:30<00:55, 1.77MB/s]
+ 33%|###2      | 47.7M/145M [00:30<00:56, 1.73MB/s]
+ 33%|###3      | 48.2M/145M [00:30<00:56, 1.73MB/s]
+ 34%|###3      | 48.8M/145M [00:31<01:14, 1.29MB/s]
+ 34%|###3      | 49.3M/145M [00:32<01:18, 1.23MB/s]
+ 34%|###4      | 49.8M/145M [00:32<01:28, 1.08MB/s]
+ 35%|###4      | 50.3M/145M [00:32<01:17, 1.23MB/s]
+ 35%|###4      | 50.9M/145M [00:33<01:16, 1.24MB/s]
+ 35%|###5      | 51.4M/145M [00:34<01:31, 1.03MB/s]
+ 36%|###5      | 51.9M/145M [00:34<01:17, 1.21MB/s]
+ 36%|###6      | 52.4M/145M [00:34<01:12, 1.29MB/s]
+ 36%|###6      | 53.0M/145M [00:35<01:11, 1.29MB/s]
+ 37%|###6      | 53.5M/145M [00:35<01:06, 1.39MB/s]
+ 37%|###7      | 54.0M/145M [00:35<01:00, 1.51MB/s]
+ 38%|###7      | 54.5M/145M [00:35<00:56, 1.62MB/s]
+ 38%|###7      | 55.1M/145M [00:36<00:50, 1.79MB/s]
+ 38%|###8      | 55.6M/145M [00:36<00:46, 1.91MB/s]
+ 39%|###8      | 56.1M/145M [00:36<00:46, 1.92MB/s]
+ 39%|###8      | 56.6M/145M [00:36<00:48, 1.82MB/s]
+ 39%|###9      | 57.1M/145M [00:37<00:47, 1.88MB/s]
+ 40%|###9      | 57.7M/145M [00:37<00:47, 1.85MB/s]
+ 40%|####      | 58.2M/145M [00:37<00:49, 1.78MB/s]
+ 40%|####      | 58.7M/145M [00:37<00:40, 2.14MB/s]
+ 41%|####      | 59.2M/145M [00:38<00:58, 1.47MB/s]
+ 41%|####1     | 59.8M/145M [00:38<00:52, 1.63MB/s]
+ 41%|####1     | 60.3M/145M [00:39<00:46, 1.82MB/s]
+ 42%|####1     | 60.8M/145M [00:39<00:45, 1.85MB/s]
+ 42%|####2     | 61.3M/145M [00:39<00:53, 1.57MB/s]
+ 43%|####2     | 61.9M/145M [00:40<00:57, 1.44MB/s]
+ 43%|####2     | 62.4M/145M [00:40<01:04, 1.28MB/s]
+ 43%|####3     | 62.9M/145M [00:41<01:02, 1.33MB/s]
+ 44%|####3     | 63.4M/145M [00:41<01:06, 1.24MB/s]
+ 44%|####4     | 64.0M/145M [00:42<01:07, 1.20MB/s]
+ 44%|####4     | 64.5M/145M [00:42<01:04, 1.25MB/s]
+ 45%|####4     | 65.0M/145M [00:42<01:02, 1.30MB/s]
+ 45%|####5     | 65.5M/145M [00:43<01:01, 1.29MB/s]
+ 45%|####5     | 66.1M/145M [00:43<00:59, 1.33MB/s]
+ 46%|####5     | 66.6M/145M [00:43<00:58, 1.34MB/s]
+ 46%|####6     | 67.1M/145M [00:44<01:05, 1.19MB/s]
+ 47%|####6     | 67.6M/145M [00:44<01:03, 1.22MB/s]
+ 47%|####6     | 68.2M/145M [00:45<00:57, 1.35MB/s]
+ 47%|####7     | 68.7M/145M [00:45<00:56, 1.37MB/s]
+ 48%|####7     | 69.2M/145M [00:46<01:09, 1.10MB/s]
+ 48%|####7     | 69.7M/145M [00:48<02:05, 603kB/s] 
+ 48%|####8     | 70.3M/145M [00:50<03:03, 410kB/s]
+ 49%|####8     | 70.8M/145M [00:52<03:57, 314kB/s]
+ 49%|####9     | 71.3M/145M [00:55<04:33, 271kB/s]
+ 49%|####9     | 71.8M/145M [00:58<05:02, 243kB/s]
+ 50%|####9     | 72.4M/145M [01:01<05:55, 205kB/s]
+ 50%|#####     | 72.9M/145M [01:07<08:28, 142kB/s]
+ 50%|#####     | 73.4M/145M [01:15<10:57, 110kB/s]
+ 51%|#####     | 73.9M/145M [01:17<09:00, 132kB/s]
+ 51%|#####1    | 74.4M/145M [01:21<09:05, 130kB/s]
+ 52%|#####1    | 75.0M/145M [01:25<08:53, 132kB/s]
+ 52%|#####1    | 75.5M/145M [01:28<07:59, 146kB/s]
+ 52%|#####2    | 76.0M/145M [01:30<06:57, 166kB/s]
+ 53%|#####2    | 76.5M/145M [01:32<06:28, 177kB/s]
+ 53%|#####3    | 77.1M/145M [01:35<06:08, 186kB/s]
+ 53%|#####3    | 77.6M/145M [01:38<06:08, 184kB/s]
+ 54%|#####3    | 78.1M/145M [01:40<05:38, 199kB/s]
+ 54%|#####4    | 78.6M/145M [01:43<05:41, 196kB/s]
+ 54%|#####4    | 79.2M/145M [01:44<05:08, 214kB/s]
+ 55%|#####4    | 79.7M/145M [01:49<06:27, 169kB/s]
+ 55%|#####5    | 80.2M/145M [01:53<07:03, 154kB/s]
+ 56%|#####5    | 80.7M/145M [01:54<05:14, 205kB/s]
+ 56%|#####5    | 81.3M/145M [01:54<03:59, 267kB/s]
+ 56%|#####6    | 81.8M/145M [01:55<02:59, 354kB/s]
+ 57%|#####6    | 82.3M/145M [01:55<02:19, 451kB/s]
+ 57%|#####6    | 82.8M/145M [01:55<01:47, 580kB/s]
+ 57%|#####7    | 83.4M/145M [01:56<01:29, 696kB/s]
+ 58%|#####7    | 83.9M/145M [01:56<01:09, 882kB/s]
+ 58%|#####8    | 84.4M/145M [01:56<00:56, 1.07MB/s]
+ 58%|#####8    | 84.9M/145M [01:57<00:49, 1.23MB/s]
+ 59%|#####8    | 85.5M/145M [01:57<00:42, 1.40MB/s]
+ 59%|#####9    | 86.0M/145M [01:57<00:38, 1.55MB/s]
+ 60%|#####9    | 86.5M/145M [01:57<00:34, 1.72MB/s]
+ 60%|#####9    | 87.0M/145M [01:58<00:35, 1.66MB/s]
+ 60%|######    | 87.6M/145M [01:58<00:32, 1.79MB/s]
+ 61%|######    | 88.1M/145M [01:58<00:33, 1.73MB/s]
+ 61%|######    | 88.6M/145M [01:58<00:31, 1.82MB/s]
+ 61%|######1   | 89.1M/145M [01:59<00:30, 1.86MB/s]
+ 62%|######1   | 89.7M/145M [01:59<00:30, 1.81MB/s]
+ 62%|######2   | 90.2M/145M [01:59<00:29, 1.85MB/s]
+ 62%|######2   | 90.7M/145M [02:00<00:31, 1.73MB/s]
+ 63%|######2   | 91.2M/145M [02:00<00:30, 1.80MB/s]
+ 63%|######3   | 91.8M/145M [02:00<00:35, 1.49MB/s]
+ 63%|######3   | 92.3M/145M [02:01<00:38, 1.39MB/s]
+ 64%|######3   | 92.8M/145M [02:01<00:34, 1.53MB/s]
+ 64%|######4   | 93.3M/145M [02:01<00:30, 1.72MB/s]
+ 65%|######4   | 93.8M/145M [02:02<00:29, 1.77MB/s]
+ 65%|######4   | 94.4M/145M [02:02<00:27, 1.87MB/s]
+ 65%|######5   | 94.9M/145M [02:02<00:26, 1.91MB/s]
+ 66%|######5   | 95.4M/145M [02:02<00:25, 1.93MB/s]
+ 66%|######6   | 95.9M/145M [02:03<00:25, 1.96MB/s]
+ 66%|######6   | 96.5M/145M [02:03<00:25, 1.90MB/s]
+ 67%|######6   | 97.0M/145M [02:03<00:25, 1.91MB/s]
+ 67%|######7   | 97.5M/145M [02:03<00:24, 1.97MB/s]
+ 67%|######7   | 98.0M/145M [02:04<00:23, 2.04MB/s]
+ 68%|######7   | 98.6M/145M [02:04<00:21, 2.15MB/s]
+ 68%|######8   | 99.1M/145M [02:04<00:20, 2.22MB/s]
+ 69%|######8   | 99.6M/145M [02:04<00:20, 2.26MB/s]
+ 69%|######8   | 100M/145M [02:05<00:19, 2.32MB/s] 
+ 69%|######9   | 101M/145M [02:05<00:20, 2.14MB/s]
+ 70%|######9   | 101M/145M [02:05<00:19, 2.28MB/s]
+ 70%|######9   | 102M/145M [02:05<00:19, 2.23MB/s]
+ 70%|#######   | 102M/145M [02:06<00:21, 2.03MB/s]
+ 71%|#######   | 103M/145M [02:06<00:19, 2.21MB/s]
+ 71%|#######1  | 103M/145M [02:06<00:19, 2.20MB/s]
+ 71%|#######1  | 104M/145M [02:06<00:20, 2.03MB/s]
+ 72%|#######1  | 104M/145M [02:07<00:22, 1.85MB/s]
+ 72%|#######2  | 105M/145M [02:07<00:21, 1.87MB/s]
+ 72%|#######2  | 105M/145M [02:07<00:22, 1.79MB/s]
+ 73%|#######2  | 106M/145M [02:07<00:20, 1.97MB/s]
+ 73%|#######3  | 106M/145M [02:08<00:18, 2.15MB/s]
+ 74%|#######3  | 107M/145M [02:08<00:18, 2.11MB/s]
+ 74%|#######3  | 107M/145M [02:08<00:16, 2.24MB/s]
+ 74%|#######4  | 108M/145M [02:08<00:15, 2.47MB/s]
+ 75%|#######4  | 109M/145M [02:09<00:15, 2.32MB/s]
+ 75%|#######5  | 109M/145M [02:09<00:16, 2.21MB/s]
+ 75%|#######5  | 110M/145M [02:09<00:14, 2.46MB/s]
+ 76%|#######5  | 110M/145M [02:09<00:14, 2.41MB/s]
+ 76%|#######6  | 111M/145M [02:09<00:14, 2.45MB/s]
+ 76%|#######6  | 111M/145M [02:10<00:13, 2.49MB/s]
+ 77%|#######6  | 112M/145M [02:10<00:13, 2.41MB/s]
+ 77%|#######7  | 112M/145M [02:10<00:14, 2.27MB/s]
+ 78%|#######7  | 113M/145M [02:10<00:16, 1.97MB/s]
+ 78%|#######7  | 113M/145M [02:11<00:13, 2.41MB/s]
+ 78%|#######8  | 114M/145M [02:11<00:14, 2.15MB/s]
+ 79%|#######8  | 114M/145M [02:11<00:14, 2.10MB/s]
+ 79%|#######8  | 115M/145M [02:11<00:15, 1.95MB/s]
+ 79%|#######9  | 115M/145M [02:12<00:14, 2.05MB/s]
+ 80%|#######9  | 116M/145M [02:12<00:13, 2.20MB/s]
+ 80%|########  | 116M/145M [02:12<00:13, 2.18MB/s]
+ 80%|########  | 117M/145M [02:12<00:12, 2.24MB/s]
+ 81%|########  | 117M/145M [02:13<00:13, 2.15MB/s]
+ 81%|########1 | 118M/145M [02:13<00:11, 2.32MB/s]
+ 82%|########1 | 118M/145M [02:13<00:13, 2.01MB/s]
+ 82%|########1 | 119M/145M [02:13<00:10, 2.44MB/s]
+ 82%|########2 | 120M/145M [02:14<00:13, 1.97MB/s]
+ 83%|########2 | 120M/145M [02:14<00:12, 2.03MB/s]
+ 83%|########2 | 121M/145M [02:14<00:12, 1.95MB/s]
+ 83%|########3 | 121M/145M [02:14<00:12, 2.00MB/s]
+ 84%|########3 | 122M/145M [02:15<00:11, 2.04MB/s]
+ 84%|########4 | 122M/145M [02:15<00:11, 1.98MB/s]
+ 84%|########4 | 123M/145M [02:15<00:11, 2.03MB/s]
+ 85%|########4 | 123M/145M [02:15<00:10, 2.08MB/s]
+ 85%|########5 | 124M/145M [02:16<00:11, 1.94MB/s]
+ 85%|########5 | 124M/145M [02:16<00:09, 2.19MB/s]
+ 86%|########5 | 125M/145M [02:16<00:09, 2.26MB/s]
+ 86%|########6 | 125M/145M [02:16<00:08, 2.27MB/s]
+ 87%|########6 | 126M/145M [02:17<00:08, 2.19MB/s]
+ 87%|########6 | 126M/145M [02:17<00:08, 2.20MB/s]
+ 87%|########7 | 127M/145M [02:17<00:08, 2.20MB/s]
+ 88%|########7 | 127M/145M [02:17<00:07, 2.32MB/s]
+ 88%|########8 | 128M/145M [02:17<00:07, 2.31MB/s]
+ 88%|########8 | 128M/145M [02:18<00:06, 2.51MB/s]
+ 89%|########8 | 129M/145M [02:18<00:07, 2.09MB/s]
+ 89%|########9 | 129M/145M [02:18<00:07, 2.16MB/s]
+ 89%|########9 | 130M/145M [02:18<00:06, 2.21MB/s]
+ 90%|########9 | 131M/145M [02:19<00:07, 2.06MB/s]
+ 90%|######### | 131M/145M [02:19<00:06, 2.26MB/s]
+ 91%|######### | 132M/145M [02:19<00:05, 2.38MB/s]
+ 91%|######### | 132M/145M [02:19<00:06, 2.00MB/s]
+ 91%|#########1| 133M/145M [02:20<00:06, 2.10MB/s]
+ 92%|#########1| 133M/145M [02:20<00:05, 2.26MB/s]
+ 92%|#########1| 134M/145M [02:20<00:05, 2.05MB/s]
+ 92%|#########2| 134M/145M [02:21<00:06, 1.81MB/s]
+ 93%|#########2| 135M/145M [02:21<00:05, 1.79MB/s]
+ 93%|#########3| 135M/145M [02:21<00:05, 1.96MB/s]
+ 93%|#########3| 136M/145M [02:21<00:04, 2.04MB/s]
+ 94%|#########3| 136M/145M [02:22<00:04, 1.87MB/s]
+ 94%|#########4| 137M/145M [02:22<00:03, 2.17MB/s]
+ 94%|#########4| 137M/145M [02:22<00:03, 2.25MB/s]
+ 95%|#########4| 138M/145M [02:22<00:03, 2.33MB/s]
+ 95%|#########5| 138M/145M [02:22<00:02, 2.34MB/s]
+ 96%|#########5| 139M/145M [02:23<00:02, 2.17MB/s]
+ 96%|#########5| 139M/145M [02:23<00:02, 2.37MB/s]
+ 96%|#########6| 140M/145M [02:23<00:02, 2.37MB/s]
+ 97%|#########6| 141M/145M [02:23<00:02, 2.17MB/s]
+ 97%|#########7| 141M/145M [02:24<00:01, 2.26MB/s]
+ 97%|#########7| 142M/145M [02:24<00:01, 2.33MB/s]
+ 98%|#########7| 142M/145M [02:24<00:01, 2.32MB/s]
+ 98%|#########8| 143M/145M [02:24<00:01, 2.24MB/s]
+ 98%|#########8| 143M/145M [02:24<00:00, 2.38MB/s]
+ 99%|#########8| 144M/145M [02:25<00:00, 2.21MB/s]
+ 99%|#########9| 144M/145M [02:25<00:00, 1.97MB/s]
+100%|#########9| 145M/145M [02:25<00:00, 2.19MB/s]
+100%|#########9| 145M/145M [02:25<00:00, 2.18MB/s]
+100%|##########| 145M/145M [02:26<00:00, 995kB/s] 
+
+Download Summary
+----------------
+File Name : tmpz_ir8fxu.tmp
+Size      : 138.64 MB
+
+Download completed successfully.
+Archive : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive\AutomationData_v3.zip
+
+============================================================
+DATASET SUMMARY
+============================================================
+Source Type : GOOGLE_DRIVE
+Database    : postgresql
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive
+Input Type  : ZIP Archive
+Status      : SUCCESS
+
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+Extracting and merging dataset...
+
+[SUCCESS] Dataset extracted and merged successfully.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Verified folder: mongodb
+[OK] Verified folder: mssql
+[OK] Verified folder: mysql
+[OK] Verified folder: postgresql
+
+=====================================
+DATASET READY
+=====================================
+
+
+DATASET READY
+
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "2"             --stage-name "Download Dataset"             --status SUCCESS 
+Stage completed: Download Dataset
+Stage Status: SUCCESS
+Stage Duration: 205.04 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Download)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "2"         --stage-name "Verify Download" 
+Stage started: Verify Download
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\verify_download.py                             --database postgresql                             --source-type google_drive                             --source-path "" 
+
+============================================================
+VERIFY DOWNLOAD
+============================================================
+
+[OK] Downloaded archive found:
+  File : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive\AutomationData_v3.zip
+  Size : 138.64 MB
+
+Download verification passed.
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "2"             --stage-name "Verify Download"             --status SUCCESS 
+Stage completed: Verify Download
+Stage Status: SUCCESS
+Stage Duration: 1.62 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Extract Dataset)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "2"         --stage-name "Extract Dataset" 
+Stage started: Extract Dataset
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\extract_dataset.py 
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] Archive already extracted successfully.
+[INFO] Skipping extraction.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Verified folder: mongodb
+[OK] Verified folder: mssql
+[OK] Verified folder: mysql
+[OK] Verified folder: postgresql
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "2"             --stage-name "Extract Dataset"             --status SUCCESS 
+Stage completed: Extract Dataset
+Stage Status: SUCCESS
+Stage Duration: 14.77 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Incoming Folder)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "2"         --stage-name "Verify Incoming Folder" 
+Stage started: Verify Incoming Folder
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\verify_incoming.py                             --database postgresql 
+
+============================================================
+VERIFY INCOMING FOLDER
+============================================================
+
+[OK] Incoming folder has extracted content:
+  Directory : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming
+  Folders   : 5
+    - archive
+    - mongodb
+    - mssql
+    - mysql
+    - postgresql
+
+Incoming folder verification passed.
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "2"             --stage-name "Verify Incoming Folder"             --status SUCCESS 
+Stage completed: Verify Incoming Folder
+Stage Status: SUCCESS
+Stage Duration: 2.47 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+FINALIZING DOWNLOAD TEST LOGGING
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py finalize                     --database postgresql                     --action download-test                     --build-number "2"                     --status "SUCCESS" 
+Execution log finalized: logs\postgresql\download-test\build_2\execution.json
+Final Status: SUCCESS
+Duration: 229.54 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] echo
+DATASET DOWNLOAD TEST SUCCESSFUL
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
+
+
+Microsoft Windows [Version 10.0.19045.6466]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming>tree /f
+Folder PATH listing for volume SSD_WINDOWS
+Volume serial number is CC97-6295
+C:.
+├───archive
+│       AutomationData_v3.zip
+│
+├───mongodb
+│       cart_events.json
+│       customer_preferences.csv
+│       customer_segments.csv
+│       order_returns.json
+│       product_seo.json
+│
+├───mssql
+│       clickstream.csv
+│       customer_sessions.csv
+│       gps_telemetry.csv
+│       sales_reconciliation.csv
+│       shipping_logs.csv
+│
+├───mysql
+│       brands.csv
+│       categories.csv
+│       customer_loyalty.csv
+│       inventory.csv
+│       price_history.csv
+│       products.csv
+│       sellers.csv
+│       suppliers.csv
+│       support_tickets.csv
+│
+└───postgresql
+        addresses.csv
+        customers.csv
+        deals.csv
+        demographics.csv
+        orders.csv
+        order_items.csv
+        order_status.csv
+        payments.csv
+
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming>
+
+
+1st run se ye tha 
+2nd run me ye ho gya esa rha
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming>tree /f
+Folder PATH listing for volume SSD_WINDOWS
+Volume serial number is CC97-6295
+C:.
+├───archive
+│       AutomationData_v3.zip
+│
+├───mongodb
+│       cart_events.json
+│       customer_preferences.csv
+│       customer_segments.csv
+│       order_returns.json
+│       product_seo.json
+│
+├───mssql
+│       clickstream.csv
+│       customer_sessions.csv
+│       gps_telemetry.csv
+│       sales_reconciliation.csv
+│       shipping_logs.csv
+│
+├───mysql
+│       brands.csv
+│       categories.csv
+│       customer_loyalty.csv
+│       inventory.csv
+│       price_history.csv
+│       products.csv
+│       sellers.csv
+│       suppliers.csv
+│       support_tickets.csv
+│
+└───postgresql
+        addresses.csv
+        customers.csv
+        deals.csv
+        demographics.csv
+        orders.csv
+        order_items.csv
+        order_status.csv
+        payments.csv
+
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming>
+
+deive li link dusri dali hti tho wo dowmload tho ho gyi but wo zip jo pehe lconfig me name tha same name se huyi tho usne bola hogai alreaye ye exrat hai is liye sayd tho iska solution dekna pdega
+
+""""Started by user Nitesh Patel
+
+Obtained download_dataset_test.groovy from git https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins
+ in C:\Users\Admin\.jenkins\workspace\downlod_test_01
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\downlod_test_01\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/multiple-dataset-source-v2^{commit}" # timeout=10
+Checking out Revision 57ddeeff2287c4435e0b1d10de64028b36efa84a (refs/remotes/origin/multiple-dataset-source-v2)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+Commit message: "add test groovy"
+ > git.exe rev-list --no-walk 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\downlod_test_01\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/multiple-dataset-source-v2^{commit}" # timeout=10
+Checking out Revision 57ddeeff2287c4435e0b1d10de64028b36efa84a (refs/remotes/origin/multiple-dataset-source-v2)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+Commit message: "add test groovy"
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Initialize Logging)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py init                         --database postgresql                         --action download-test                         --os windows                         --build-number "3"                         --job-name "downlod_test_01"                         --build-url "http://localhost:8080/job/downlod_test_01/3/" 
+Execution log initialized: logs\postgresql\download-test\build_3\execution.json
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Download Dataset)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "3"         --stage-name "Download Dataset" 
+Stage started: Download Dataset
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>scripts\batch\common\download_dataset.bat
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+=====================================
+INSTALLING 7-ZIP
+=====================================
+
+[SUCCESS] 7-Zip already installed.
+
+[SUCCESS] 7-ZIP READY
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+============================================================
+DATASET DOWNLOAD
+============================================================
+
+Source Type : GOOGLE_DRIVE
+Database    : postgresql
+Source      : https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive
+
+Downloading dataset from Google Drive...
+
+
+Google Drive Download
+---------------------
+Source URL  : https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Output File : tmpwk0vo_gx.tmp
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive
+
+Downloading...
+From: https://drive.google.com/uc?id=1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC
+To: C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive\tmpwk0vo_gx.tmp
+
+  0%|          | 0.00/13.7k [00:00<?, ?B/s]
+100%|##########| 13.7k/13.7k [00:00<00:00, 13.7MB/s]
+
+Download Summary
+----------------
+File Name : tmpwk0vo_gx.tmp
+Size      : 0.01 MB
+
+Download completed successfully.
+Archive : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive\AutomationData_v3.zip
+
+============================================================
+DATASET SUMMARY
+============================================================
+Source Type : GOOGLE_DRIVE
+Database    : postgresql
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive
+Input Type  : ZIP Archive
+Status      : SUCCESS
+
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] Archive already extracted successfully.
+[INFO] Skipping extraction.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Verified folder: mongodb
+[OK] Verified folder: mssql
+[OK] Verified folder: mysql
+[OK] Verified folder: postgresql
+
+=====================================
+DATASET READY
+=====================================
+
+
+DATASET READY
+
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "3"             --stage-name "Download Dataset"             --status SUCCESS 
+Stage completed: Download Dataset
+Stage Status: SUCCESS
+Stage Duration: 8.86 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Download)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "3"         --stage-name "Verify Download" 
+Stage started: Verify Download
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\verify_download.py                             --database postgresql                             --source-type google_drive                             --source-path "https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link" 
+
+============================================================
+VERIFY DOWNLOAD
+============================================================
+
+[OK] Downloaded archive found:
+  File : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\archive\AutomationData_v3.zip
+  Size : 0.01 MB
+
+Download verification passed.
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "3"             --stage-name "Verify Download"             --status SUCCESS 
+Stage completed: Verify Download
+Stage Status: SUCCESS
+Stage Duration: 3.18 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Extract Dataset)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "3"         --stage-name "Extract Dataset" 
+Stage started: Extract Dataset
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\extract_dataset.py 
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] Archive already extracted successfully.
+[INFO] Skipping extraction.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Verified folder: mongodb
+[OK] Verified folder: mssql
+[OK] Verified folder: mysql
+[OK] Verified folder: postgresql
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "3"             --stage-name "Extract Dataset"             --status SUCCESS 
+Stage completed: Extract Dataset
+Stage Status: SUCCESS
+Stage Duration: 1.38 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Incoming Folder)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "3"         --stage-name "Verify Incoming Folder" 
+Stage started: Verify Incoming Folder
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\verify_incoming.py                             --database postgresql 
+
+============================================================
+VERIFY INCOMING FOLDER
+============================================================
+
+[OK] Incoming folder has extracted content:
+  Directory : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming
+  Folders   : 5
+    - archive
+    - mongodb
+    - mssql
+    - mysql
+    - postgresql
+
+Incoming folder verification passed.
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "3"             --stage-name "Verify Incoming Folder"             --status SUCCESS 
+Stage completed: Verify Incoming Folder
+Stage Status: SUCCESS
+Stage Duration: 1.32 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+FINALIZING DOWNLOAD TEST LOGGING
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py finalize                     --database postgresql                     --action download-test                     --build-number "3"                     --status "SUCCESS" 
+Execution log finalized: logs\postgresql\download-test\build_3\execution.json
+Final Status: SUCCESS
+Duration: 19.83 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] echo
+DATASET DOWNLOAD TEST SUCCESSFUL
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
+"" ye hai uska output 
+
+
+ab third local se krta huyi
+
+mene ye folder ki link di jisme ye fiels thi
+Microsoft Windows [Version 10.0.19045.6466]
+(c) Microsoft Corporation. All rights reserved.
+
+F:\Quantumatrix\Projects\rawd>tree/f
+Folder PATH listing for volume New Volume
+Volume serial number is 1E6C-C572
+F:.
+    001orders.csv
+    002products.csv
+    003cites.csv
+
+No subfolders exist
+
+
+F:\Quantumatrix\Projects\rawd>
+
+postgre selct kr ke or path ye dal kr kra tho
+
+F:\Quantumatrix\Projects\rawd
+
+tho run ke baad postgre fodler me cle gyaMicrosoft Windows [Version 10.0.19045.6466]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming>tree /f
+Folder PATH listing for volume SSD_WINDOWS
+Volume serial number is CC97-6295
+C:.
+├───archive
+│       AutomationData_v3.zip
+│
+├───mongodb
+│       cart_events.json
+│       customer_preferences.csv
+│       customer_segments.csv
+│       order_returns.json
+│       product_seo.json
+│
+├───mssql
+│       clickstream.csv
+│       customer_sessions.csv
+│       gps_telemetry.csv
+│       sales_reconciliation.csv
+│       shipping_logs.csv
+│
+├───mysql
+│       brands.csv
+│       categories.csv
+│       customer_loyalty.csv
+│       inventory.csv
+│       price_history.csv
+│       products.csv
+│       sellers.csv
+│       suppliers.csv
+│       support_tickets.csv
+│
+└───postgresql
+        001orders.csv
+        002products.csv
+        003cites.csv
+        addresses.csv
+        customers.csv
+        deals.csv
+        demographics.csv
+        orders.csv
+        order_items.csv
+        order_status.csv
+        payments.csv
+
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming>
+
+or ye hai uska ouput
+
+Started by user Nitesh Patel
+
+Obtained download_dataset_test.groovy from git https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins
+ in C:\Users\Admin\.jenkins\workspace\downlod_test_01
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\downlod_test_01\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/multiple-dataset-source-v2^{commit}" # timeout=10
+Checking out Revision 57ddeeff2287c4435e0b1d10de64028b36efa84a (refs/remotes/origin/multiple-dataset-source-v2)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+Commit message: "add test groovy"
+ > git.exe rev-list --no-walk 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\downlod_test_01\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/multiple-dataset-source-v2^{commit}" # timeout=10
+Checking out Revision 57ddeeff2287c4435e0b1d10de64028b36efa84a (refs/remotes/origin/multiple-dataset-source-v2)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 57ddeeff2287c4435e0b1d10de64028b36efa84a # timeout=10
+Commit message: "add test groovy"
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Initialize Logging)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py init                         --database postgresql                         --action download-test                         --os windows                         --build-number "4"                         --job-name "downlod_test_01"                         --build-url "http://localhost:8080/job/downlod_test_01/4/" 
+Execution log initialized: logs\postgresql\download-test\build_4\execution.json
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Download Dataset)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "4"         --stage-name "Download Dataset" 
+Stage started: Download Dataset
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>scripts\batch\common\download_dataset.bat
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+=====================================
+INSTALLING 7-ZIP
+=====================================
+
+[SUCCESS] 7-Zip already installed.
+
+[SUCCESS] 7-ZIP READY
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+============================================================
+DATASET DOWNLOAD
+============================================================
+
+Source Type : LOCAL
+Database    : postgresql
+Source      : F:\Quantumatrix\Projects\rawd
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\postgresql
+
+Copying local dataset folder...
+
+
+Scanning local folder...
+
+Local Dataset Summary
+---------------------
+CSV Files   : 3
+JSON Files  : 0
+Total Files : 3
+Target Folder     : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\postgresql
+
+Copy operation completed successfully.
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\postgresql
+
+============================================================
+DATASET SUMMARY
+============================================================
+Source Type : LOCAL
+Database    : postgresql
+Destination : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\postgresql
+Input Type  : Folder
+Status      : SUCCESS
+
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] No extraction required.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Dataset verified successfully.
+[OK] Dataset is ready for loading.
+
+=====================================
+DATASET READY
+=====================================
+
+
+DATASET READY
+
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "4"             --stage-name "Download Dataset"             --status SUCCESS 
+Stage completed: Download Dataset
+Stage Status: SUCCESS
+Stage Duration: 3.84 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Download)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "4"         --stage-name "Verify Download" 
+Stage started: Verify Download
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\verify_download.py                             --database postgresql                             --source-type local                             --source-path "F:\Quantumatrix\Projects\rawd" 
+
+============================================================
+VERIFY DOWNLOAD
+============================================================
+
+[OK] Downloaded files found:
+  Directory : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\postgresql
+  Files     : 11
+    - 001orders.csv
+    - 002products.csv
+    - 003cites.csv
+    - addresses.csv
+    - customers.csv
+    - deals.csv
+    - demographics.csv
+    - order_items.csv
+    - order_status.csv
+    - orders.csv
+    - payments.csv
+
+Download verification passed.
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "4"             --stage-name "Verify Download"             --status SUCCESS 
+Stage completed: Verify Download
+Stage Status: SUCCESS
+Stage Duration: 1.59 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Extract Dataset)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "4"         --stage-name "Extract Dataset" 
+Stage started: Extract Dataset
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\extract_dataset.py 
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] No extraction required.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Dataset verified successfully.
+[OK] Dataset is ready for loading.
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "4"             --stage-name "Extract Dataset"             --status SUCCESS 
+Stage completed: Extract Dataset
+Stage Status: SUCCESS
+Stage Duration: 0.82 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Incoming Folder)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-start         --database postgresql         --action download-test         --build-number "4"         --stage-name "Verify Incoming Folder" 
+Stage started: Verify Incoming Folder
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\python\common\verify_incoming.py                             --database postgresql 
+
+============================================================
+VERIFY INCOMING FOLDER
+============================================================
+
+[OK] Incoming folder has downloaded files:
+  Directory : C:\Users\Admin\.jenkins\workspace\downlod_test_01\incoming\postgresql
+  Files     : 11
+    - 001orders.csv
+    - 002products.csv
+    - 003cites.csv
+    - addresses.csv
+    - customers.csv
+    - deals.csv
+    - demographics.csv
+    - order_items.csv
+    - order_status.csv
+    - orders.csv
+    - payments.csv
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py stage-end             --database postgresql             --action download-test             --build-number "4"             --stage-name "Verify Incoming Folder"             --status SUCCESS 
+Stage completed: Verify Incoming Folder
+Stage Status: SUCCESS
+Stage Duration: 1.03 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+FINALIZING DOWNLOAD TEST LOGGING
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\downlod_test_01>python scripts\logging\logger.py finalize                     --database postgresql                     --action download-test                     --build-number "4"                     --status "SUCCESS" 
+Execution log finalized: logs\postgresql\download-test\build_4\execution.json
+Final Status: SUCCESS
+Duration: 8.64 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] echo
+DATASET DOWNLOAD TEST SUCCESSFUL
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS

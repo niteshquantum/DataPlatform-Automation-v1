@@ -22,7 +22,11 @@ echo DETECTING SCHEMA
 echo -------------------------------------
 echo.
 
-python scripts\schema_detector.py mongodb
+if /I "%SCHEMA_SOURCE%"=="DATABASE" (
+    python scripts\schema_extractor.py mongodb
+) else (
+    python scripts\schema_detector.py mongodb
+)
 if errorlevel 1 exit /b 1
 
 echo.

@@ -10,7 +10,11 @@ call "%~dp0..\..\common\set_project_root.bat"
 
 cd /d "%PROJECT_ROOT%"
 
-python scripts\schema_detector.py mysql
+if /I "%SCHEMA_SOURCE%"=="DATABASE" (
+    python scripts\schema_extractor.py mysql
+) else (
+    python scripts\schema_detector.py mysql
+)
 if errorlevel 1 (
     echo.
     echo SCHEMA DETECTION FAILED

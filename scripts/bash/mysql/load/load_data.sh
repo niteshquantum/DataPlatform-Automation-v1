@@ -20,7 +20,11 @@ echo "DETECTING SCHEMA"
 echo "-------------------------------------"
 echo
 
-python3 scripts/schema_detector.py mysql
+if [ "${SCHEMA_SOURCE}" = "DATABASE" ]; then
+    python3 scripts/schema_extractor.py mysql
+else
+    python3 scripts/schema_detector.py mysql
+fi
 
 echo
 echo "-------------------------------------"

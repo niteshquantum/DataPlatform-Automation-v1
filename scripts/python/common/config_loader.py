@@ -53,5 +53,15 @@ def load_common_config(config_name):
     return load_config(config_file)
 
 
+def load_source_config():
+
+    if platform.system() == "Windows":
+        config_file = ROOT / "config" / "windows" / "source.conf"
+    else:
+        config_file = ROOT / "config" / "ubuntu" / "source.conf"
+
+    return load_config(config_file)
+
+
 def get_project_root():
     return ROOT

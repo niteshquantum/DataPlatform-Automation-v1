@@ -21,7 +21,11 @@ echo DETECTING SCHEMA
 echo -------------------------------------
 echo.
 
-python scripts\schema_detector.py postgresql
+if /I "%SCHEMA_SOURCE%"=="DATABASE" (
+    python scripts\schema_extractor.py postgresql
+) else (
+    python scripts\schema_detector.py postgresql
+)
 if errorlevel 1 exit /b 1
 
 echo.

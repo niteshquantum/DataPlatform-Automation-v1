@@ -24,7 +24,11 @@ echo "DETECTING SCHEMA"
 echo "-------------------------------------"
 echo
 
-python3 scripts/schema_detector.py mongodb
+if [ "${SCHEMA_SOURCE}" = "DATABASE" ]; then
+    python3 scripts/schema_extractor.py mongodb
+else
+    python3 scripts/schema_detector.py mongodb
+fi
 
 echo
 echo "-------------------------------------"

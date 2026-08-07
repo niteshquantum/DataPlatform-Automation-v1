@@ -22,7 +22,11 @@ echo "DETECTING SCHEMA"
 echo "-------------------------------------"
 echo
  
-python3 scripts/schema_detector.py postgresql
+if [ "${SCHEMA_SOURCE}" = "DATABASE" ]; then
+    python3 scripts/schema_extractor.py postgresql
+else
+    python3 scripts/schema_detector.py postgresql
+fi
  
 echo
 echo "-------------------------------------"

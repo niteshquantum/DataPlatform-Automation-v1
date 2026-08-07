@@ -21,7 +21,11 @@ echo DETECTING SCHEMA
 echo -------------------------------------
 echo.
 
-python scripts\schema_detector.py mssql
+if /I "%SCHEMA_SOURCE%"=="DATABASE" (
+    python scripts\schema_extractor.py mssql
+) else (
+    python scripts\schema_detector.py mssql
+)
 if errorlevel 1 exit /b 1
 
 echo.

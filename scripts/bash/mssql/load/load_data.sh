@@ -20,7 +20,11 @@ echo "DETECTING SCHEMA"
 echo "-------------------------------------"
 echo
 
-python3 scripts/schema_detector.py mssql
+if [ "${SCHEMA_SOURCE}" = "DATABASE" ]; then
+    python3 scripts/schema_extractor.py mssql
+else
+    python3 scripts/schema_detector.py mssql
+fi
 
 echo
 echo "-------------------------------------"

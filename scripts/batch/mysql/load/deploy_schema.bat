@@ -18,7 +18,11 @@ echo DETECTING SCHEMA
 echo -------------------------------------
 echo.
 
-python scripts\schema_detector.py mysql
+if /I "%SCHEMA_SOURCE%"=="DATABASE" (
+    python scripts\schema_extractor.py mysql
+) else (
+    python scripts\schema_detector.py mysql
+)
 if errorlevel 1 exit /b 1
 
 echo.
