@@ -6,7 +6,7 @@ if errorlevel 1 exit /b 1
 
 cd /d "%PROJECT_ROOT%"
 
-python scripts\batch\mysql\setup\validate_mysql.bat
+call scripts\batch\mysql\setup\validate_mysql.bat
 if errorlevel 1 exit /b 1
 
 exit /b 0
