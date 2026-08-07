@@ -64,9 +64,15 @@ REM =====================================
 REM PATHS
 REM =====================================
 
-set "LB_BAT=%ROOT%\tools\liquibase\liquibase.bat"
+if defined DATA_PLATFORM_TOOLS_ROOT (
+    set "TOOLS_ROOT=%DATA_PLATFORM_TOOLS_ROOT%"
+) else (
+    set "TOOLS_ROOT=C:\Program Files\DataPlatform\tools"
+)
 
-set "DRIVER=%ROOT%\tools\drivers\mysql-connector-j-%MYSQL_DRIVER_VERSION%.jar"
+set "LB_BAT=%TOOLS_ROOT%\liquibase\liquibase.bat"
+
+set "DRIVER=%TOOLS_ROOT%\drivers\mysql-connector-j-%MYSQL_DRIVER_VERSION%.jar"
 
 if not exist "%DRIVER%" (
 echo ERROR: JDBC DRIVER NOT FOUND

@@ -14,6 +14,11 @@ REM =====================================
 call "%~dp0..\..\common\set_project_root.bat"
 
 set "ROOT=%PROJECT_ROOT%"
+set "DATA_PLATFORM_CONFIG_FILE=%ROOT%\config\windows\mysql.conf"
+
+if not defined DATA_PLATFORM_TOOLS_ROOT (
+    set "DATA_PLATFORM_TOOLS_ROOT=C:\Program Files\DataPlatform\tools"
+)
 
 REM =====================================
 REM INSTALL TERRAFORM

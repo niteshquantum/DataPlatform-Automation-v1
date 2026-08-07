@@ -12,7 +12,13 @@ REM =====================================
 REM TERRAFORM PATH
 REM =====================================
 
-set TF=%ROOT%\tools\terraform\terraform.exe
+if defined DATA_PLATFORM_TOOLS_ROOT (
+    set "TOOLS_ROOT=%DATA_PLATFORM_TOOLS_ROOT%"
+) else (
+    set "TOOLS_ROOT=C:\Program Files\DataPlatform\tools"
+)
+
+set TF=%TOOLS_ROOT%\terraform\terraform.exe
 
 REM =====================================
 REM CHECK TERRAFORM

@@ -11,6 +11,12 @@ call "%~dp0..\..\common\set_project_root.bat"
 set "ROOT=%PROJECT_ROOT%"
 set "CONFIG_FILE=%ROOT%\config\windows\mysql.conf"
 
+if defined DATA_PLATFORM_TOOLS_ROOT (
+    set "TOOLS_ROOT=%DATA_PLATFORM_TOOLS_ROOT%"
+) else (
+    set "TOOLS_ROOT=C:\Program Files\DataPlatform\tools"
+)
+
 if not exist "%CONFIG_FILE%" (
     echo ERROR: MYSQL CONFIG NOT FOUND
     echo Expected: %CONFIG_FILE%
@@ -26,7 +32,7 @@ if not defined EXPECTED_VERSION (
     exit /b 1
 )
 
-set "LIQUIBASE_HOME=%ROOT%\tools\liquibase"
+set "LIQUIBASE_HOME=%TOOLS_ROOT%\liquibase"
 set "LIQUIBASE_BAT=%LIQUIBASE_HOME%\liquibase.bat"
 set "VERSION_OUTPUT=%TEMP%\liquibase_version_%RANDOM%_%RANDOM%_%RANDOM%.txt"
 

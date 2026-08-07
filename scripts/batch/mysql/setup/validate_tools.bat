@@ -14,13 +14,19 @@ REM =====================================
 call "%~dp0..\..\common\set_project_root.bat"
 set "ROOT=%PROJECT_ROOT%"
 
-if not exist "%ROOT%\tools\terraform\terraform.exe" (
-echo ERROR: TERRAFORM NOT FOUND
-exit /b 1
+if defined DATA_PLATFORM_TOOLS_ROOT (
+    set "TOOLS_ROOT=%DATA_PLATFORM_TOOLS_ROOT%"
+) else (
+    set "TOOLS_ROOT=C:\Program Files\DataPlatform\tools"
+)
+
+if not exist "%TOOLS_ROOT%\terraform\terraform.exe" (
+    echo ERROR: TERRAFORM NOT FOUND
+    exit /b 1
 )
 
 echo Checking Terraform...
-"%ROOT%\tools\terraform\terraform.exe" version
+"%TOOLS_ROOT%\terraform\terraform.exe" version
 REM =====================================
 REM LIQUIBASE
 REM =====================================

@@ -4,10 +4,30 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
 $ProjectRoot = Split-Path $ProjectRoot -Parent
 
-# Read config
-$ConfigFile = Join-Path $ProjectRoot "config\windows\mssql.conf"
+# Resolve tools root
+$ToolsRoot = $env:DATA_PLATFORM_TOOLS_ROOT
+if ([string]::IsNullOrWhiteSpace($ToolsRoot)) {
+    $ToolsRoot = "C:\Program Files\DataPlatform\tools"
+}
 
-if (!(Test-Path $ConfigFile)) {
+# Read config
+$ConfigFile = $env:DATA_PLATFORM_CONFIG_FILE
+if ([string]::IsNullOrWhiteSpace($ConfigFile)) {
+    $CandidateConfigs = @(
+        (Join-Path $ProjectRoot "config\windows\mysql.conf"),
+        (Join-Path $ProjectRoot "config\windows\mssql.conf"),
+        (Join-Path $ProjectRoot "config\windows\postgresql.conf")
+    )
+
+    foreach ($Candidate in $CandidateConfigs) {
+        if (Test-Path $Candidate) {
+            $ConfigFile = $Candidate
+            break
+        }
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($ConfigFile) -or !(Test-Path $ConfigFile)) {
 Write-Error "Config file not found: $ConfigFile"
 exit 1
 }
@@ -34,10 +54,10 @@ exit 1
 
 
 # tools\liquibase path
-$LiquibaseDir = Join-Path $ProjectRoot "tools\liquibase"
+$LiquibaseDir = Join-Path $ToolsRoot "liquibase"
 
 if (Test-Path "$LiquibaseDir\liquibase.bat") {
-    Write-Host "Liquibase already exists."
+    Write-Host "Liquibase already installed. Skipping installation."
     exit 0
 }
 

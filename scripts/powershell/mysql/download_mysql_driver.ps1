@@ -45,7 +45,12 @@ if ([string]::IsNullOrWhiteSpace($DriverVersion)) {
 # DRIVER DIRECTORY
 # =====================================
 
-$DriverDir = "$PROJECT_ROOT\tools\drivers"
+$ToolsRoot = $env:DATA_PLATFORM_TOOLS_ROOT
+if ([string]::IsNullOrWhiteSpace($ToolsRoot)) {
+    $ToolsRoot = "C:\Program Files\DataPlatform\tools"
+}
+
+$DriverDir = Join-Path $ToolsRoot "drivers"
 
 if (!(Test-Path $DriverDir)) {
     New-Item -ItemType Directory -Path $DriverDir -Force | Out-Null
@@ -58,7 +63,7 @@ if (!(Test-Path $DriverDir)) {
 $JarFile = "$DriverDir\mysql-connector-j-$DriverVersion.jar"
 
 if (Test-Path $JarFile) {
-    Write-Host "MySQL Connector already installed."
+    Write-Host "MySQL JDBC Driver already installed. Skipping installation."
     exit 0
 }
 
