@@ -91,9 +91,9 @@ def open_browser():
 
 
 if __name__ == "__main__":
-    
 
-    #threading.Timer(1, open_browser).start()
+    # threading.Timer(1, open_browser).start()
+
     import socket
 
     print("\n" + "=" * 60)
@@ -101,33 +101,40 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Schema Editor is ready.")
     print("Open any of the following URLs:\n")
-    
+
     try:
-    
+
         hostname = socket.gethostname()
-    
+
         addresses = socket.gethostbyname_ex(hostname)[2]
-    
+
         shown = set()
-    
+
         for ip in addresses:
-    
+
             if ip.startswith("127."):
                 continue
-    
+
             if ip in shown:
                 continue
-    
+
             shown.add(ip)
-    
+
             print(f"http://{ip}:5000")
-    
+
     except Exception:
-    
+
         print("Unable to determine network IP address.")
         print("Use: http://127.0.0.1:5000")
-    
+
     print("")
     print("After clicking 'Save & Continue',")
     print("the Jenkins pipeline will continue automatically.")
     print("=" * 60 + "\n")
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+        use_reloader=False
+    )
