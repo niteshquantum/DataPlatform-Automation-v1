@@ -104,7 +104,7 @@ if /I "%INST_INSTANCE_STATE%"=="NO_INSTANCE" (
     echo DEPLOYING SQL SERVER
     echo =====================================
     echo.
-    call "%PROJECT_ROOT%\scripts\batch\mssql\setup\deploy_mssql_gdrive.bat"
+    call "%PROJECT_ROOT%\scripts\batch\mssql\setup\deploy_mssql.bat"
     if errorlevel 1 exit /b 1
 
     echo.
@@ -312,4 +312,4 @@ echo MSSQL AUTOMATION PIPELINE SUCCESSFUL
 echo =====================================
 echo.
 
-exit /b 0
+exit /b 0

@@ -224,7 +224,59 @@ pipeline {
             }
         }
 
+stage('Schema Detection') {
 
+    steps {
+
+        script {
+
+            runTrackedStage('Schema Detection') {
+
+                bat 'python scripts\\schema_detector.py mongodb'
+
+            }
+
+        }
+
+    }
+
+}
+
+stage('Datatype Detection') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Datatype Detection') {
+
+                bat 'python scripts\\datatype_registry_generator.py mongodb'
+
+            }
+
+        }
+
+    }
+
+}
+
+stage('Schema Editor') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Schema Editor') {
+
+                bat 'python scripts\\schema_editor\\app.py mongodb'
+
+            }
+
+        }
+
+    }
+
+}
         stage('Load Data') {
 
             steps {

@@ -31,7 +31,6 @@ from scripts.python.common.source_utils import (
 
 
 def print_header():
-
     print()
     print("=" * 60)
     print("DATASET DOWNLOAD")
@@ -39,7 +38,6 @@ def print_header():
 
 
 def create_directory(directory: Path):
-
     directory.mkdir(
         parents=True,
         exist_ok=True
@@ -68,7 +66,10 @@ def download_dataset():
     )
 
     if not source_type:
-        raise ValueError("SOURCE_TYPE is not configured.")
+        if config.get("DATASET_URL"):
+            source_type = "google_drive"
+        else:
+            raise ValueError("SOURCE_TYPE is not configured.")
 
     downloader = get_downloader(source_type)
 
@@ -79,10 +80,6 @@ def download_dataset():
     )
 
     archive = is_archive_file(output_filename)
-
-    # ---------------------------------------
-    # Decide destination
-    # ---------------------------------------
 
     if archive:
 
@@ -106,9 +103,9 @@ def download_dataset():
 
     create_directory(destination_directory)
 
-    source = Path(source_path)
+    source = Path(source_path) if source_path else None
 
-    if source.is_dir():
+    if source and source.is_dir():
 
         output_file = destination_directory
 
@@ -126,7 +123,7 @@ def download_dataset():
         ).lower() == "true"
     )
 
-    if source.is_file():
+    if source and source.is_file():
 
         if output_file.exists() and not force:
 
@@ -179,6 +176,7 @@ def download_dataset():
                     print(f"Database    : {database.lower()}")
 
                 print(f"Destination : {destination_directory}")
+
                 if source.is_dir():
 
                     input_type = "Folder"
@@ -208,7 +206,8 @@ def download_dataset():
     if database:
         print(f"Database    : {database.lower()}")
 
-    print(f"Source      : {source_path}")
+    if source_path:
+        print(f"Source      : {source_path}")
     print(f"Destination : {destination_directory}")
 
     print()
@@ -219,9 +218,7 @@ def download_dataset():
 
     elif source_type.lower() == "local":
 
-        source = Path(source_path)
-
-        if source.is_dir():
+        if source and source.is_dir():
 
             print("Copying local dataset folder...")
 
@@ -238,10 +235,6 @@ def download_dataset():
         print("Acquiring dataset...")
 
     print()
-
-    # ---------------------------------------
-    # ZIP download
-    # ---------------------------------------
 
     if archive:
 
@@ -292,11 +285,7 @@ def download_dataset():
 
             print(f"Destination : {destination_directory}")
 
-            print(f"Input Type  : {input_type}")
-
-            if source.is_dir():
-
-                print(f"Files Found : {copied}")
+            print(f"Input Type  : ZIP Archive")
 
             print("Status      : SUCCESS")
 
@@ -319,15 +308,12 @@ def download_dataset():
 
             raise
 
-    # ---------------------------------------
-    # CSV / JSON / Folder
-    # ---------------------------------------
+    else:
 
-    downloader.download(
-        config,
-        str(output_file)
-    )
-    
+        downloader.download(
+            config,
+            str(output_file)
+        )
 
     print()
 
@@ -347,19 +333,15 @@ def download_dataset():
 
     print(f"Destination : {destination_directory}")
 
-    if archive:
-
-        input_type = "ZIP Archive"
-
-    elif source.is_dir():
+    if source and source.is_dir():
 
         input_type = "Folder"
 
-    elif source.suffix.lower() == ".csv":
+    elif source and source.suffix.lower() == ".csv":
 
         input_type = "CSV File"
 
-    elif source.suffix.lower() == ".json":
+    elif source and source.suffix.lower() == ".json":
 
         input_type = "JSON File"
 

@@ -1,0 +1,930 @@
+Started by user DIVYA PATIL
+Obtained CI_CD/mssql/windows/setup_pipeline.groovy from git https://github.com/niteshquantum/DataPlatform-Automation-v1
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+Cloning the remote Git repository
+Cloning repository https://github.com/niteshquantum/DataPlatform-Automation-v1
+ > git.exe init C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1 # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.49.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1 +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1 # timeout=10
+ > git.exe config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+ > git.exe rev-parse "refs/remotes/origin/main^{commit}" # timeout=10
+Checking out Revision b1381e50222905d90d65e9999ab3e4a6850e5fe6 (refs/remotes/origin/main)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f b1381e50222905d90d65e9999ab3e4a6850e5fe6 # timeout=10
+Commit message: "Uncomment pg_ctl command execution in script"
+First time build. Skipping changelog.
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Initialize Logging)
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py init                     --database mssql                     --action setup                     --os windows                     --build-number "1"                     --job-name "mssql-setup-1"                     --build-url "http://localhost:8080/job/mssql-setup-1/1/" 
+Execution log initialized: logs\mssql\setup\build_1\execution.json
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Check Administrator Privileges)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Check Administrator Privileges" 
+Stage started: Check Administrator Privileges
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\common\check_admin_privileges.bat
+
+=====================================
+CHECKING ADMINISTRATOR PRIVILEGES
+=====================================
+
+Administrator privileges detected.
+[Pipeline] writeFile
+[Pipeline] echo
+Administrator privileges available.
+[Pipeline] echo
+SQL Server network configuration will be enabled.
+[Pipeline] readFile
+[Pipeline] echo
+ADMIN STATUS = true
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py set-environment                             --database mssql                             --action setup                             --build-number "1"                             --administrator-privileges "true" 
+Environment information updated: logs\mssql\setup\build_1\execution.json
+Administrator Privileges: True
+Execution Mode: windows_service
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Check Administrator Privileges"             --status SUCCESS 
+Stage completed: Check Administrator Privileges
+Stage Status: SUCCESS
+Stage Duration: 3.12 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Python Runtime)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Validate Python Runtime" 
+Stage started: Validate Python Runtime
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\common\validate_python_runtime.bat
+
+=====================================
+VALIDATING PYTHON RUNTIME
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+Python 3.13.4
+
+=====================================
+PYTHON RUNTIME VALIDATED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Validate Python Runtime"             --status SUCCESS 
+Stage completed: Validate Python Runtime
+Stage Status: SUCCESS
+Stage Duration: 1.99 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Install Python Requirements)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Install Python Requirements" 
+Stage started: Install Python Requirements
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\mssql\setup\install_python_requirements.bat
+
+=====================================
+PYTHON VERSION
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+Python 3.13.4
+
+=====================================
+INSTALLING PYTHON REQUIREMENTS
+=====================================
+
+Requirement already satisfied: pandas in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 1)) (2.3.3)
+Requirement already satisfied: pyyaml in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 2)) (6.0.3)
+Requirement already satisfied: python-dotenv in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 3)) (1.2.1)
+Requirement already satisfied: gdown>=5.2.0 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (6.1.0)
+Requirement already satisfied: libarchive-c>=5.3 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 5)) (5.3)
+Requirement already satisfied: pyodbc in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from -r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\scripts\batch\mssql\setup\..\..\..\..\requirements\mssql.txt (line 3)) (5.3.0)
+Requirement already satisfied: numpy>=1.26.0 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 1)) (2.3.3)
+Requirement already satisfied: python-dateutil>=2.8.2 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 1)) (2.9.0.post0)
+Requirement already satisfied: pytz>=2020.1 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 1)) (2025.2)
+Requirement already satisfied: tzdata>=2022.7 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 1)) (2025.2)
+Requirement already satisfied: beautifulsoup4 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (4.13.5)
+Requirement already satisfied: filelock in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (3.29.7)
+Requirement already satisfied: requests[socks] in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (2.32.5)
+Requirement already satisfied: tqdm in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (4.67.1)
+Requirement already satisfied: six>=1.5 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from python-dateutil>=2.8.2->pandas->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 1)) (1.17.0)
+Requirement already satisfied: soupsieve>1.2 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from beautifulsoup4->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (2.8)
+Requirement already satisfied: typing-extensions>=4.0.0 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from beautifulsoup4->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (4.15.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (3.4.3)
+Requirement already satisfied: idna<4,>=2.5 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (2025.8.3)
+Requirement already satisfied: PySocks!=1.5.7,>=1.5.6 in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from requests[socks]->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (1.7.1)
+Requirement already satisfied: colorama in c:\users\admin\appdata\local\programs\python\python313\lib\site-packages (from tqdm->gdown>=5.2.0->-r C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\requirements\common.txt (line 4)) (0.4.6)
+
+[notice] A new release of pip is available: 25.3 -> 26.2
+[notice] To update, run: python.exe -m pip install --upgrade pip
+
+=====================================
+PYTHON REQUIREMENTS INSTALLED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Install Python Requirements"             --status SUCCESS 
+Stage completed: Install Python Requirements
+Stage Status: SUCCESS
+Stage Duration: 5.52 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Python Requirements)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Validate Python Requirements" 
+Stage started: Validate Python Requirements
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\mssql\setup\validate_python_requirements.bat
+
+=====================================
+VALIDATING PYTHON REQUIREMENTS
+=====================================
+
+Using Python:
+C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+
+Python Version:
+Python 3.13.4
+
+Checking PyYAML...
+Checking python-dotenv...
+Checking pyodbc...
+Checking pandas...
+
+=====================================
+PYTHON REQUIREMENTS VALIDATED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Validate Python Requirements"             --status SUCCESS 
+Stage completed: Validate Python Requirements
+Stage Status: SUCCESS
+Stage Duration: 4.92 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Java Runtime)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Validate Java Runtime" 
+Stage started: Validate Java Runtime
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\common\validate_java_runtime.bat
+=====================================
+VALIDATING JAVA RUNTIME
+=====================================
+========================================
+       Discovering Installed JDK
+========================================
+
+Checking C:\Program Files\Java
+  Ignoring unsupported: jdk1.8.0_202
+  Ignoring unsupported: jre1.8.0_202
+Checking C:\Program Files\Microsoft
+  Ignoring unsupported: AzureAttestService
+
+========================================
+Java Configuration
+========================================
+Selected Version : JDK 17
+JAVA_HOME         : C:\Program Files\Microsoft\jdk-17.0.14.7-hotspot
+========================================
+
+Validating Java installation...
+
+--- java -version ---
+openjdk version "17.0.14" 2025-01-21 LTS
+OpenJDK Runtime Environment Microsoft-10800295 (build 17.0.14+7-LTS)
+OpenJDK 64-Bit Server VM Microsoft-10800295 (build 17.0.14+7-LTS, mixed mode, sharing)
+
+--- javac -version ---
+javac 17.0.14
+
+========================================
+Java 17 validated successfully
+========================================
+'...' is not recognized as an internal or external command,
+operable program or batch file.
+Java Path:
+C:\Program Files\Microsoft\jdk-17.0.14.7-hotspot\bin\java.exe
+D:\java21-install\bin\java.exe
+D:\bin\java.exe
+C:\Program Files\java\jdk1.8.0_202\bin\java.exe
+
+JAVA_HOME:
+C:\Program Files\Microsoft\jdk-17.0.14.7-hotspot
+
+Java Version:
+openjdk version "17.0.14" 2025-01-21 LTS
+OpenJDK Runtime Environment Microsoft-10800295 (build 17.0.14+7-LTS)
+OpenJDK 64-Bit Server VM Microsoft-10800295 (build 17.0.14+7-LTS, mixed mode, sharing)
+
+Detecting Java Version...
+Detected Java Major Version: 17
+
+Java 17 detected - Supported
+
+=====================================
+JAVA RUNTIME VALIDATED
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Validate Java Runtime"             --status SUCCESS 
+Stage completed: Validate Java Runtime
+Stage Status: SUCCESS
+Stage Duration: 3.61 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Install Tools)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Install Tools" 
+Stage started: Install Tools
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\mssql\setup\install_tools.bat
+
+=====================================
+INSTALLING MSSQL TOOLS
+=====================================
+
+[1/5] Installing Terraform...
+
+=====================================
+INSTALLING TERRAFORM
+=====================================
+
+Downloading Terraform...
+Extracting Terraform...
+Terraform Installed Successfully.
+[2/5] Installing Liquibase...
+
+=====================================
+INSTALLING LIQUIBASE
+=====================================
+
+Downloading Liquibase Version 5.0.3 ...
+URL : https://github.com/liquibase/liquibase/releases/download/v5.0.3/liquibase-5.0.3.zip
+LiquibaseDir = C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\tools\liquibase
+
+
+    Directory: C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\tools\liquibase
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+d-----          8/4/2026  11:06 AM                examples                                                             
+d-----          8/4/2026  11:06 AM                internal                                                             
+d-----          8/4/2026  11:06 AM                lib                                                                  
+d-----          8/4/2026  11:06 AM                licenses                                                             
+-a----          8/4/2026  11:04 AM              0 .gitkeep                                                             
+-a----         5/14/2026   4:12 PM             50 ABOUT.txt                                                            
+-a----         5/14/2026   4:12 PM         466775 changelog.txt                                                        
+-a----         5/14/2026   4:12 PM          11088 GETTING_STARTED.txt                                                  
+-a----         5/14/2026   4:12 PM           3688 LICENSE.txt                                                          
+-a----         5/13/2026   7:11 PM           2655 liquibase                                                            
+-a----         5/13/2026   7:11 PM           3247 liquibase.bat                                                        
+-a----         5/14/2026   4:12 PM           3566 README.txt                                                           
+-a----         5/14/2026   4:12 PM            738 UNINSTALL.txt                                                        
+Liquibase downloaded successfully.
+
+
+
+LIQUIBASE INSTALLATION SUCCESSFUL
+
+[3/5] Installing SQLCMD...
+
+=====================================
+INSTALLING SQLCMD
+=====================================
+
+SQLCMD already installed.
+[4/5] Installing MSSQL JDBC Driver...
+
+=====================================
+INSTALLING MSSQL JDBC DRIVER
+=====================================
+
+
+=====================================
+DOWNLOADING MSSQL JDBC DRIVER
+=====================================
+Version : 12.10.0
+URL     : https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/12.10.0.jre11/mssql-jdbc-12.10.0.jre11.jar
+
+
+=====================================
+MSSQL JDBC DRIVER INSTALLED
+=====================================
+Driver : C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\tools\drivers\mssql-jdbc-12.10.0.jre11.jar
+=====================================
+
+MSSQL JDBC DRIVER INSTALLATION SUCCESSFUL
+
+[5/5] Validating Installed Tools...
+
+=====================================
+VALIDATING TOOLS
+=====================================
+
+Checking Terraform...
+Terraform v1.13.0
+on windows_amd64
+
+Your version of Terraform is out of date! The latest version
+is 1.15.8. You can update by downloading from https://developer.hashicorp.com/terraform/install
+Checking Liquibase...
+
+=====================================
+VALIDATING LIQUIBASE
+=====================================
+
+Expected Liquibase Version : 5.0.3
+
+Java Found:
+D:\java21-install\bin\java.exe
+D:\bin\java.exe
+C:\Program Files\java\jdk1.8.0_202\bin\java.exe
+
+Checking Liquibase Version...
+
+####################################################
+##   _     _             _ _                      ##
+##  | |   (_)           (_) |                     ##
+##  | |    _  __ _ _   _ _| |__   __ _ ___  ___   ##
+##  | |   | |/ _` | | | | | '_ \ / _` / __|/ _ \  ##
+##  | |___| | (_| | |_| | | |_) | (_| \__ \  __/  ##
+##  \_____/_|\__, |\__,_|_|_.__/ \__,_|___/\___|  ##
+##              | |                               ##
+##              |_|                               ##
+##                                                ## 
+##  Get documentation at docs.liquibase.com       ##
+##  Get certified courses at learn.liquibase.com  ## 
+##                                                ##
+####################################################
+Starting Liquibase at 11:06:43 using Java 21.0.11 (version 5.0.3 #10665 built at 2026-05-13 17:55+0000)
+Liquibase Home: C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\tools\liquibase
+Java Home D:\java21-install (Version 21.0.11)
+Libraries:
+- internal\lib\commons-collections4.jar: Apache Commons Collections 4.5.0 By The Apache Software Foundation
+- internal\lib\commons-io.jar: Apache Commons IO 2.22.0 By The Apache Software Foundation
+- internal\lib\commons-lang3.jar: Apache Commons Lang 3.20.0 By The Apache Software Foundation
+- internal\lib\commons-text.jar: Apache Commons Text 1.15.0 By The Apache Software Foundation
+- internal\lib\h2.jar: H2 Database Engine 2.4.240 By H2 Group
+- internal\lib\opencsv.jar: opencsv 5.12.0
+- internal\lib\picocli.jar: picocli 4.7.7 By Remko Popma
+- internal\lib\snakeyaml.jar: SnakeYAML 2.6.0
+
+
+Liquibase Version: 5.0.3
+
+
+=====================================
+LIQUIBASE VALIDATED
+=====================================
+
+Checking SQLCMD...
+
+=====================================
+VALIDATING SQLCMD
+=====================================
+
+SQLCMD FOUND
+sqlcmd: Install/Create/Query SQL Server, Azure SQL, and Tools
+
+Version: v1.10.0
+
+Flags:
+-K,--application-intent
+   Declares the application workload type when connecting to a 
+   server. The only currently supported value is ReadOnly. 
+   If -K is not specified, the sqlcmd utility will not 
+   support connectivity to a secondary replica in an Always 
+   On availability group 
+
+   --authentication-method
+   Specifies the SQL authentication method to use to connect 
+   to Azure SQL Database. One of: ActiveDirectoryDefault, 
+   ActiveDirectoryIntegrated, ActiveDirectoryPassword, 
+   ActiveDirectoryInteractive, 
+   ActiveDirectoryManagedIdentity, 
+   ActiveDirectoryServicePrincipal, 
+   ActiveDirectoryServicePrincipalAccessToken, 
+   ActiveDirectoryAzCli, ActiveDirectoryDeviceCode, 
+   ActiveDirectoryWorkloadIdentity, 
+   ActiveDirectoryClientAssertion, 
+   ActiveDirectoryAzurePipelines, 
+   ActiveDirectoryEnvironment, 
+   ActiveDirectoryAzureDeveloperCli, SqlPassword 
+
+-c,--batch-terminator
+   Specifies the batch terminator. The default value is GO 
+
+-z,--change-password
+   New password 
+
+-Z,--change-password-exit
+   New password and exit 
+
+-R,--client-regional-setting
+   Provided for backward compatibility. Client regional 
+   settings are not used 
+
+-s,--column-separator
+   Specifies the column separator character. Sets the 
+   SQLCMDCOLSEP variable. 
+
+-d,--database-name
+   This option sets the sqlcmd scripting variable 
+   SQLCMDDBNAME. This parameter specifies the initial 
+   database. The default is your login's default-database 
+   property. If the database does not exist, an error 
+   message is generated and sqlcmd exits 
+
+-A,--dedicated-admin-connection
+   Dedicated administrator connection 
+
+-X,--disable-cmd-and-warn
+   -X[1] Disables commands that might compromise system 
+   security. Passing 1 tells sqlcmd to exit when disabled 
+   commands are run. 
+
+-x,--disable-variable-substitution
+   Causes sqlcmd to ignore scripting variables. This parameter 
+   is useful when a script contains many INSERT statements 
+   that may contain strings that have the same format as 
+   regular variables, such as $(variable_name) 
+
+   --driver-logging-level
+   Level of mssql driver messages to print 
+
+-e,--echo-input
+   Echo input 
+
+-g,--enable-column-encryption
+   Enable column encryption 
+
+-I,--enable-quoted-identifiers
+   Provided for backward compatibility. Quoted identifiers are 
+   always enabled 
+
+-N,--encrypt-connection
+   This switch is used by the client to request an encrypted 
+   connection 
+
+-m,--error-level
+   Controls which error messages are sent to stdout. Messages 
+   that have severity level greater than or equal to this 
+   level are sent 
+
+-V,--error-severity-level
+   Controls the severity level that is used to set the 
+   ERRORLEVEL variable on exit 
+
+-r,--errors-to-stderr
+   -r[0 | 1] Redirects error messages with severity >= 11 
+   output to stderr. Pass 1 to to redirect all errors 
+   including PRINT. 
+
+-b,--exit-on-error
+   Specifies that sqlcmd exits and returns a DOS ERRORLEVEL 
+   value when an error occurs 
+
+-Y,--fixed-type-width
+   Sets the sqlcmd scripting variable SQLCMDMAXFIXEDTYPEWIDTH 
+
+-h,--headers
+   Specifies the number of rows to print between the column 
+   headings. Use -h-1 to specify that headers not be 
+   printed 
+
+-?,--help
+   -? shows this syntax summary, --help shows modern sqlcmd 
+   sub-command help 
+
+-F,--host-name-in-certificate
+   Specifies the host name in the server certificate. 
+
+-q,--initial-query
+   Executes a query when sqlcmd starts, but does not exit 
+   sqlcmd when the query has finished running. 
+   Multiple-semicolon-delimited queries can be executed 
+
+-i,--input-file
+   Identifies one or more files that contain batches of SQL 
+   statements. If one or more files do not exist, sqlcmd 
+   will exit. Mutually exclusive with -Q/-q 
+
+-L,--list-servers
+   -L[c] List servers. Pass c to omit 'Servers:' output. 
+
+-l,--login-timeOut
+   Specifies the number of seconds before a sqlcmd login to 
+   the go-mssqldb driver times out when you try to connect 
+   to a server. This option sets the sqlcmd scripting 
+   variable SQLCMDLOGINTIMEOUT. The default value is 30. 0 
+   means infinite 
+
+-M,--multi-subnet-failover
+   Provided for backward compatibility. Sqlcmd always 
+   optimizes detection of the active replica of a SQL 
+   Failover Cluster 
+
+-o,--output-file
+   Identifies the file that receives output from sqlcmd 
+
+-a,--packet-size
+   Requests a packet of a different size. This option sets the 
+   sqlcmd scripting variable SQLCMDPACKETSIZE. packet_size 
+   must be a value between 512 and 32767. The default = 
+   4096. A larger packet size can enhance performance for 
+   execution of scripts that have lots of SQL statements 
+   between GO commands. You can request a larger packet 
+   size. However, if the request is denied, sqlcmd uses the 
+   server default for packet size 
+
+-P,--password
+   Password 
+
+-Q,--query
+   Executes a query when sqlcmd starts and then immediately 
+   exits sqlcmd. Multiple-semicolon-delimited queries can 
+   be executed 
+
+-t,--query-timeout
+   Query timeout 
+
+-k,--remove-control-characters
+   -k [1|2] Remove control characters from output. Pass 1 to 
+   substitute a space per character, 2 for a space per 
+   consecutive characters 
+
+-w,--screen-width
+   Specifies the screen width for output 
+
+-S,--server
+   [[tcp:]|[lpc:]|[np:]]server[\instance_name][,port] 
+   Specifies the instance of SQL Server to which to 
+   connect. It sets the sqlcmd scripting variable 
+   SQLCMDSERVER. 
+
+-J,--server-certificate
+   Specifies the path to a server certificate file (PEM, DER, 
+   or CER) to match against the server's TLS certificate. 
+   Use when encryption is enabled (-N true, -N mandatory, 
+   or -N strict) for certificate pinning instead of 
+   standard certificate validation. 
+
+   --server-name
+   Specifies the server name to use for authentication when 
+   tunneling through a proxy. Use with -S to specify the 
+   dial address separately from the server name sent to SQL 
+   Server. 
+
+   --trace-file
+   Write runtime trace to the specified file. Only for 
+   advanced debugging. 
+
+-W,--trim-spaces
+   Remove trailing spaces from a column 
+
+-C,--trust-server-certificate
+   Implicitly trust the server certificate without validation 
+
+-u,--unicode-output-file
+   Specifies that all output files are encoded with 
+   little-endian Unicode 
+
+-G,--use-aad
+   Tells sqlcmd to use ActiveDirectory authentication. If no 
+   user name is provided, authentication method 
+   ActiveDirectoryDefault is used. If a password is 
+   provided, ActiveDirectoryPassword is used. Otherwise 
+   ActiveDirectoryInteractive is used 
+
+-E,--use-trusted-connection
+   Uses a trusted connection instead of using a user name and 
+   password to sign in to SQL Server, ignoring any 
+   environment variables that define user name and password 
+
+-U,--user-name
+   The login name or contained database user name. For 
+   contained database users, you must provide the database 
+   name option 
+
+-y,--variable-type-width
+   Sets the sqlcmd scripting variable SQLCMDMAXVARTYPEWIDTH 
+
+-v,--variables
+   Creates a sqlcmd scripting variable that can be used in a 
+   sqlcmd script. Enclose the value in quotation marks if 
+   the value contains spaces. You can specify multiple 
+   var=values values. If there are errors in any of the 
+   values specified, sqlcmd generates an error message and 
+   then exits 
+
+   --version
+   Print version information and exit 
+
+   --vertical
+   Prints the output in vertical format. This option sets the 
+   sqlcmd scripting variable SQLCMDFORMAT to 'vert'. The 
+   default is false 
+
+-H,--workstation-name
+   This option sets the sqlcmd scripting variable 
+   SQLCMDWORKSTATION. The workstation name is listed in the 
+   hostname column of the sys.sysprocesses catalog view and 
+   can be returned using the stored procedure sp_who. If 
+   this option is not specified, the default is the current 
+   computer name. This name can be used to identify 
+   different sqlcmd sessions 
+
+
+=====================================
+SQLCMD VALIDATED
+=====================================
+
+Checking MSSQL JDBC Driver...
+
+=====================================
+VALIDATING MSSQL JDBC DRIVER
+=====================================
+
+Expected Driver Version : 12.10.0
+
+Driver Found:
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\tools\drivers\mssql-jdbc-12.10.0.jre11.jar
+
+=====================================
+MSSQL JDBC DRIVER VALIDATED
+=====================================
+
+
+=====================================
+TOOLS VALIDATED SUCCESSFULLY
+=====================================
+
+
+=====================================
+MSSQL TOOLS INSTALLED SUCCESSFULLY
+=====================================
+
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Install Tools"             --status SUCCESS 
+Stage completed: Install Tools
+Stage Status: SUCCESS
+Stage Duration: 120.95 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Check MSSQL Instance)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Check MSSQL Instance" 
+Stage started: Check MSSQL Instance
+[Pipeline] bat
+[Pipeline] echo
+Instance State: NO_INSTANCE
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Check MSSQL Instance"             --status SUCCESS 
+Stage completed: Check MSSQL Instance
+Stage Status: SUCCESS
+Stage Duration: 2.72 seconds
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy SQL Server)
+[Pipeline] bat
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-start         --database mssql         --action setup         --build-number "1"         --stage-name "Deploy SQL Server" 
+Stage started: Deploy SQL Server
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>scripts\batch\mssql\setup\deploy_mssql.bat
+
+=====================================
+DEPLOYING SQL SERVER
+=====================================
+
+
+=====================================
+DOWNLOADING SQL SERVER
+=====================================
+
+
+=====================================
+DOWNLOADING MSSQL SERVER
+=====================================
+
+Downloading SQL Server Developer Edition...
+
+
+=====================================
+DOWNLOAD COMPLETED
+Installer : C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\databases\mssql\downloads\SQL2022-SSEI-Dev.exe
+=====================================
+
+
+Preparing SQL Server installation media...
+
+
+=====================================
+PREPARING MSSQL INSTALLATION MEDIA
+=====================================
+
+
+Launching SQL Server bootstrapper...
+
+
+=======================================================
+COMPLETE THE FOLLOWING IN MICROSOFT SETUP
+=======================================================
+
+Edition      : Developer
+Action       : Download Media
+Media Type   : ISO
+Download To  :
+    C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\databases\mssql\media
+
+When the download finishes,
+return to this PowerShell window
+and press ENTER.
+
+SQL Server ISO was not found in:
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\databases\mssql\media
+At C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\scripts\powershell\mssql\prepare_mssql_media.ps1:101 char:5
++     throw "SQL Server ISO was not found in:`n$MediaDir"
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (SQL Server ISO ...ses\mssql\media:String) [], RuntimeException
+    + FullyQualifiedErrorId : SQL Server ISO was not found in:
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1\databases\mssql\media
+ 
+
+SQL SERVER DOWNLOAD FAILED
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py stage-end             --database mssql             --action setup             --build-number "1"             --stage-name "Deploy SQL Server"             --status FAILURE 
+Stage completed: Deploy SQL Server
+Stage Status: FAILURE
+Stage Duration: 12.17 seconds
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py set-error             --database mssql             --action setup             --build-number "1"             --failed-stage "Deploy SQL Server"             --message "Stage execution failed" 
+Pipeline error recorded: logs\mssql\setup\build_1\execution.json
+Failed Stage: Deploy SQL Server
+Error Message: Stage execution failed
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Configure SQL Server)
+Stage "Configure SQL Server" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Start SQL Server)
+Stage "Start SQL Server" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate SQL Server)
+Stage "Validate SQL Server" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Configure MSSQL User)
+Stage "Configure MSSQL User" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Validate Environment)
+Stage "Validate Environment" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+FINALIZING MSSQL SETUP LOGGING AND REPORTING
+[Pipeline] script
+[Pipeline] {
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\logging\logger.py finalize                     --database mssql                     --action setup                     --build-number "1"                     --status "FAILURE" 
+Execution log finalized: logs\mssql\setup\build_1\execution.json
+Final Status: FAILURE
+Duration: 166.07 seconds
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\reporting\generate_report.py                     --database mssql                     --action setup                     --build-number "1" 
+Reports generated successfully.
+JSON Report: reports\mssql\setup\build_1\report.json
+HTML Report: reports\mssql\setup\build_1\report.html
+[Pipeline] bat
+
+C:\ProgramData\Jenkins\.jenkins\workspace\mssql-setup-1>python scripts\reporting\generate_history.py                     --database mssql                     --action setup                     --build-number "1" 
+Execution history generated successfully.
+History Record: ADDED
+Total Executions: 1
+JSON History: reports\history\execution_history.json
+HTML History: reports\history\execution_history.html
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] archiveArtifacts
+Archiving artifacts
+Recording fingerprints
+[Pipeline] echo
+MSSQL SETUP PIPELINE COMPLETED
+[Pipeline] echo
+MSSQL SETUP FAILED
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 1
+Finished: FAILURE

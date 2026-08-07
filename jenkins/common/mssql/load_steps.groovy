@@ -93,6 +93,32 @@ def execute(Map context) {
         }
 
 
+        stage('Verify Download') {
+
+
+
+                    runTrackedStage('Verify Download') {
+
+                        withEnv(["DATABASE=${context.database}"]) {
+                            sh 'python3 scripts/python/common/verify_download.py'
+                        }
+                    }
+        }
+
+
+        stage('Verify Incoming Folder') {
+
+
+
+                    runTrackedStage('Verify Incoming Folder') {
+
+                        withEnv(["DATABASE=${context.database}"]) {
+                            sh 'python3 scripts/python/common/verify_incoming.py'
+                        }
+                    }
+        }
+
+
         stage('Profile Source Data') {
 
 
@@ -102,7 +128,35 @@ def execute(Map context) {
                         sh './scripts/bash/common/run_data_profiling.sh mssql'
                     }
         }
+        stage('Schema Detection') {
 
+            runTrackedStage(
+                'Schema Detection'
+            ) {
+
+                sh 'python3 scripts/schema_detector.py mssql'
+            }
+        }
+
+        stage('Datatype Detection') {
+
+            runTrackedStage(
+                'Datatype Detection'
+            ) {
+
+                sh 'python3 scripts/datatype_registry_generator.py mssql'
+            }
+        }
+
+        stage('Schema Editor') {
+
+            runTrackedStage(
+                'Schema Editor'
+            ) {
+
+                sh 'python3 scripts/schema_editor/app.py mssql'
+            }
+        }
 
         stage('Create Database') {
 

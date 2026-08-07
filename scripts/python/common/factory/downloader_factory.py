@@ -20,10 +20,6 @@ for _, module_name, _ in pkgutil.iter_modules(downloaders.__path__):
 
 
 def get_downloader(source_type):
-    """
-    Return the downloader module based on the configured source type.
-    """
-
     downloader = DOWNLOADERS.get(source_type)
 
     if downloader is None:

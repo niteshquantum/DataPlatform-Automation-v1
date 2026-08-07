@@ -7,10 +7,6 @@ SOURCE_TYPE = "google_drive"
 
 
 def download(config, output_path):
-    """
-    Download a dataset from Google Drive.
-    """
-
     source_path = os.getenv("SOURCE_PATH")
 
     if source_path:
@@ -20,8 +16,11 @@ def download(config, output_path):
         source_path = config.get("SOURCE_PATH")
 
     if not source_path:
+        source_path = config.get("DATASET_URL")
+
+    if not source_path:
         raise ValueError(
-            "SOURCE_PATH is not configured."
+            "SOURCE_PATH or DATASET_URL is not configured."
         )
 
     destination = Path(output_path)

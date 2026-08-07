@@ -174,3 +174,6 @@ metadata/reconciliation/**/reconciliation.json
 metadata/assessment/**/assessment.json
 metadata/recommendation/**/recommendation.json
 metadata/governance/**/action_plan.json
+
+# Generated datatype registry
+metadata/**/datatype_registry.json

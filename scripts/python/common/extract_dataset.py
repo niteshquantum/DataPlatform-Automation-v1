@@ -4,7 +4,6 @@ import sys
 import zipfile
 import os
 
-
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
@@ -86,6 +85,7 @@ def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
 
 def extract_dataset():
     config = load_common_config("dataset")
+
     source_type = (
         os.getenv("SOURCE_TYPE")
         or config.get("SOURCE_TYPE")
@@ -108,11 +108,12 @@ def extract_dataset():
         config["DOWNLOAD_DIRECTORY"] /
         output_filename
     )
+
     if not is_archive_file(output_filename):
 
         print()
         print("[INFO] No extraction required.")
-        
+
 
         return
 
@@ -127,7 +128,26 @@ def extract_dataset():
 
     force = config.get("FORCE_EXTRACT", "false").lower() == "true"
 
-    if not force and state.get("extraction_status") == "EXTRACTED_COMPLETE":
+    download_ts = state.get("download_timestamp")
+    extraction_ts = state.get("extraction_timestamp")
+    fresh_download = bool(
+        download_ts
+        and (not extraction_ts or download_ts > extraction_ts)
+    )
+
+    can_skip = (
+        not force
+        and not fresh_download
+        and state.get("extraction_status") == "EXTRACTED_COMPLETE"
+    )
+
+    if fresh_download:
+        print()
+        print("[INFO] Fresh archive download detected:")
+        print(f"[INFO] Last Download   : {download_ts}")
+        print("[INFO] Forcing extraction of the freshly downloaded archive.")
+
+    if can_skip:
         current_state_archive = state.get("archive_path")
         current_state_identity = state.get("dataset_identity")
         actual_identity = None
@@ -186,6 +206,9 @@ def extract_dataset():
 
 def verify_dataset():
     config = load_common_config("dataset")
+    project_root = get_project_root()
+    incoming = project_root / "incoming"
+
     source_type = (
         os.getenv("SOURCE_TYPE")
         or config.get("SOURCE_TYPE")
@@ -201,8 +224,7 @@ def verify_dataset():
         source_path=source_path,
         config=config
     )
-    project_root = get_project_root()
-    incoming = project_root / "incoming"
+
     if not is_archive_file(output_filename):
 
         print()

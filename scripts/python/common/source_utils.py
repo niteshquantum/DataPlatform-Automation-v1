@@ -1,22 +1,10 @@
 from pathlib import Path
 
 
-def get_output_filename(source_type: str,
-                        source_path: str,
-                        config: dict) -> str:
-    """
-    Returns the filename that should be stored in
-    incoming/archive.
+def get_output_filename(source_type, source_path, config):
 
-    Rules
-    -----
-    Local      -> Original filename
-    GoogleDrive-> Existing DATASET_NAME
-    Future:
-        Azure Blob -> Blob filename
-        S3         -> Object filename
-        FTP        -> Remote filename
-    """
+    if source_type is None:
+        return config["DATASET_NAME"]
 
     source_type = source_type.lower()
 
@@ -29,11 +17,5 @@ def get_output_filename(source_type: str,
     return config["DATASET_NAME"]
 
 
-
-
-def is_archive_file(file_path: str) -> bool:
-    """
-    Returns True if dataset is a ZIP archive.
-    """
-
+def is_archive_file(file_path):
     return Path(file_path).suffix.lower() == ".zip"

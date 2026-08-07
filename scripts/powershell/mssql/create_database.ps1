@@ -45,30 +45,12 @@ DECLARE @Owner sysname = N'$UserLiteral';
 
 IF DB_ID(@Database) IS NULL
 BEGIN
-    DECLARE @DataPath nvarchar(4000) = CONVERT(nvarchar(4000), SERVERPROPERTY('InstanceDefaultDataPath'));
-    DECLARE @LogPath nvarchar(4000) = CONVERT(nvarchar(4000), SERVERPROPERTY('InstanceDefaultLogPath'));
-    IF @DataPath IS NULL OR @LogPath IS NULL THROW 50000, 'SQL Server default data or log directory is unavailable.', 1;
-    DECLARE @Mdf nvarchar(4000) = @DataPath + @Database + N'.mdf';
-    DECLARE @Ldf nvarchar(4000) = @LogPath + @Database + N'_log.ldf';
-    DECLARE @MdfExists int = 0, @LdfExists int = 0;
     DECLARE @Command nvarchar(max);
-    EXEC master.dbo.xp_fileexist @Mdf, @MdfExists OUTPUT;
-    EXEC master.dbo.xp_fileexist @Ldf, @LdfExists OUTPUT;
 
-    IF @MdfExists = 1 AND @LdfExists = 1
-    BEGIN
-        SET @Command = N'CREATE DATABASE ' + QUOTENAME(@Database) + N' ON (FILENAME = N''' + REPLACE(@Mdf, '''', '''''') + N'''), (FILENAME = N''' + REPLACE(@Ldf, '''', '''''') + N''') FOR ATTACH;';
-        EXEC (@Command);
-    END
-    ELSE IF @MdfExists = 0 AND @LdfExists = 0
-    BEGIN
-        SET @Command = N'CREATE DATABASE ' + QUOTENAME(@Database) + N';';
-        EXEC (@Command);
-    END
-    ELSE
-    BEGIN
-        THROW 50001, 'Only one expected database file exists. Manual recovery is required; no file was deleted.', 1;
-    END
+    SET @Command =
+        N'CREATE DATABASE ' + QUOTENAME(@Database);
+
+    EXEC(@Command);
 END
 
 IF (SELECT state_desc FROM sys.databases WHERE name = @Database) <> N'ONLINE'
