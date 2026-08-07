@@ -1,0 +1,267 @@
+def runTrackedStage(String stageName, Closure stageBody) {
+    try {
+        stageBody()
+        echo "Stage '${stageName}' completed successfully"
+    } catch (Exception error) {
+        echo "Stage '${stageName}' failed: ${error.getMessage()}"
+        throw error
+    }
+}
+
+
+pipeline {
+
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+
+    parameters {
+
+        choice(
+            name: 'DATABASE',
+            choices: [
+                'MYSQL',
+                'MSSQL',
+                'POSTGRESQL'
+            ],
+            description: 'Select database to test'
+        )
+
+        choice(
+            name: 'SCHEMA_SOURCE',
+            choices: [
+                'CSV',
+                'DATABASE'
+            ],
+            description: 'Schema detection source'
+        )
+    }
+
+
+    stages {
+
+        stage('Initialize Logging') {
+
+            steps {
+
+                script {
+
+                    def db = params.DATABASE.toLowerCase()
+                    def action = 'test'
+                    def os = isUnix() ? 'linux' : 'windows'
+
+                    if (isUnix()) {
+
+                        sh """
+                            python3 scripts/logging/logger.py init \
+                                --database ${db} \
+                                --action ${action} \
+                                --os ${os} \
+                                --build-number "${env.BUILD_NUMBER}" \
+                                --job-name "${env.JOB_NAME}" \
+                                --build-url "${env.BUILD_URL}"
+                        """
+
+                    } else {
+
+                        bat """
+                            python scripts\\logging\\logger.py init ^
+                            --database ${db} ^
+                            --action ${action} ^
+                            --os ${os} ^
+                            --build-number "${env.BUILD_NUMBER}" ^
+                            --job-name "${env.JOB_NAME}" ^
+                            --build-url "${env.BUILD_URL}"
+                        """
+
+                    }
+                }
+            }
+        }
+
+
+        stage('Validate Python Runtime') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage(
+                        'Validate Python Runtime'
+                    ) {
+
+                        if (isUnix()) {
+
+                            sh 'chmod +x testing/scripts/bash/common/validate_python_runtime.sh'
+
+                            sh 'testing/scripts/bash/common/validate_python_runtime.sh'
+
+                        } else {
+
+                            bat 'testing\\scripts\\batch\\common\\validate_python_runtime.bat'
+
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Validate Database Connection') {
+
+            steps {
+
+                script {
+
+                    def db = params.DATABASE.toLowerCase()
+
+                    runTrackedStage(
+                        'Validate Database Connection'
+                    ) {
+
+                        if (isUnix()) {
+
+                            sh "testing/scripts/bash/${db}/validate_connection.sh"
+
+                        } else {
+
+                            bat "testing\\scripts\\batch\\${db}\\validate_connection.bat"
+
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Run Schema Detection') {
+
+            steps {
+
+                script {
+
+                    def db = params.DATABASE.toLowerCase()
+
+                    runTrackedStage(
+                        'Run Schema Detection'
+                    ) {
+
+                        withEnv([
+                            "SCHEMA_SOURCE=${params.SCHEMA_SOURCE}"
+                        ]) {
+
+                            if (isUnix()) {
+
+                                sh "testing/scripts/bash/${db}/run_schema_detection.sh"
+
+                            } else {
+
+                                bat "testing\\scripts\\batch\\${db}\\run_schema_detection.bat"
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Run Datatype Registry Generator') {
+
+            steps {
+
+                script {
+
+                    def db = params.DATABASE.toLowerCase()
+
+                    runTrackedStage(
+                        'Run Datatype Registry Generator'
+                    ) {
+
+                        if (isUnix()) {
+
+                            sh "testing/scripts/bash/${db}/run_datatype_generator.sh"
+
+                        } else {
+
+                            bat "testing\\scripts\\batch\\${db}\\run_datatype_generator.bat"
+
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Validate Metadata') {
+
+            steps {
+
+                script {
+
+                    def db = params.DATABASE.toLowerCase()
+
+                    runTrackedStage(
+                        'Validate Metadata'
+                    ) {
+
+                        if (isUnix()) {
+
+                            sh "testing/scripts/bash/common/validate_metadata.sh ${db}"
+
+                        } else {
+
+                            bat "testing\\scripts\\batch\\common\\validate_metadata.bat ${db}"
+
+                        }
+                    }
+                }
+            }
+        }
+
+
+        stage('Archive Metadata') {
+
+            steps {
+
+                script {
+
+                    def db = params.DATABASE.toLowerCase()
+                    def buildNumber = env.BUILD_NUMBER
+
+                    runTrackedStage(
+                        'Archive Metadata'
+                    ) {
+
+                        if (isUnix()) {
+
+                            sh "testing/scripts/bash/common/archive_metadata.sh ${db} ${buildNumber}"
+
+                        } else {
+
+                            bat "testing\\scripts\\batch\\common\\archive_metadata.bat ${db} ${buildNumber}"
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    post {
+
+        success {
+
+            echo "Schema Extractor Smoke Test PASSED"
+        }
+
+        failure {
+
+            echo "Schema Extractor Smoke Test FAILED"
+        }
+    }
+}
