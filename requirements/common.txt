@@ -1,5 +1,6 @@
 pandas
 pyyaml
 python-dotenv
+flask
 gdown>=5.2.0
 libarchive-c>=5.3
