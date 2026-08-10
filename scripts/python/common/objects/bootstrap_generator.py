@@ -264,14 +264,10 @@ def generate(database):
         # --------------------------------------------------------
 
         sql_out = root / "objects" / database / "generated"
-        lq_out  = root / "liquibase" / database / "objects"
         master  = root / "liquibase" / database / "master_objects.xml"
 
         if sql_out.exists():
             shutil.rmtree(sql_out)
-
-        if lq_out.exists():
-            shutil.rmtree(lq_out)
 
         if master.exists():
             master.unlink()
