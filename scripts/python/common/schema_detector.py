@@ -206,31 +206,75 @@ def update_datatype_metadata(table_name, datatypes, metadata_path):
         logger.error(f"Error updating datatype metadata: {e}")
 
 
-def detect_and_update_datatypes(table_name, columns, mapped_columns, samples, metadata_path):
-    """Detect mapped-column datatypes and save them to datatype metadata."""
-    mapped_samples = get_mapped_column_samples(columns, mapped_columns, samples)
+# def detect_and_update_datatypes(table_name, columns, mapped_columns, samples, metadata_path):
+#     """Detect mapped-column datatypes and save them to datatype metadata."""
+#     mapped_samples = get_mapped_column_samples(columns, mapped_columns, samples)
+#     _, default_type = _load_datatype_rules()
+#     detected_datatypes = {
+#         column: (
+#             detected_type
+#             if (detected_type := detect_datatype(column, values)) != DEFAULT_DATATYPE
+#             else default_type
+#         )
+#         for column, values in mapped_samples.items()
+#     }
+#     datatypes = {
+#         column: {
+#             "detected_type": detected_type,
+#             "final_type": resolve_datatype(table_name, column, detected_type),
+#         }
+#         for column, detected_type in detected_datatypes.items()
+#     }
+
+#     for column, datatype in detected_datatypes.items():
+#         logger.info(f"Column {column} detected datatype: {datatype}")
+
+#     update_datatype_metadata(table_name, datatypes, metadata_path)
+def detect_and_update_datatypes(
+    table_name, columns, mapped_columns, samples, metadata_path
+):
+    """Detect mapped-column datatypes and save them to datatype registry."""
+
+    mapped_samples = get_mapped_column_samples(
+        columns, mapped_columns, samples
+    )
+
     _, default_type = _load_datatype_rules()
+
     detected_datatypes = {
         column: (
             detected_type
-            if (detected_type := detect_datatype(column, values)) != DEFAULT_DATATYPE
+            if (detected_type := detect_datatype(column, values))
+            != DEFAULT_DATATYPE
             else default_type
         )
         for column, values in mapped_samples.items()
     }
+
     datatypes = {
         column: {
             "detected_type": detected_type,
-            "final_type": resolve_datatype(table_name, column, detected_type),
+            "selected_type": resolve_datatype(
+                table_name,
+                column,
+                detected_type,
+            ),
         }
         for column, detected_type in detected_datatypes.items()
     }
 
-    for column, datatype in detected_datatypes.items():
-        logger.info(f"Column {column} detected datatype: {datatype}")
+    for column, datatype in datatypes.items():
+        logger.info(
+            f"Column {column} | "
+            f"Detected: {datatype['detected_type']} | "
+            f"Selected: {datatype['selected_type']}"
+        )
 
-    update_datatype_metadata(table_name, datatypes, metadata_path)
-
+    update_datatype_metadata(
+        table_name,
+        datatypes,
+        metadata_path,
+    )
 
 def update_schema_registry(table_name, columns, registry_path):
     """
@@ -289,12 +333,17 @@ def main():
         / db_type
         / "schema_registry.json"
     )
+    # datatype_metadata_path = (
+    #     project_root.parent
+    #     / "metadata"
+    #     / "datatype_metadata.json"
+    # )
     datatype_metadata_path = (
-        project_root.parent
-        / "metadata"
-        / "datatype_metadata.json"
+    project_root
+    / "metadata"
+    / db_type
+    / "datatype_registry.json"
     )
-
     logger.info(f"Database type: {db_type}")
     
     # Verify incoming directory exists

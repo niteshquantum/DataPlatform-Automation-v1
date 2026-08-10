@@ -1,0 +1,29 @@
+{
+    "employe": {
+        "id": {
+            "detected_type": "INTEGER",
+            "selected_type": "INTEGER",
+            "sample_value": "1"
+        },
+        "name": {
+            "detected_type": "TEXT",
+            "selected_type": "TEXT",
+            "sample_value": "Rahul"
+        },
+        "age": {
+            "detected_type": "INTEGER",
+            "selected_type": "INTEGER",
+            "sample_value": "25"
+        },
+        "salary": {
+            "detected_type": "NUMERIC",
+            "selected_type": "NUMERIC",
+            "sample_value": "25000.50"
+        },
+        "joining_date": {
+            "detected_type": "DATE",
+            "selected_type": "DATE",
+            "sample_value": "2026-08-05"
+        }
+    }
+}
