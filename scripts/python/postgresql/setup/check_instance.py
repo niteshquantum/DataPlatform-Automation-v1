@@ -19,6 +19,35 @@ def is_port_open(host, port):
         return False
 
 
+def get_port_owner_process_name(port):
+    command = [
+        "powershell.exe",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        (
+            f"$connection = Get-NetTCPConnection -LocalPort {port} -State Listen "
+            "-ErrorAction SilentlyContinue | Select-Object -First 1; "
+            "if ($connection) { "
+            "(Get-Process -Id $connection.OwningProcess "
+            "-ErrorAction SilentlyContinue).ProcessName "
+            "}"
+        ),
+    ]
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        return result.stdout.strip().lower()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
 def check_instance():
     config = load_database_config("postgresql")
 
@@ -71,13 +100,19 @@ def check_instance():
             print("INSTANCE_STATE=POSTGRESQL_AUTHENTICATION_FAILED")
             return "POSTGRESQL_AUTHENTICATION_FAILED"
 
+        if is_port_open(host, port):
+            process_name = get_port_owner_process_name(port)
+
+            if process_name in {"postgres", "postgres.exe"}:
+                print("INSTANCE_STATE=POSTGRESQL_RUNNING_BUT_UNUSABLE")
+                return "POSTGRESQL_RUNNING_BUT_UNUSABLE"
+
+            print("INSTANCE_STATE=PORT_OCCUPIED_BY_NON_POSTGRESQL")
+            return "PORT_OCCUPIED_BY_NON_POSTGRESQL"
+
         if managed:
             print("INSTANCE_STATE=INSTANCE_INSTALLED_BUT_STOPPED")
             return "INSTANCE_INSTALLED_BUT_STOPPED"
-
-        if is_port_open(host, port):
-            print("INSTANCE_STATE=PORT_OCCUPIED_BY_NON_POSTGRESQL")
-            return "PORT_OCCUPIED_BY_NON_POSTGRESQL"
 
         print("INSTANCE_STATE=NO_INSTANCE")
         return "NO_INSTANCE"

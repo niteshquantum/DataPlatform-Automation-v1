@@ -53,6 +53,8 @@ def getInstanceState() {
         returnStdout: true
     ).trim()
 
+    echo output
+
     def state = 'UNKNOWN'
 
     def lines = output.split('\n')
@@ -270,6 +272,11 @@ pipeline {
                         if (instanceState == 'POSTGRESQL_AUTHENTICATION_FAILED') {
 
                             error "PostgreSQL is reachable on the configured port, but the configured credentials were rejected. Aborting setup."
+                        }
+
+                        if (instanceState == 'POSTGRESQL_RUNNING_BUT_UNUSABLE') {
+
+                            error "PostgreSQL is already running on the configured port, but the configured connection could not be established. See the instance-check output above for the PostgreSQL error. Aborting setup."
                         }
 
                         if (instanceState == 'UNKNOWN') {
