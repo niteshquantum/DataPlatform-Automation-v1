@@ -93,6 +93,10 @@ def generate_index_xml(database):
             / f"{sql_file.stem}.xml"
         )
 
+        if xml_file.exists():
+            print(f"Preserving existing index XML: {xml_file.name}")
+            continue
+
         with open(
             xml_file,
             "w",
