@@ -11,6 +11,8 @@ import json
 import logging
 from pathlib import Path
 
+from scripts.python.common.config_loader import load_source_config
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -200,6 +202,50 @@ def get_postgresql_columns(conn, table_name):
     return columns
 
 
+def get_source_connection(source_config):
+    """
+    Returns a connection to the source database using source.conf.
+    """
+    db_type = source_config.get("SOURCE_DB_TYPE", "").lower()
+
+    if db_type == "mssql":
+        import pyodbc
+        connection_string = (
+            f"DRIVER={{{source_config['SOURCE_ODBC_DRIVER']}}};"
+            f"SERVER={source_config['SOURCE_HOST']},{source_config['SOURCE_PORT']};"
+            f"DATABASE={source_config['SOURCE_DB']};"
+            f"UID={source_config['SOURCE_USER']};"
+            f"PWD={source_config['SOURCE_PASSWORD']};"
+            "Encrypt=no;"
+            "TrustServerCertificate=yes;"
+            "Connection Timeout=30;"
+        )
+        return pyodbc.connect(connection_string)
+
+    elif db_type == "mysql":
+        import mysql.connector
+        return mysql.connector.connect(
+            host=source_config["SOURCE_HOST"],
+            port=int(source_config["SOURCE_PORT"]),
+            user=source_config["SOURCE_USER"],
+            password=source_config["SOURCE_PASSWORD"],
+            database=source_config["SOURCE_DB"]
+        )
+
+    elif db_type == "postgresql":
+        import psycopg2
+        return psycopg2.connect(
+            host=source_config["SOURCE_HOST"],
+            port=int(source_config["SOURCE_PORT"]),
+            user=source_config["SOURCE_USER"],
+            password=source_config["SOURCE_PASSWORD"],
+            database=source_config["SOURCE_DB"]
+        )
+
+    else:
+        raise ValueError(f"Unsupported source database type: {db_type}")
+
+
 def main():
     """
     Main function to extract schema from database and update schema registry.
@@ -226,26 +272,24 @@ def main():
         / "cdc_status.json"
     )
 
-    logger.info(f"Database type: {db_type}")
+    logger.info(f"Target database type: {db_type}")
 
-    if db_type not in ("mysql", "mssql", "postgresql"):
-        logger.error(f"Unsupported database type: {db_type}. Only MySQL, MSSQL and PostgreSQL are supported.")
+    source_config = load_source_config()
+    source_db_type = source_config.get("SOURCE_DB_TYPE", "").lower()
+
+    logger.info(f"Source database type: {source_db_type}")
+
+    if source_db_type not in ("mysql", "mssql", "postgresql"):
+        logger.error(f"Unsupported source database type: {source_db_type}")
         return
 
     # Add project root to path for imports
     sys.path.insert(0, str(project_root))
 
-    if db_type == "mysql":
-        from scripts.python.mysql.setup.db_connection import get_connection
-    elif db_type == "postgresql":
-        from scripts.python.postgresql.setup.db_connection import get_connection
-    else:
-        from scripts.python.mssql.setup.db_connection import get_connection
-
     try:
-        conn = get_connection()
+        conn = get_source_connection(source_config)
     except Exception as e:
-        logger.error(f"Failed to connect to {db_type}: {e}")
+        logger.error(f"Failed to connect to source {source_db_type}: {e}")
         registry_path.parent.mkdir(parents=True, exist_ok=True)
         with open(registry_path, "w", encoding="utf-8") as f:
             json.dump({}, f, indent=2)
@@ -257,18 +301,18 @@ def main():
         logger.info(f"CDC metadata written to {cdc_path}")
         return
 
-    logger.info(f"Connected to {db_type} successfully")
+    logger.info(f"Connected to source {source_db_type} successfully")
     cdc_status = {"tables": {}}
 
     try:
-        if db_type == "mysql":
+        if source_db_type == "mysql":
             tables = get_mysql_tables(conn)
-        elif db_type == "postgresql":
+        elif source_db_type == "postgresql":
             tables = get_postgresql_tables(conn)
         else:
             tables = get_mssql_tables(conn)
 
-        logger.info(f"Found {len(tables)} table(s) in database")
+        logger.info(f"Found {len(tables)} table(s) in source database")
 
         for table_name in tables:
             normalized_table_name = (
@@ -278,9 +322,9 @@ def main():
                 .replace(' ', '_')
             )
 
-            if db_type == "mysql":
+            if source_db_type == "mysql":
                 columns = get_mysql_columns(conn, table_name)
-            elif db_type == "postgresql":
+            elif source_db_type == "postgresql":
                 columns = get_postgresql_columns(conn, table_name)
             else:
                 columns = get_mssql_columns(conn, table_name)
