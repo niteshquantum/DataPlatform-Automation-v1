@@ -38,7 +38,7 @@ for include_elem in root.findall(f"{{{NS}}}include"):
 # Scan all XML files except master.xml
 xml_files = sorted(
     f for f in mysql_dir.glob("*.xml")
-    if f.name != "master.xml"
+    if f.name not in {"master.xml", "master_objects.xml"}
 )
 
 for xml_file in xml_files:
