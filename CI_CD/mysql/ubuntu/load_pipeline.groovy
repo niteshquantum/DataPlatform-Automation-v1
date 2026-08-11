@@ -74,6 +74,16 @@ pipeline {
             description: 'Dataset location (URL, local path, folder path, etc.)'
         )
 
+        choice(
+            name: 'SCHEMA_SOURCE',
+            choices: [
+                'CSV',
+                'DATABASE'
+            ],
+            defaultValue: 'CSV',
+            description: 'Schema detection source'
+        )
+
         booleanParam(
             name: 'RUN_ASSESSMENT',
             defaultValue: true,
@@ -90,13 +100,18 @@ pipeline {
 
                 sh """
                     python3 scripts/logging/logger.py init \
-                    --database mysql \
-                    --action load \
-                    --os ubuntu \
-                    --build-number "${env.BUILD_NUMBER}" \
-                    --job-name "${env.JOB_NAME}" \
-                    --build-url "${env.BUILD_URL}"
+                        --database mysql \
+                        --action load \
+                        --os ubuntu \
+                        --build-number "${env.BUILD_NUMBER}" \
+                        --job-name "${env.JOB_NAME}" \
+                        --build-url "${env.BUILD_URL}"
                 """
+
+                script {
+                    env.MYSQL_LOAD_LOGGING_INITIALIZED = 'true'
+                    env.SCHEMA_SOURCE = params.SCHEMA_SOURCE
+                }
             }
         }
 
@@ -255,7 +270,11 @@ pipeline {
 
                     runTrackedStage('Schema Detection') {
 
-                        sh 'python3 scripts/schema_detector.py mysql'
+                        if (params.SCHEMA_SOURCE == 'DATABASE') {
+                            sh 'python3 scripts/schema_extractor.py mysql'
+                        } else {
+                            sh 'python3 scripts/schema_detector.py mysql'
+                        }
 
                     }
 

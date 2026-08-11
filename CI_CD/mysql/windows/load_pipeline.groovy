@@ -84,6 +84,16 @@ pipeline {
 
     parameters {
 
+        choice(
+            name: 'SCHEMA_SOURCE',
+            choices: [
+                'CSV',
+                'DATABASE'
+            ],
+            defaultValue: 'CSV',
+            description: 'Schema detection source'
+        )
+
         booleanParam(
             name: 'RUN_ASSESSMENT',
             defaultValue: true,
@@ -110,6 +120,7 @@ pipeline {
 
                 script {
                     env.MYSQL_LOAD_LOGGING_INITIALIZED = 'true'
+                    env.SCHEMA_SOURCE = params.SCHEMA_SOURCE
                 }
             }
         }
@@ -304,7 +315,11 @@ pipeline {
 
                 runTrackedStage('Schema Detection') {
 
-                    bat 'python scripts\\schema_detector.py mysql'
+                    if (params.SCHEMA_SOURCE == 'DATABASE') {
+                        bat 'python scripts\\schema_extractor.py mysql'
+                    } else {
+                        bat 'python scripts\\schema_detector.py mysql'
+                    }
 
                 }
 
