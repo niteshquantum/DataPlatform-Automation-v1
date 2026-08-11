@@ -59,18 +59,14 @@ def save():
         except Exception:
             pass
 
-    threading.Timer(1, stop_app).start()
+    # Give the browser time to render the success page before the Flask
+    # development server shuts down; this avoids a follow-up GET to /save.
+    threading.Timer(2.0, stop_app).start()
 
     return """
     <!DOCTYPE html>
 
     <html>
-
-    <head>
-
-    <meta http-equiv="refresh" content="1">
-
-    </head>
 
     <body>
 
