@@ -30,24 +30,6 @@ echo
 
 python3 scripts/python/mysql/setup/generate_liquibase_xml.py
 
-echo
-echo "-------------------------------------"
-echo "GENERATING INDEX SQL"
-echo "-------------------------------------"
-echo
-
-python3 -c "from scripts.python.common.objects.generators.generate_indexes import generate_indexes; generate_indexes('mysql')"
-
-echo
-echo "-------------------------------------"
-echo "GENERATING INDEX LIQUIBASE XML"
-echo "-------------------------------------"
-echo
-
-python3 -c "from scripts.python.common.objects.xml_generators.generate_index_xml import generate_index_xml; generate_index_xml('mysql')"
-
-
-
 SCHEMA_STATUS="$PROJECT_ROOT/metadata/mysql/schema_status.json"
 
 SCHEMA_CHANGED=$(python3 -c "

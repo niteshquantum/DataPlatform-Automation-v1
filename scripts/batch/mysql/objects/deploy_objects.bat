@@ -14,7 +14,7 @@ if errorlevel 1 (
 
 cd /d "%PROJECT_ROOT%"
 
-set "PYTHONPATH=%PROJECT_ROOT%;%PYTHONPATH%"
+export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/scripts/python/common:$PROJECT_ROOT/scripts/python/common/objects:$PYTHONPATH"
 
 
 echo.

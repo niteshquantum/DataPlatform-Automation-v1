@@ -19,9 +19,6 @@ def generate_index_xml(database):
         start=1
     ):
 
-        # Read generated index SQL so that the actual
-        # index name and table name can be passed
-        # to the Liquibase precondition.
         with open(
             sql_file,
             "r",
