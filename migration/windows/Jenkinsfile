@@ -80,9 +80,6 @@ pipeline {
 
     stages {
         stage('Initialize Migration') {
-            agent {
-                label 'windows-node'
-            }
             steps {
                 checkout scm
                 bat 'scripts\\batch\\migration\\windows\\initialize_migration.bat'
