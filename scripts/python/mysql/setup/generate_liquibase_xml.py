@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[4]
 
 schema_file = ROOT / "metadata" / "mysql" / "schema_registry.json"
 datatype_registry_file = ROOT / "metadata" / "mysql" / "datatype_registry.json"
-liquibase_dir = ROOT / "liquibase" / "mysql"
+liquibase_dir = ROOT / "liquibase" / "mysql"1
 
 liquibase_dir.mkdir(parents=True, exist_ok=True)
 
