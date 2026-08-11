@@ -7,13 +7,16 @@ LIQUIBASE_VIEW_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
     http://www.liquibase.org/xml/ns/dbchangelog
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <changeSet id="{id}" author="automation">
+    <changeSet
+        id="{id}"
+        author="automation"
+        runOnChange="true">
 
         <sqlFile
             path="{sql_path}"
             relativeToChangelogFile="false"
             splitStatements="false"
-            stripComments="false"/>            
+            stripComments="false"/>
 
     </changeSet>
 
