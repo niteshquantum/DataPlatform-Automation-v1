@@ -51,10 +51,15 @@ def save():
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
-    threading.Timer(
-        1,
-        lambda: os._exit(0)
-    ).start()
+    def stop_app():
+        try:
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func is not None:
+                func()
+        except Exception:
+            pass
+
+    threading.Timer(1, stop_app).start()
 
     return """
     <!DOCTYPE html>
@@ -117,11 +122,8 @@ if __name__ == "__main__":
 
             config.read(network_conf)
 
-            host = config["DEFAULT"]["JENKINS_HOST"]
-            port = config["DEFAULT"].get(
-                "SCHEMA_EDITOR_PORT",
-                "5000"
-            )
+            host = config["DEFAULT"].get("JENKINS_HOST", "127.0.0.1")
+            port = int(config["DEFAULT"].get("SCHEMA_EDITOR_PORT", "5000"))
 
             print(f"http://{host}:{port}")
 
@@ -149,9 +151,10 @@ if __name__ == "__main__":
     print("the Jenkins pipeline will continue automatically.")
     print("=" * 60 + "\n")
 
+    configured_port = int(os.environ.get("SCHEMA_EDITOR_PORT", "5000"))
     app.run(
         host="0.0.0.0",
-        port=5000,
+        port=configured_port,
         debug=False,
         use_reloader=False
     )

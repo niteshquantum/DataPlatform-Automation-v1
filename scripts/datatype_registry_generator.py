@@ -66,6 +66,14 @@ def main():
         / "datatype_registry.json"
     )
 
+    existing_registry = {}
+    if datatype_path.exists():
+        try:
+            with open(datatype_path, "r", encoding="utf-8") as f:
+                existing_registry = json.load(f)
+        except Exception:
+            existing_registry = {}
+
     if not schema_path.exists():
         print("schema_registry.json not found")
         return
@@ -157,11 +165,20 @@ def main():
                 sample_data.get(column, [])
             )
 
+            existing_column = existing_registry.get(table, {}).get(column, {})
+            previous_selected = existing_column.get("selected_type") if isinstance(existing_column, dict) else None
+            previous_final = existing_column.get("final_type") if isinstance(existing_column, dict) else None
+
+            selected_type = previous_selected if isinstance(previous_selected, str) and previous_selected.strip() else detected
+            final_type = previous_final if isinstance(previous_final, str) and previous_final.strip() else selected_type
+
             datatype_registry[table][column] = {
 
                 "detected_type": detected,
 
-                "selected_type": detected,
+                "selected_type": selected_type,
+
+                "final_type": final_type,
 
                 "sample_value":
                     sample_data.get(column, [""])[0]

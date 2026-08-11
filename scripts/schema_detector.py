@@ -157,43 +157,114 @@ def get_json_keys(file_path):
     except Exception as e:
         logger.error(f"Error reading JSON file {file_path}: {e}")
         return []
+def _normalize_column_name(column):
+    """Normalize a column name for safe compare operations."""
+    return str(column).strip().lower().replace("\ufeff", "")
+
+
+def _detect_renames(existing_columns, current_columns):
+    """Return a conservative rename map for one-to-one column renames."""
+    existing_norm = [_normalize_column_name(col) for col in existing_columns]
+    current_norm = [_normalize_column_name(col) for col in current_columns]
+
+    deleted = [col for col in existing_columns if _normalize_column_name(col) not in current_norm]
+    added = [col for col in current_columns if _normalize_column_name(col) not in existing_norm]
+
+    if len(deleted) != 1 or len(added) != 1:
+        return {}
+
+    old_name = deleted[0]
+    new_name = added[0]
+    old_key = _normalize_column_name(old_name)
+    new_key = _normalize_column_name(new_name)
+
+    if old_key == new_key:
+        return {old_name: new_name}
+
+    old_tokens = [token for token in old_key.split("_") if token]
+    new_tokens = [token for token in new_key.split("_") if token]
+
+    common_prefix = 0
+    while common_prefix < min(len(old_tokens), len(new_tokens)) and old_tokens[common_prefix] == new_tokens[common_prefix]:
+        common_prefix += 1
+
+    common_suffix = 0
+    while common_suffix < min(len(old_tokens) - common_prefix, len(new_tokens) - common_prefix) and old_tokens[-1 - common_suffix] == new_tokens[-1 - common_suffix]:
+        common_suffix += 1
+
+    old_core = old_tokens[common_prefix:len(old_tokens) - common_suffix]
+    new_core = new_tokens[common_prefix:len(new_tokens) - common_suffix]
+
+    if len(old_core) == 0 and len(new_core) == 1:
+        return {old_name: new_name}
+    if len(new_core) == 0 and len(old_core) == 1:
+        return {old_name: new_name}
+    if old_core == [] or new_core == []:
+        return {}
+    if old_core == new_core:
+        return {old_name: new_name}
+    if len(old_core) == 1 and len(new_core) == 1 and old_core[0] != new_core[0]:
+        return {old_name: new_name}
+    if len(old_core) <= 2 and len(new_core) <= 2 and set(old_core) == set(new_core):
+        return {old_name: new_name}
+
+    return {}
+
+
 def detect_schema_changes(existing_columns, current_columns):
     """
     Compare existing and current schema.
-    Returns NEW, CHANGED, DELETED or UNCHANGED.
+    Returns NEW, CHANGED, DELETED, RENAMED, or UNCHANGED.
     """
+    existing = [_normalize_column_name(c) for c in existing_columns]
+    current = [_normalize_column_name(c) for c in current_columns]
 
-    existing = {c.lower().strip() for c in existing_columns}
-    current = {c.lower().strip() for c in current_columns}
-
-    added = list(current - existing)
-    deleted = list(existing - current)
+    added = [col for col in current_columns if _normalize_column_name(col) not in existing]
+    deleted = [col for col in existing_columns if _normalize_column_name(col) not in current]
 
     if not existing_columns:
         return {
             "status": "NEW",
-            "added_columns": current_columns,
-            "deleted_columns": []
+            "added_columns": list(current_columns),
+            "deleted_columns": [],
+            "renamed_columns": {},
+            "datatype_changes": [],
+        }
+
+    renamed = _detect_renames(existing_columns, current_columns)
+    if renamed:
+        return {
+            "status": "RENAMED",
+            "added_columns": list(added),
+            "deleted_columns": list(deleted),
+            "renamed_columns": renamed,
+            "datatype_changes": [],
         }
 
     if added:
         return {
             "status": "CHANGED",
-            "added_columns": added,
-            "deleted_columns": deleted
+            "added_columns": list(added),
+            "deleted_columns": list(deleted),
+            "renamed_columns": {},
+            "datatype_changes": [],
         }
 
     if deleted:
         return {
             "status": "DELETED",
             "added_columns": [],
-            "deleted_columns": deleted
+            "deleted_columns": list(deleted),
+            "renamed_columns": {},
+            "datatype_changes": [],
         }
 
     return {
         "status": "UNCHANGED",
         "added_columns": [],
-        "deleted_columns": []
+        "deleted_columns": [],
+        "renamed_columns": {},
+        "datatype_changes": [],
     }
 def update_schema_registry(table_name, columns, registry_path):
     """
@@ -373,7 +444,7 @@ def main():
 
                 existing_columns = registry.get(table_name, [])
 
-            result = detect_schema_changes(existing_columns, mapped_headers)
+            result = detect_schema_changes(existing_columns, mapped_keys)
             cdc_status["tables"][table_name] = result
             log_schema_status(result)
             summary[result["status"].lower()] += 1

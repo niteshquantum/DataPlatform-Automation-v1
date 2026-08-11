@@ -489,29 +489,23 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
         return 0
 
     existing_columns = get_table_columns(conn, db_type, table_name)
-    if existing_columns and load_mode == "reload":
-        truncate_table(conn, db_type, table_name)
     if not existing_columns:
-        if strict_schema:
-            raise Exception(
-                f"Strict schema mode: table '{table_name}' does not exist. "
-                f"Refusing to create it."
-            )
-        create_table(conn, db_type, table_name, file_columns)
-        existing_columns = file_columns
-    else:
-        new_columns = [col for col in file_columns if col not in existing_columns]
-        if new_columns:
-            if strict_schema:
-                raise Exception(
-                    f"Strict schema mode: table '{table_name}' has missing columns "
-                    f"not present in target schema: {new_columns}"
-                )
-            add_missing_columns(conn, db_type, table_name, new_columns)
-            existing_columns.extend(new_columns)
+        raise ValueError(
+            f"Table '{table_name}' does not exist in the target database. "
+            "Schema changes are managed by Liquibase and data loading is insert-only."
+        )
 
-    actual_columns = [col for col in existing_columns if col in file_columns] + \
-                     [col for col in existing_columns if col not in file_columns]
+    missing_columns = [col for col in file_columns if col not in existing_columns]
+    if missing_columns:
+        raise ValueError(
+            f"File '{path.name}' contains columns not present in target table '{table_name}': {missing_columns}. "
+            "Resolve the schema mismatch before loading."
+        )
+
+    if load_mode == "reload":
+        truncate_table(conn, db_type, table_name)
+
+    actual_columns = [col for col in existing_columns if col in file_columns]
     rows_prepared = prepare_rows(rows, actual_columns, file_columns)
     inserted = insert_rows(conn, db_type, table_name, actual_columns, rows_prepared)
     return inserted
@@ -649,9 +643,13 @@ def main():
     conn.close()
 
     logger.info("Data loader completed")
-    
-
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        raise SystemExit(main())
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        raise SystemExit(1)
