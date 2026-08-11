@@ -1,0 +1,104 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        choice(
+            name: 'SOURCE_DATABASE',
+            choices: ['MSSQL', 'MYSQL', 'POSTGRESQL'],
+            description: 'Source Database Type'
+        )
+        choice(
+            name: 'DESTINATION_DATABASE',
+            choices: ['MSSQL', 'MYSQL', 'POSTGRESQL'],
+            description: 'Destination Database Type'
+        )
+        string(
+            name: 'SOURCE_HOST',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_PORT',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_DB',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_SCHEMA',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_USER',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        password(
+            name: 'SOURCE_PASSWORD',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_HOST',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_PORT',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_DB',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_SCHEMA',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_USER',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        password(
+            name: 'DESTINATION_PASSWORD',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+    }
+
+    stages {
+        stage('Initialize Migration') {
+            agent {
+                label 'windows-node'
+            }
+            steps {
+                checkout scm
+                bat 'scripts\\batch\\migration\\windows\\initialize_migration.bat'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "MIGRATION INITIALIZATION SUCCESSFUL"
+        }
+        failure {
+            echo "MIGRATION INITIALIZATION FAILED"
+        }
+        always {
+            echo 'MIGRATION INITIALIZATION COMPLETED'
+        }
+    }
+}
