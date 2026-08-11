@@ -110,7 +110,56 @@ def detect_safe_rename(existing_columns, current_columns):
     if len(old_core) == 1 and len(new_core) == 1 and old_core[0] != new_core[0]:
         return {old_name: new_name}
     return {}
+def is_indexed_column(table_name, column_name):
+    """
+    Check whether a column is part of a generated MySQL index.
+    """
 
+    indexes_dir = (
+        ROOT
+        / "objects"
+        / "mysql"
+        / "generated"
+        / "indexes"
+    )
+
+    if not indexes_dir.exists():
+        return False
+
+    table_name = _normalize_name(table_name)
+    column_name = _normalize_name(column_name)
+
+    for sql_file in indexes_dir.glob("*.sql"):
+        try:
+            sql = sql_file.read_text(
+                encoding="utf-8"
+            )
+
+            # CREATE INDEX index_name ON table_name (column_name)
+            match = re.search(
+                r"CREATE\s+INDEX\s+[`\"]?([^`\"\s]+)[`\"]?"
+                r"\s+ON\s+[`\"]?([^`\"\s]+)[`\"]?"
+                r"\s*\(\s*[`\"]?([^`\"\s]+)[`\"]?\s*\)",
+                sql,
+                re.IGNORECASE
+            )
+
+            if not match:
+                continue
+
+            indexed_table = _normalize_name(match.group(2))
+            indexed_column = _normalize_name(match.group(3))
+
+            if (
+                indexed_table == table_name
+                and indexed_column == column_name
+            ):
+                return True
+
+        except Exception:
+            continue
+
+    return False
 
 def write_change_set(filename, xml_content):
     path = liquibase_dir / filename
@@ -191,24 +240,103 @@ for table_name, columns in sorted(schema_registry.items()):
         generated_any = True
 
     for column in clean_columns:
+
         normalized = _normalize_name(column)
-        old_type = previous_types.get(table_name, {}).get(normalized)
-        new_type = get_column_datatype(table_name, column)
-        if normalized in { _normalize_name(c) for c in previous_columns } and old_type and old_type != new_type:
-            change_id = f"mysql-modify-{table_name}-{normalized}"
-            filename = f"{change_id}.xml"
-            xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet id="{change_id}" author="tanisha">
-        <preConditions onFail="MARK_RAN">
-            <columnExists tableName="{table_name}" columnName="{column}"/>
-        </preConditions>
-        <modifyDataType tableName="{table_name}" columnName="{column}" newDataType="{new_type}"/>
-    </changeSet>
-</databaseChangeLog>
-'''
-            write_change_set(filename, xml_content)
-            generated_any = True
+
+        old_type = previous_types.get(
+            table_name,
+            {}
+        ).get(normalized)
+
+        new_type = get_column_datatype(
+            table_name,
+            column
+        )
+
+        column_exists = (
+            normalized
+            in {
+                _normalize_name(c)
+                for c in previous_columns
+            }
+        )
+
+        if not column_exists:
+            continue
+
+        if not old_type:
+            continue
+
+        if old_type == new_type:
+            continue
+
+        indexed = is_indexed_column(
+            table_name,
+            column
+        )
+
+        unsafe_indexed_type = (
+            indexed
+            and (
+                new_type.startswith("TEXT")
+                or new_type.startswith("BLOB")
+            )
+        )
+
+        if unsafe_indexed_type:
+
+            print(
+                f"WARNING: Skipping unsafe datatype change "
+                f"{table_name}.{column}: "
+                f"{old_type} -> {new_type}. "
+                f"The column is indexed and MySQL does not "
+                f"allow a full TEXT/BLOB index without a key length."
+            )
+
+            continue
+
+        change_id = (
+            f"mysql-modify-"
+            f"{table_name}-"
+            f"{normalized}"
+        )
+
+        filename = f"{change_id}.xml"
+
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+    <databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+        <changeSet
+            id="{change_id}"
+            author="tanisha">
+
+            <preConditions onFail="MARK_RAN">
+                <columnExists
+                    tableName="{table_name}"
+                    columnName="{column}"/>
+            </preConditions>
+
+            <modifyDataType
+                tableName="{table_name}"
+                columnName="{column}"
+                newDataType="{new_type}"/>
+
+        </changeSet>
+
+    </databaseChangeLog>
+    '''
+
+        write_change_set(
+            filename,
+            xml_content
+        )
+
+        generated_any = True
 
 if not generated_any:
     print("No schema changes detected. Nothing to generate.")
