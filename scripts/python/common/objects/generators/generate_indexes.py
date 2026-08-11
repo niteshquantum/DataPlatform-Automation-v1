@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from config_loader import get_project_root
 from template_loader import load_template
