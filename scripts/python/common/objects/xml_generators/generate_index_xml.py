@@ -1,3 +1,5 @@
+import re
+
 from xml_generators.xml_generator_base import XMLGeneratorBase
 
 
@@ -12,18 +14,45 @@ def generate_index_xml(database):
         generator.sql_folder.glob("*.sql")
     )
 
-    for change_id, sql_file in enumerate(sql_files, start=1):
+    for change_id, sql_file in enumerate(
+        sql_files,
+        start=1
+    ):
+
+        # Read generated index SQL so that the actual
+        # index name and table name can be passed
+        # to the Liquibase precondition.
+        with open(
+            sql_file,
+            "r",
+            encoding="utf-8"
+        ) as file:
+            sql = file.read()
+
+        match = re.search(
+            r"CREATE\s+INDEX\s+([`\"\w]+)\s+ON\s+([`\"\w]+)",
+            sql,
+            re.IGNORECASE
+        )
+
+        if not match:
+            raise ValueError(
+                f"Could not determine index name and table name "
+                f"from SQL file: {sql_file}"
+            )
+
+        index_name = match.group(1).strip("`\"")
+        table_name = match.group(2).strip("`\"")
 
         xml = generator.template.format(
-
             id=f"index-{change_id}",
-
             sql_path=(
-                        sql_file
-                        .relative_to(generator.project_root)
-                        .as_posix()
-                    )
-
+                sql_file
+                .relative_to(generator.project_root)
+                .as_posix()
+            ),
+            index_name=index_name,
+            table_name=table_name
         )
 
         xml_file = (
@@ -36,7 +65,8 @@ def generate_index_xml(database):
             "w",
             encoding="utf-8"
         ) as file:
-
             file.write(xml)
 
-        print(f"Generated : {xml_file.name}")
+        print(
+            f"Generated : {xml_file.name}"
+        )
