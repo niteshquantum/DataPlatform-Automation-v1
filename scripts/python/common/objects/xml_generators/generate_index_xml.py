@@ -34,7 +34,7 @@ def generate_index_xml(database):
 
         if not match:
             raise ValueError(
-                f"Could not determine index name and table name "
+                f"Unable to determine index name/table name "
                 f"from SQL file: {sql_file}"
             )
 
