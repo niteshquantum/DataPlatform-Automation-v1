@@ -34,9 +34,9 @@ def run_migration_liquibase(dest_db_type):
         print(f"ERROR: Migration Liquibase runner not found: {runner_path}")
         return 1
 
-    changelog = ROOT / "liquibase" / dest_db_type.lower() / "master.xml"
+    changelog = ROOT / "liquibase" / "migration" / dest_db_type.lower() / "master.xml"
     if not changelog.exists():
-        print(f"ERROR: Changelog not found: {changelog}")
+        print(f"ERROR: Migration changelog not found: {changelog}")
         return 1
 
     changelog_rel = changelog.relative_to(ROOT)
@@ -66,7 +66,7 @@ def print_apply_summary(dest_db_type):
     print("=" * 48)
     print()
     print(f"Destination Database : {dest_db_type}")
-    print(f"Changelog            : liquibase/{dest_db_type.lower()}/master.xml")
+    print(f"Changelog            : liquibase/migration/{dest_db_type.lower()}/master.xml")
     print()
     print("APPLY SCHEMA: PASS")
     print()

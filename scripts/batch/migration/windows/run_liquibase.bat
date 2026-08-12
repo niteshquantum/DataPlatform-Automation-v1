@@ -35,7 +35,7 @@ if "%DB_TYPE%"=="" (
 )
 
 if "%CHANGELOG%"=="" (
-    set "CHANGELOG=liquibase\%DB_TYPE%\master.xml"
+    set "CHANGELOG=liquibase\migration\%DB_TYPE%\master.xml"
 )
 
 if "%LB_COMMAND%"=="" (

@@ -1,6 +1,7 @@
+import json
+import re
 import os
 import sys
-import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -71,9 +72,9 @@ def ensure_master_objects_xml(liquibase_dir):
     return master_objects
 
 
-def update_master_xml(liquibase_dir):
+def update_migration_master_xml(liquibase_migration_dir):
     xml_files = sorted([
-        f.name for f in liquibase_dir.glob("*.xml")
+        f.name for f in liquibase_migration_dir.glob("*.xml")
         if f.name != "master.xml"
     ])
 
@@ -82,7 +83,7 @@ def update_master_xml(liquibase_dir):
         for fname in xml_files
     ])
 
-    master_path = liquibase_dir / "master.xml"
+    master_path = liquibase_migration_dir / "master.xml"
     content = (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"\n'
@@ -94,12 +95,157 @@ def update_master_xml(liquibase_dir):
     )
 
     master_path.write_text(content, encoding="utf-8")
-    print(f"Updated {master_path.name} with {len(xml_files)} include(s)")
+    print(f"Updated migration master.xml with {len(xml_files)} include(s)")
     return master_path
 
 
+def generate_migration_ddl(dest_db_type):
+    schema_file = ROOT / "metadata" / dest_db_type.lower() / "schema_registry.json"
+    liquibase_migration_dir = ROOT / "liquibase" / "migration" / dest_db_type.lower()
+    status_file = ROOT / "metadata" / dest_db_type.lower() / "schema_status.json"
+
+    if not schema_file.exists():
+        print(f"ERROR: Schema registry not found: {schema_file}")
+        return 1
+
+    with open(schema_file, "r", encoding="utf-8") as f:
+        schema_registry = json.load(f)
+
+    existing_files = sorted([
+        f for f in liquibase_migration_dir.glob("*.xml")
+        if f.name != "master.xml"
+    ])
+
+    covered_columns = {}
+
+    column_pattern = re.compile(r'<column name="([^"]+)"')
+    table_pattern = re.compile(r'tableName="([^"]+)"')
+
+    for file in existing_files:
+        try:
+            content = file.read_text(encoding="utf-8")
+            table_match = table_pattern.search(content)
+            if not table_match:
+                continue
+            table_name = table_match.group(1).lower()
+            cols = {c.lower() for c in column_pattern.findall(content)}
+            covered_columns.setdefault(table_name, set()).update(cols)
+        except Exception:
+            pass
+
+    next_number = len(existing_files) + 1
+    generated_any = False
+
+    for table_name, columns in sorted(schema_registry.items()):
+        table_name = table_name.lower()
+        clean_columns = [c.replace("\ufeff", "").strip() for c in columns]
+
+        already_covered = covered_columns.get(table_name, set())
+        new_columns = [c for c in clean_columns if c.lower() not in already_covered]
+
+        if not new_columns:
+            continue
+
+        change_id = f"{next_number:03d}"
+
+        if table_name not in covered_columns:
+            filename = f"{change_id}_create_{table_name}.xml"
+            xml_path = liquibase_migration_dir / filename
+
+            column_xml = ""
+            for col in new_columns:
+                column_xml += f'''
+        <column name="{col}" type="VARCHAR(255)"/>
+'''
+
+            xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="{change_id}" author="tanisha">
+
+    <preConditions onFail="MARK_RAN">
+        <not>
+            <tableExists tableName="{table_name}"/>
+        </not>
+    </preConditions>
+
+    <createTable tableName="{table_name}">
+{column_xml}
+        </createTable>
+
+    </changeSet>
+
+</databaseChangeLog>
+'''
+        else:
+            filename = f"{change_id}_alter_{table_name}_add_columns.xml"
+            xml_path = liquibase_migration_dir / filename
+
+            add_column_xml = ""
+            precondition_checks = ""
+            for col in new_columns:
+                add_column_xml += f'''
+        <column name="{col}" type="VARCHAR(255)"/>
+'''
+                precondition_checks += f'''
+            <not>
+                <columnExists tableName="{table_name}" columnName="{col}"/>
+            </not>
+'''
+
+            xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="{change_id}" author="tanisha">
+
+    <preConditions onFail="MARK_RAN">
+        <and>
+{precondition_checks}
+        </and>
+    </preConditions>
+
+    <addColumn tableName="{table_name}">
+{add_column_xml}
+        </addColumn>
+
+    </changeSet>
+
+</databaseChangeLog>
+'''
+
+        with open(xml_path, "w", encoding="utf-8") as f:
+            f.write(xml_content)
+
+        print(f"Generated {filename}")
+
+        covered_columns.setdefault(table_name, set()).update(c.lower() for c in new_columns)
+        next_number += 1
+        generated_any = True
+
+    if not generated_any:
+        print("No schema changes detected. Nothing to generate.")
+
+    status_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(status_file, "w", encoding="utf-8") as f:
+        json.dump({"schema_changed": generated_any}, f, indent=4)
+
+    return 0
+
+
 def print_generation_summary(dest_db_type):
-    liquibase_dir = ROOT / "liquibase" / dest_db_type.lower()
+    liquibase_migration_dir = ROOT / "liquibase" / "migration" / dest_db_type.lower()
 
     print()
     print("=" * 48)
@@ -107,11 +253,11 @@ def print_generation_summary(dest_db_type):
     print("=" * 48)
     print()
     print(f"Destination Database : {dest_db_type}")
-    print(f"Liquibase Directory   : {liquibase_dir}")
+    print(f"Liquibase Directory   : {liquibase_migration_dir}")
     print()
 
     xml_files = sorted([
-        f for f in liquibase_dir.glob("*.xml")
+        f for f in liquibase_migration_dir.glob("*.xml")
         if f.name not in ("master.xml", "master_objects.xml")
     ])
 
@@ -141,16 +287,16 @@ def main():
         print(f"Destination Database : {dest_db_type}")
         print()
 
-        liquibase_dir = ROOT / "liquibase" / dest_db_type.lower()
-        liquibase_dir.mkdir(parents=True, exist_ok=True)
+        liquibase_migration_dir = ROOT / "liquibase" / "migration" / dest_db_type.lower()
+        liquibase_migration_dir.mkdir(parents=True, exist_ok=True)
 
-        rc = run_generator(dest_db_type)
+        rc = generate_migration_ddl(dest_db_type)
         if rc != 0:
             print("ERROR: DDL generation failed")
             return rc
 
-        ensure_master_objects_xml(liquibase_dir)
-        update_master_xml(liquibase_dir)
+        ensure_master_objects_xml(liquibase_migration_dir)
+        update_migration_master_xml(liquibase_migration_dir)
 
         return print_generation_summary(dest_db_type)
 
