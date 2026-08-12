@@ -229,10 +229,10 @@ def create_database(db_type, config, role_prefix):
 
     if db_type_upper == "MSSQL":
         conn = get_connection(db_type, config, role_prefix, database="master")
+        conn.autocommit = True
         cursor = conn.cursor()
         try:
             cursor.execute(f"CREATE DATABASE [{db_name}]")
-            conn.commit()
         finally:
             cursor.close()
             conn.close()
@@ -249,10 +249,10 @@ def create_database(db_type, config, role_prefix):
 
     elif db_type_upper == "POSTGRESQL":
         conn = get_connection(db_type, config, role_prefix, database="postgres")
+        conn.autocommit = True
         cursor = conn.cursor()
         try:
             cursor.execute(f'CREATE DATABASE "{db_name}"')
-            conn.commit()
         finally:
             cursor.close()
             conn.close()
@@ -301,9 +301,6 @@ def main():
 
         print_validation_summary(role, dest_effective)
 
-        test_connection(db_type, dest_effective, role)
-        print(f"Connection: PASS")
-
         if database_exists(db_type, dest_effective, role):
             print(f"Database : PASS (exists)")
         else:
@@ -312,6 +309,9 @@ def main():
             print(f"Creating database {db_name}...")
             create_database(db_type, dest_effective, role)
             print(f"Database created successfully")
+
+        test_connection(db_type, dest_effective, role)
+        print(f"Connection: PASS")
 
         database = verify_database(db_type, dest_effective, role)
         print(f"Database : PASS (verified: {database})")
