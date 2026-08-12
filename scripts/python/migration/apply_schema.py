@@ -13,12 +13,6 @@ from scripts.python.migration.initialize import (
 
 MIGRATION_CONFIG_DIR = ROOT / "config" / "windows" / "migration"
 
-EXTRA_DB_FIELDS = {
-    "MSSQL": ["ODBC_DRIVER", "DRIVER_VERSION", "INSTANCE", "LIQUIBASE_VERSION"],
-    "MYSQL": ["DRIVER_VERSION", "LIQUIBASE_VERSION"],
-    "POSTGRESQL": ["DRIVER_VERSION", "LIQUIBASE_VERSION"],
-}
-
 
 def load_db_defaults():
     db_defaults = {}
@@ -31,55 +25,13 @@ def get_destination_config():
     dest_defaults = load_migration_config("destination.conf")
     db_defaults = load_db_defaults()
     dest_effective = build_effective_config(dest_defaults, db_defaults, "DESTINATION")
-    return dest_effective, db_defaults
+    return dest_effective
 
 
-def write_temp_db_config(effective_config, db_defaults, db_type):
-    db_type_upper = db_type.upper()
-    config_path = ROOT / "config" / "windows" / f"{db_type.lower()}.conf"
-
-    backup_path = config_path.with_suffix(".conf.bak")
-    original_content = config_path.read_text(encoding="utf-8") if config_path.exists() else ""
-    backup_path.write_text(original_content, encoding="utf-8")
-
-    lines = []
-    for key, value in effective_config.items():
-        if key.startswith("DESTINATION_"):
-            field = key[len("DESTINATION_"):]
-            db_key = f"{db_type_upper}_{field}"
-            lines.append(f"{db_key}={value}")
-
-    for field in EXTRA_DB_FIELDS.get(db_type_upper, []):
-        db_key = f"{db_type_upper}_{field}"
-        if db_key in db_defaults:
-            lines.append(f"{db_key}={db_defaults[db_key]}")
-
-    config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return config_path, backup_path
-
-
-def restore_db_config(config_path, backup_path):
-    if backup_path.exists():
-        backup_content = backup_path.read_text(encoding="utf-8")
-        if backup_content:
-            config_path.write_text(backup_content, encoding="utf-8")
-        else:
-            config_path.unlink(missing_ok=True)
-        backup_path.unlink(missing_ok=True)
-    else:
-        config_path.unlink(missing_ok=True)
-
-
-def run_liquibase(dest_db_type):
-    runner_map = {
-        "MSSQL": "scripts/batch/mssql/setup/run_liquibase.bat",
-        "MYSQL": "scripts/batch/mysql/setup/run_liquibase.bat",
-        "POSTGRESQL": "scripts/batch/postgresql/setup/run_liquibase.bat",
-    }
-
-    runner_path = ROOT / runner_map.get(dest_db_type, "")
+def run_migration_liquibase(dest_db_type):
+    runner_path = ROOT / "scripts" / "batch" / "migration" / "windows" / "run_liquibase.bat"
     if not runner_path.exists():
-        print(f"ERROR: Liquibase runner not found: {runner_path}")
+        print(f"ERROR: Migration Liquibase runner not found: {runner_path}")
         return 1
 
     changelog = ROOT / "liquibase" / dest_db_type.lower() / "master.xml"
@@ -92,7 +44,9 @@ def run_liquibase(dest_db_type):
     cmd = [
         "cmd", "/c",
         str(runner_path),
+        dest_db_type,
         str(changelog_rel),
+        "update",
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -121,7 +75,7 @@ def print_apply_summary(dest_db_type):
 
 def main():
     try:
-        dest_effective, db_defaults = get_destination_config()
+        dest_effective = get_destination_config()
         dest_db_type = dest_effective.get("DESTINATION_DATABASE", "").upper()
 
         if not dest_db_type:
@@ -136,17 +90,10 @@ def main():
         print(f"Destination Database : {dest_db_type}")
         print()
 
-        config_path = None
-        backup_path = None
-        try:
-            config_path, backup_path = write_temp_db_config(dest_effective, db_defaults, dest_db_type)
-            rc = run_liquibase(dest_db_type)
-            if rc != 0:
-                print("ERROR: Liquibase update failed")
-                return rc
-        finally:
-            if config_path and backup_path:
-                restore_db_config(config_path, backup_path)
+        rc = run_migration_liquibase(dest_db_type)
+        if rc != 0:
+            print("ERROR: Liquibase update failed")
+            return rc
 
         return print_apply_summary(dest_db_type)
 
