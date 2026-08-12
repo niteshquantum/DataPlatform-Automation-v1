@@ -56,16 +56,17 @@ def add_extra_fields(effective_config, db_defaults, role_prefix, db_type):
             effective_config[role_key] = db_defaults[db_key]
 
 
-def get_connection(db_type, config, role_prefix):
+def get_connection(db_type, config, role_prefix, database=None):
     prefix = role_prefix
     db_type_upper = db_type.upper()
     module = import_db_module(db_type)
 
     if db_type_upper == "MSSQL":
+        target_db = database or config[f"{prefix}_DB"]
         connection_string = (
             f"DRIVER={{{config[f'{prefix}_ODBC_DRIVER']}}};"
             f"SERVER={config[f'{prefix}_HOST']},{config[f'{prefix}_PORT']};"
-            f"DATABASE={config[f'{prefix}_DB']};"
+            f"DATABASE={target_db};"
             f"UID={config[f'{prefix}_USER']};"
             f"PWD={config[f'{prefix}_PASSWORD']};"
             "Encrypt=no;"
@@ -75,21 +76,24 @@ def get_connection(db_type, config, role_prefix):
         return module.connect(connection_string)
 
     elif db_type_upper == "MYSQL":
-        return module.connect(
-            host=config[f"{prefix}_HOST"],
-            port=int(config[f"{prefix}_PORT"]),
-            user=config[f"{prefix}_USER"],
-            password=config[f"{prefix}_PASSWORD"],
-            database=config[f"{prefix}_DB"],
-        )
+        conn_kwargs = {
+            "host": config[f"{prefix}_HOST"],
+            "port": int(config[f"{prefix}_PORT"]),
+            "user": config[f"{prefix}_USER"],
+            "password": config[f"{prefix}_PASSWORD"],
+        }
+        if database:
+            conn_kwargs["database"] = database
+        return module.connect(**conn_kwargs)
 
     elif db_type_upper == "POSTGRESQL":
+        target_db = database or config[f"{prefix}_DB"]
         return module.connect(
             host=config[f"{prefix}_HOST"],
             port=int(config[f"{prefix}_PORT"]),
             user=config[f"{prefix}_USER"],
             password=config[f"{prefix}_PASSWORD"],
-            database=config[f"{prefix}_DB"],
+            database=target_db,
         )
 
     else:
@@ -108,7 +112,7 @@ def test_connection(db_type, config, role_prefix):
 def verify_database(db_type, config, role_prefix):
     prefix = role_prefix
     db_type_upper = db_type.upper()
-    conn = get_connection(db_type, config, role_prefix)
+    conn = get_connection(db_type, config, role_prefix, database=config[f"{prefix}_DB"])
     cursor = conn.cursor()
 
     try:
@@ -169,6 +173,94 @@ def verify_schema(db_type, config, role_prefix):
         conn.close()
 
 
+def database_exists(db_type, config, role_prefix):
+    prefix = role_prefix
+    db_type_upper = db_type.upper()
+    db_name = config[f"{prefix}_DB"]
+
+    if db_type_upper == "MSSQL":
+        conn = get_connection(db_type, config, role_prefix, database="master")
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT name FROM sys.databases WHERE name = ?",
+                (db_name,),
+            )
+            result = cursor.fetchone()
+            return result is not None
+        finally:
+            cursor.close()
+            conn.close()
+
+    elif db_type_upper == "MYSQL":
+        conn = get_connection(db_type, config, role_prefix)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SHOW DATABASES")
+            for (name,) in cursor.fetchall():
+                if name.lower() == db_name.lower():
+                    return True
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    elif db_type_upper == "POSTGRESQL":
+        conn = get_connection(db_type, config, role_prefix, database="postgres")
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT datname FROM pg_database WHERE datname = %s",
+                (db_name,),
+            )
+            result = cursor.fetchone()
+            return result is not None
+        finally:
+            cursor.close()
+            conn.close()
+
+    return False
+
+
+def create_database(db_type, config, role_prefix):
+    prefix = role_prefix
+    db_type_upper = db_type.upper()
+    db_name = config[f"{prefix}_DB"]
+
+    if db_type_upper == "MSSQL":
+        conn = get_connection(db_type, config, role_prefix, database="master")
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"CREATE DATABASE [{db_name}]")
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+
+    elif db_type_upper == "MYSQL":
+        conn = get_connection(db_type, config, role_prefix)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"CREATE DATABASE `{db_name}`")
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+
+    elif db_type_upper == "POSTGRESQL":
+        conn = get_connection(db_type, config, role_prefix, database="postgres")
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f'CREATE DATABASE "{db_name}"')
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+
+    else:
+        raise ValueError(f"Unsupported database type: {db_type}")
+
+
 def print_validation_summary(role, config):
     prefix = role
     db_type = config.get(f"{role}_DATABASE", "").upper()
@@ -211,6 +303,15 @@ def main():
 
         test_connection(db_type, dest_effective, role)
         print(f"Connection: PASS")
+
+        if database_exists(db_type, dest_effective, role):
+            print(f"Database : PASS (exists)")
+        else:
+            db_name = dest_effective.get(f"{role}_DB", "")
+            print(f"Database {db_name} does not exist")
+            print(f"Creating database {db_name}...")
+            create_database(db_type, dest_effective, role)
+            print(f"Database created successfully")
 
         database = verify_database(db_type, dest_effective, role)
         print(f"Database : PASS (verified: {database})")

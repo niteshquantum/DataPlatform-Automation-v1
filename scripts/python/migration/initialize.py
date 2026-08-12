@@ -29,7 +29,7 @@ def env_override(config, role_prefix):
         if env_key.startswith(prefix):
             value = os.environ[env_key]
             if value:
-                config[env_key] = value
+                config[env_key] = value.strip()
     return config
 
 
@@ -51,7 +51,7 @@ def build_effective_config(role_defaults, db_defaults, role_prefix):
     db_type = role_defaults.get(f"{role_prefix}_DATABASE", "")
     env_db = os.environ.get(f"{role_prefix}_DATABASE", "")
     if env_db:
-        db_type = env_db
+        db_type = env_db.strip()
 
     mapped_db_defaults = map_db_config_to_role(db_defaults, db_type, role_prefix)
     effective = dict(mapped_db_defaults)

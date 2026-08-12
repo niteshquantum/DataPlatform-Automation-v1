@@ -27,10 +27,15 @@ REM =====================================
 set "DB_TYPE=%~1"
 set "CHANGELOG=%~2"
 set "LB_COMMAND=%~3"
+set "ARG_DB_HOST=%~4"
+set "ARG_DB_PORT=%~5"
+set "ARG_DB_NAME=%~6"
+set "ARG_DB_USER=%~7"
+set "ARG_DB_PASSWORD=%~8"
 
 if "%DB_TYPE%"=="" (
     echo ERROR: Database type not provided
-    echo Usage: run_liquibase.bat ^<DB_TYPE^> ^<CHANGELOG^> [LB_COMMAND]
+    echo Usage: run_liquibase.bat ^<DB_TYPE^> ^<CHANGELOG^> [LB_COMMAND] [HOST PORT DB USER PASSWORD]
     exit /b 1
 )
 
@@ -82,30 +87,54 @@ for /f "tokens=1,2 delims==" %%A in (%CONFIG_FILE%) do (
 )
 
 REM =====================================
+REM OVERRIDE WITH EXPLICIT ARGUMENTS IF PROVIDED
+REM =====================================
+
+if defined ARG_DB_HOST (
+    set "DB_HOST=%ARG_DB_HOST%"
+)
+
+if defined ARG_DB_PORT (
+    set "DB_PORT=%ARG_DB_PORT%"
+)
+
+if defined ARG_DB_NAME (
+    set "DB_NAME=%ARG_DB_NAME%"
+)
+
+if defined ARG_DB_USER (
+    set "DB_USER=%ARG_DB_USER%"
+)
+
+if defined ARG_DB_PASSWORD (
+    set "DB_PASSWORD=%ARG_DB_PASSWORD%"
+)
+
+REM =====================================
 REM VALIDATE REQUIRED CONFIG
 REM =====================================
 
 if not defined DB_HOST (
-    echo ERROR: %DB_TYPE%_HOST NOT FOUND IN MIGRATION CONFIG
-    echo File: %CONFIG_FILE%
+    echo ERROR: %DB_TYPE%_HOST NOT FOUND
+    echo Provide via argument or migration config file.
     exit /b 1
 )
 
 if not defined DB_PORT (
-    echo ERROR: %DB_TYPE%_PORT NOT FOUND IN MIGRATION CONFIG
-    echo File: %CONFIG_FILE%
+    echo ERROR: %DB_TYPE%_PORT NOT FOUND
+    echo Provide via argument or migration config file.
     exit /b 1
 )
 
 if not defined DB_NAME (
-    echo ERROR: %DB_TYPE%_DB NOT FOUND IN MIGRATION CONFIG
-    echo File: %CONFIG_FILE%
+    echo ERROR: %DB_TYPE%_DB NOT FOUND
+    echo Provide via argument or migration config file.
     exit /b 1
 )
 
 if not defined DB_USER (
-    echo ERROR: %DB_TYPE%_USER NOT FOUND IN MIGRATION CONFIG
-    echo File: %CONFIG_FILE%
+    echo ERROR: %DB_TYPE%_USER NOT FOUND
+    echo Provide via argument or migration config file.
     exit /b 1
 )
 
