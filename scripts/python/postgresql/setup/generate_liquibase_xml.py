@@ -2,6 +2,11 @@ import json
 import re
 from pathlib import Path
 
+from scripts.python.common.liquibase_schema_helpers import (
+    collect_existing_change_files,
+    get_next_change_number,
+)
+
 ROOT = Path(__file__).resolve().parents[4]
 
 schema_file = (
@@ -36,70 +41,17 @@ existing_files = sorted(
     if f.name != "master.xml"
 )
 
-# Parse existing files BEFORE any deletion to discover which
-# columns are already covered by deployed changesets.
+existing_changes = collect_existing_change_files(
+    liquibase_dir,
+    exclude_names={"master.xml"},
+)
+
 covered_columns = {}
+for parsed in existing_changes:
+    covered_columns.setdefault(parsed["table_name"], set()).update(parsed["columns"])
 
-column_pattern = re.compile(r'<column name="([^"]+)"')
-
-table_pattern = re.compile(r'tableName="([^"]+)"')
-
-
-for file in existing_files:
-
-    try:
-
-        content = file.read_text(encoding="utf-8")
-
-        table_match = table_pattern.search(content)
-
-        if not table_match:
-            continue
-
-        table_name = table_match.group(1).lower()
-
-        cols = {
-            c.lower()
-            for c in column_pattern.findall(content)
-        }
-
-        covered_columns.setdefault(
-            table_name,
-            set()
-        ).update(cols)
-
-    except Exception:
-        pass
-
-
-# Remove only XML files for tables that no longer exist in the
-# current schema registry. This prevents stale changelogs from
-# referencing dropped tables while preserving deployed history
-# for existing tables.
-for old_file in list(existing_files):
-
-    try:
-
-        content = old_file.read_text(encoding="utf-8")
-
-        table_match = table_pattern.search(content)
-
-        if not table_match:
-            continue
-
-        table_name = table_match.group(1).lower()
-
-        if table_name not in schema_registry:
-            old_file.unlink()
-
-    except Exception:
-        pass
-
-
-next_number = len([
-    f for f in existing_files
-    if f.name[0].isdigit()
-]) + 1
+next_number = get_next_change_number(existing_files)
+print(f"Using next change number: {next_number:03d}")
 
 generated_any = False
 
@@ -276,14 +228,17 @@ for table_name, columns in schema_registry.items():
 </databaseChangeLog>
 '''
 
+    if xml_path.exists():
+        raise RuntimeError(
+            f"IMMUTABLE CHANGESET VIOLATION: "
+            f"Unable to write new changeset {xml_path.name} because a file with the same name already exists. "
+            f"Please inspect existing Liquibase files in {liquibase_dir}."
+        )
 
     with open(xml_path, "w", encoding="utf-8") as f:
-
         f.write(xml_content)
 
-
     print(f"Generated {filename}")
-
 
     covered_columns.setdefault(
         table_name,
@@ -292,7 +247,6 @@ for table_name, columns in schema_registry.items():
         c.lower()
         for c in new_columns
     )
-
 
     next_number += 1
 

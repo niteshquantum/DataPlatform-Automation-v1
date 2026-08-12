@@ -31,39 +31,38 @@ if not master_xml.exists():
 tree = ET.parse(master_xml)
 root = tree.getroot()
 
-# Remove all existing includes
+current_order = []
 for include_elem in root.findall(f"{{{NS}}}include"):
-    root.remove(include_elem)
+    filename = include_elem.get("file")
+    if filename:
+        current_order.append(Path(filename).name)
 
 # Scan all XML files except master.xml
 xml_files = sorted(
     f for f in mysql_dir.glob("*.xml")
     if f.name != "master.xml"
 )
+xml_names = [f.name for f in xml_files]
 
-for xml_file in xml_files:
+include_order = [name for name in current_order if name in xml_names]
+include_order += [name for name in xml_names if name not in include_order]
 
-    relative_path = xml_file.name
+if include_order == current_order:
+    print("master.xml is already up to date")
+else:
+    for include_elem in root.findall(f"{{{NS}}}include"):
+        root.remove(include_elem)
 
-    include_elem = ET.SubElement(
-        root,
-        f"{{{NS}}}include"
-    )
+    for relative_path in include_order:
+        include_elem = ET.SubElement(root, f"{{{NS}}}include")
+        include_elem.set("file", relative_path)
+        include_elem.set("relativeToChangelogFile", "true")
+        print(f"Added {relative_path}")
 
-    include_elem.set("file", relative_path)
-
-    include_elem.set(
-        "relativeToChangelogFile",
-        "true"
-    )
-
-    print(f"Added {relative_path}")
-
-# Save
-tree.write(
-    master_xml,
-    encoding="utf-8",
-    xml_declaration=True
+    tree.write(
+        master_xml,
+        encoding="utf-8",
+        xml_declaration=True
 )
 
 print("\nmaster.xml updated successfully")

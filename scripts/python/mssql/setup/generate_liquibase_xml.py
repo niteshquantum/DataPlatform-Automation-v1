@@ -44,29 +44,22 @@ existing_files = sorted(
     if f.name != "master.xml"
 )
 
-for old_file in existing_files:
-    if old_file.name[0].isdigit():
-        old_file.unlink()
+from scripts.python.common.liquibase_schema_helpers import (
+    collect_existing_change_files,
+    get_next_change_number,
+)
 
-existing_files = []
+existing_changes = collect_existing_change_files(
+    liquibase_dir,
+    exclude_names={"master.xml"},
+)
+
 covered_columns = {}
- 
-column_pattern = re.compile(r'<column name="([^"]+)"')
-table_pattern = re.compile(r'tableName="([^"]+)"')
- 
-for file in existing_files:
-    try:
-        content = file.read_text(encoding="utf-8")
-        table_match = table_pattern.search(content)
-        if not table_match:
-            continue
-        table_name = table_match.group(1).lower()
-        cols = {c.lower() for c in column_pattern.findall(content)}
-        covered_columns.setdefault(table_name, set()).update(cols)
-    except Exception:
-        pass
- 
-next_number = len(existing_files) + 1
+for parsed in existing_changes:
+    covered_columns.setdefault(parsed["table_name"], set()).update(parsed["columns"])
+
+next_number = get_next_change_number(existing_files)
+print(f"Using next change number: {next_number:03d}")
 generated_any = False
  
 for table_name, columns in schema_registry.items():
@@ -169,6 +162,13 @@ for table_name, columns in schema_registry.items():
 </databaseChangeLog>
 '''
  
+    if xml_path.exists():
+        raise RuntimeError(
+            f"IMMUTABLE CHANGESET VIOLATION: "
+            f"Unable to write new changeset {xml_path.name} because a file with the same name already exists. "
+            f"Please inspect existing Liquibase files in {liquibase_dir}."
+        )
+
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_content)
  
