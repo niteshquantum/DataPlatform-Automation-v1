@@ -109,6 +109,14 @@ pipeline {
                 bat 'scripts\\batch\\migration\\windows\\generate_ddl.bat'
             }
         }
+
+        stage('Install Liquibase') {
+            steps {
+                
+                bat 'scripts\\batch\\common\\install_liquibase.bat'
+            }
+        }
+
         stage('Apply Schema') {
             steps {
                 
