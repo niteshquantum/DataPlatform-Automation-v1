@@ -89,28 +89,69 @@ def shutdown_server():
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
-
 if __name__ == "__main__":
 
-    #threading.Timer(1, open_browser).start()
-    import socket
+    # threading.Timer(1, open_browser).start()
 
-    hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
+    import socket
+    import configparser
 
     print("\n" + "=" * 60)
     print("ACTION REQUIRED")
     print("=" * 60)
-    print(f"Schema Editor is ready.")
-    print(f"Open the following URL:")
-    print(f"http://{ip}:5000")
+    print("Schema Editor is ready.")
+    print("Open the following URL:\n")
+
+    try:
+
+        config = configparser.ConfigParser()
+
+        network_conf = (
+            PROJECT_ROOT
+            / "config"
+            / "common"
+            / "network.conf"
+        )
+
+        if network_conf.exists():
+
+            config.read(network_conf)
+
+            host = config["DEFAULT"]["JENKINS_HOST"]
+            port = config["DEFAULT"].get(
+                "SCHEMA_EDITOR_PORT",
+                "5000"
+            )
+
+            print(f"http://{host}:{port}")
+
+        else:
+
+            s = socket.socket(
+                socket.AF_INET,
+                socket.SOCK_DGRAM
+            )
+
+            s.connect(("8.8.8.8", 80))
+
+            ip = s.getsockname()[0]
+
+            s.close()
+
+            print(f"http://{ip}:5000")
+
+    except Exception:
+
+        print("http://127.0.0.1:5000")
+
     print("")
     print("After clicking 'Save & Continue',")
     print("the Jenkins pipeline will continue automatically.")
     print("=" * 60 + "\n")
+
     app.run(
-    host="0.0.0.0",
-    port=5000,
-    debug=False,
-    use_reloader=False
-)
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+        use_reloader=False
+    )
