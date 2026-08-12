@@ -85,17 +85,47 @@ pipeline {
                 bat 'scripts\\batch\\migration\\windows\\initialize_migration.bat'
             }
         }
+        stage('Validate Source') {
+            steps {
+                
+                bat 'scripts\\batch\\migration\\windows\\validate_source.bat'
+            }
+        }
+        stage('Validate Destination') {
+            steps {
+                
+                bat 'scripts\\batch\\migration\\windows\\validate_destination.bat'
+            }
+        }
+        stage('Extract Source Schema') {
+            steps {
+                
+                bat 'scripts\\batch\\migration\\windows\\extract_schema.bat'
+            }
+        }
+        stage('Generate Target DDL') {
+            steps {
+                
+                bat 'scripts\\batch\\migration\\windows\\generate_ddl.bat'
+            }
+        }
+        stage('Apply Schema') {
+            steps {
+                
+                bat 'scripts\\batch\\migration\\windows\\apply_schema.bat'
+            }
+        }
     }
 
     post {
         success {
-            echo "MIGRATION INITIALIZATION SUCCESSFUL"
+            echo "MIGRATION COMPLETED SUCCESSFULLY"
         }
         failure {
-            echo "MIGRATION INITIALIZATION FAILED"
+            echo "MIGRATION FAILED"
         }
         always {
-            echo 'MIGRATION INITIALIZATION COMPLETED'
+            echo 'MIGRATION COMPLETED'
         }
     }
 }
