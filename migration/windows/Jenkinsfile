@@ -117,6 +117,15 @@ pipeline {
             }
         }
 
+        stage('Install drivers') {
+            steps {
+                
+                bat 'scripts\\batch\\common\\install_mssql_driver.bat'
+                bat 'scripts\\batch\\mysql\\setup\\install_mysql_driver.bat'
+                bat 'scripts\\batch\\postgresql\\setup\\install_postgresql_driver.bat'
+            }
+        }
+
         stage('Apply Schema') {
             steps {
                 
