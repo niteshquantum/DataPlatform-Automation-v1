@@ -20,7 +20,7 @@ then
     exit 1
 fi
 
-CONFIG_FILE="$PROJECT_ROOT/config/linux/migration/${DB_TYPE}.conf"
+CONFIG_FILE="$PROJECT_ROOT/config/linux/migration/${DB_TYPE,,}.conf"
 
 if [ ! -f "$CONFIG_FILE" ]
 then
