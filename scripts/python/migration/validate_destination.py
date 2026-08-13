@@ -279,7 +279,7 @@ def main():
     role = "DESTINATION"
 
     try:
-        dest_defaults = load_migration_config("destination.conf")
+        dest_defaults = load_migration_role_config("destination")
         db_defaults = load_db_defaults()
 
         dest_effective = build_effective_config(dest_defaults, db_defaults, "DESTINATION")

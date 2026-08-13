@@ -187,7 +187,7 @@ def main():
     role = "SOURCE"
 
     try:
-        source_defaults = load_migration_config("source.conf")
+        source_defaults = load_migration_role_config("source")
         db_defaults = load_db_defaults()
 
         source_effective = build_effective_config(source_defaults, db_defaults, "SOURCE")
