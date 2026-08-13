@@ -13,8 +13,8 @@ echo
 
 python3 "$PROJECT_ROOT/scripts/python/migration/apply_schema.py"
 
-echo.
+echo
 echo "SCHEMA APPLICATION COMPLETED"
-echo.
+echo
 
 exit 0

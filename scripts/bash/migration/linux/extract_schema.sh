@@ -13,8 +13,8 @@ echo
 
 python3 "$PROJECT_ROOT/scripts/python/migration/extract_schema.py"
 
-echo.
+echo
 echo "SOURCE SCHEMA EXTRACTION COMPLETED"
-echo.
+echo
 
 exit 0

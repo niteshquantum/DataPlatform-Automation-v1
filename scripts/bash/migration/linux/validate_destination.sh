@@ -13,8 +13,8 @@ echo
 
 python3 "$PROJECT_ROOT/scripts/python/migration/validate_destination.py"
 
-echo.
+echo
 echo "DESTINATION VALIDATION COMPLETED"
-echo.
+echo
 
 exit 0

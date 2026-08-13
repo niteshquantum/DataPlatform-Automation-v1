@@ -99,10 +99,10 @@ then
     exit 1
 fi
 
-echo.
+echo
 echo "====================================="
 echo "MIGRATION LIQUIBASE VALIDATED"
 echo "====================================="
-echo.
+echo
 
 exit 0

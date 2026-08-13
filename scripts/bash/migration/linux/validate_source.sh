@@ -13,8 +13,8 @@ echo
 
 python3 "$PROJECT_ROOT/scripts/python/migration/validate_source.py"
 
-echo.
+echo
 echo "SOURCE VALIDATION COMPLETED"
-echo.
+echo
 
 exit 0

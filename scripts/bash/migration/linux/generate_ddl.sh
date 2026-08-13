@@ -13,8 +13,8 @@ echo
 
 python3 "$PROJECT_ROOT/scripts/python/migration/generate_ddl.py"
 
-echo.
+echo
 echo "TARGET DDL GENERATION COMPLETED"
-echo.
+echo
 
 exit 0

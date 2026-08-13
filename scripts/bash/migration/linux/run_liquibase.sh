@@ -276,10 +276,10 @@ fi
     "${PASSWORD_OPTION[@]}" \
     "$LB_COMMAND"
 
-echo.
+echo
 echo "====================================="
 echo "${DB_TYPE} LIQUIBASE ${LB_COMMAND} COMPLETED"
 echo "====================================="
-echo.
+echo
 
 exit 0

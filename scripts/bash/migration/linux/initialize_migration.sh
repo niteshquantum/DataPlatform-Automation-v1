@@ -13,8 +13,8 @@ echo
 
 python3 "$PROJECT_ROOT/scripts/python/migration/initialize.py"
 
-echo.
+echo
 echo "MIGRATION INITIALIZATION COMPLETED"
-echo.
+echo
 
 exit 0
