@@ -116,6 +116,20 @@ pipeline {
                 sh 'scripts/bash/migration/linux/generate_ddl.sh'
             }
         }
+
+        stage('Install Liquibase') {
+            steps {
+                sh 'scripts/bash/common/install_liquibase.sh'
+            }
+        }
+
+        stage('Install drivers') {
+            steps {
+                sh 'scripts/bash/mysql/setup/install_mysql_driver.sh'
+                sh 'scripts/bash/postgresql/setup/install_postgresql_driver.sh'
+                sh 'scripts/bash/common/install_mssql_driver.sh'
+            }
+        }
         stage('Apply Schema') {
             steps {
                 sh 'scripts/bash/migration/linux/apply_schema.sh'
