@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        choice(
+            name: 'SOURCE_DATABASE',
+            choices: ['MSSQL', 'MYSQL', 'POSTGRESQL'],
+            description: 'Source Database Type'
+        )
+        choice(
+            name: 'DESTINATION_DATABASE',
+            choices: ['MSSQL', 'MYSQL', 'POSTGRESQL'],
+            description: 'Destination Database Type'
+        )
+        string(
+            name: 'SOURCE_HOST',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_PORT',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_DB',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_SCHEMA',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'SOURCE_USER',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        password(
+            name: 'SOURCE_PASSWORD',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_HOST',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_PORT',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_DB',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_SCHEMA',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        string(
+            name: 'DESTINATION_USER',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+        password(
+            name: 'DESTINATION_PASSWORD',
+            defaultValue: '',
+            description: 'Optional override. Leave empty to use selected database config.'
+        )
+    }
+
+    stages {
+        stage('Initialize Migration') {
+            steps {
+                checkout scm
+                sh 'scripts/bash/migration/linux/initialize_migration.sh'
+            }
+        }
+        stage('Validate Source') {
+            steps {
+                sh 'scripts/bash/migration/linux/validate_source.sh'
+            }
+        }
+        stage('Validate Destination') {
+            steps {
+                sh 'scripts/bash/migration/linux/validate_destination.sh'
+            }
+        }
+        stage('Extract Source Schema') {
+            steps {
+                sh 'scripts/bash/migration/linux/extract_schema.sh'
+            }
+        }
+        stage('Generate Target DDL') {
+            steps {
+                sh 'scripts/bash/migration/linux/generate_ddl.sh'
+            }
+        }
+        stage('Apply Schema') {
+            steps {
+                sh 'scripts/bash/migration/linux/apply_schema.sh'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "MIGRATION COMPLETED SUCCESSFULLY"
+        }
+        failure {
+            echo "MIGRATION FAILED"
+        }
+        always {
+            echo 'MIGRATION COMPLETED'
+        }
+    }
+}

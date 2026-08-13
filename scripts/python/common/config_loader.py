@@ -63,5 +63,20 @@ def load_source_config():
     return load_config(config_file)
 
 
+def get_migration_config_path(name):
+    if platform.system() == "Windows":
+        return ROOT / "config" / "windows" / "migration" / f"{name}.conf"
+    else:
+        return ROOT / "config" / "linux" / "migration" / f"{name}.conf"
+
+
+def load_migration_config(database_name):
+    return load_config(get_migration_config_path(database_name))
+
+
+def load_migration_role_config(role):
+    return load_config(get_migration_config_path(role))
+
+
 def get_project_root():
     return ROOT

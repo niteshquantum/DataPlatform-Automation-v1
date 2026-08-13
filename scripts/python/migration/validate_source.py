@@ -6,15 +6,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
+from scripts.python.common.config_loader import load_migration_config
 from scripts.python.migration.initialize import (
-    load_migration_config,
     build_effective_config,
     mask_password,
     validate_database_type,
     validate_required_fields,
 )
-
-MIGRATION_CONFIG_DIR = ROOT / "config" / "windows" / "migration"
 
 SUPPORTED_DATABASES = ["MSSQL", "MYSQL", "POSTGRESQL"]
 
@@ -33,8 +31,8 @@ EXTRA_DB_FIELDS = {
 
 def load_db_defaults():
     db_defaults = {}
-    for db_file in ["mssql.conf", "mysql.conf", "postgresql.conf"]:
-        db_defaults.update(load_migration_config(db_file))
+    for db_name in ["mssql", "mysql", "postgresql"]:
+        db_defaults.update(load_migration_config(db_name))
     return db_defaults
 
 

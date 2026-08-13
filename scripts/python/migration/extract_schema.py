@@ -6,19 +6,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from scripts.python.migration.initialize import (
+from scripts.python.common.config_loader import (
+    get_migration_config_path,
     load_migration_config,
+    load_migration_role_config,
+)
+from scripts.python.migration.initialize import (
     build_effective_config,
 )
-
-MIGRATION_CONFIG_DIR = ROOT / "config" / "windows" / "migration"
-SOURCE_CONF = ROOT / "config" / "windows" / "source.conf"
 
 
 def load_db_defaults():
     db_defaults = {}
-    for db_file in ["mssql.conf", "mysql.conf", "postgresql.conf"]:
-        db_defaults.update(load_migration_config(db_file))
+    for db_name in ["mssql", "mysql", "postgresql"]:
+        db_defaults.update(load_migration_config(db_name))
     return db_defaults
 
 
@@ -38,7 +39,7 @@ def add_extra_fields(effective_config, db_defaults, role_prefix, db_type):
 
 
 def build_effective_source_config():
-    source_defaults = load_migration_config("source.conf")
+    source_defaults = load_migration_role_config("source")
     db_defaults = load_db_defaults()
     source_effective = build_effective_config(source_defaults, db_defaults, "SOURCE")
     add_extra_fields(source_effective, db_defaults, "SOURCE", source_effective.get("SOURCE_DATABASE", ""))
@@ -46,8 +47,9 @@ def build_effective_source_config():
 
 
 def write_temp_source_conf(effective_config):
-    backup_path = SOURCE_CONF.with_suffix(".conf.bak")
-    original_content = SOURCE_CONF.read_text(encoding="utf-8") if SOURCE_CONF.exists() else ""
+    source_conf_path = get_migration_config_path("source")
+    backup_path = source_conf_path.with_suffix(".conf.bak")
+    original_content = source_conf_path.read_text(encoding="utf-8") if source_conf_path.exists() else ""
     backup_path.write_text(original_content, encoding="utf-8")
 
     lines = []
@@ -58,20 +60,21 @@ def write_temp_source_conf(effective_config):
         if key.startswith("SOURCE_") and key != "SOURCE_DATABASE":
             lines.append(f"{key}={effective_config[key]}")
 
-    SOURCE_CONF.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    source_conf_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return backup_path
 
 
 def restore_source_conf(backup_path):
+    source_conf_path = get_migration_config_path("source")
     if backup_path.exists():
         backup_content = backup_path.read_text(encoding="utf-8")
         if backup_content:
-            SOURCE_CONF.write_text(backup_content, encoding="utf-8")
+            source_conf_path.write_text(backup_content, encoding="utf-8")
         else:
-            SOURCE_CONF.unlink(missing_ok=True)
+            source_conf_path.unlink(missing_ok=True)
         backup_path.unlink(missing_ok=True)
     else:
-        SOURCE_CONF.unlink(missing_ok=True)
+        source_conf_path.unlink(missing_ok=True)
 
 
 def extract_schema(dest_db_type):
@@ -151,7 +154,7 @@ def main():
             print("ERROR: SOURCE_DATABASE is not configured")
             return 1
 
-        dest_defaults = load_migration_config("destination.conf")
+        dest_defaults = load_migration_role_config("destination")
         db_defaults = load_db_defaults()
         dest_effective = build_effective_config(dest_defaults, db_defaults, "DESTINATION")
         dest_db_type = dest_effective.get("DESTINATION_DATABASE", "")

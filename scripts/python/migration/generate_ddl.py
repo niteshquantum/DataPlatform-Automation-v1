@@ -7,23 +7,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from scripts.python.migration.initialize import (
+from scripts.python.common.config_loader import (
     load_migration_config,
+    load_migration_role_config,
+)
+from scripts.python.migration.initialize import (
     build_effective_config,
 )
-
-MIGRATION_CONFIG_DIR = ROOT / "config" / "windows" / "migration"
 
 
 def load_db_defaults():
     db_defaults = {}
-    for db_file in ["mssql.conf", "mysql.conf", "postgresql.conf"]:
-        db_defaults.update(load_migration_config(db_file))
+    for db_name in ["mssql", "mysql", "postgresql"]:
+        db_defaults.update(load_migration_config(db_name))
     return db_defaults
 
 
 def get_destination_db_type():
-    dest_defaults = load_migration_config("destination.conf")
+    dest_defaults = load_migration_role_config("destination")
     db_defaults = load_db_defaults()
     dest_effective = build_effective_config(dest_defaults, db_defaults, "DESTINATION")
     return dest_effective.get("DESTINATION_DATABASE", "").upper()

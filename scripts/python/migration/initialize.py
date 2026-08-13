@@ -5,10 +5,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from scripts.python.common.config_loader import load_config, get_project_root
+from scripts.python.common.config_loader import (
+    load_config,
+    get_project_root,
+    load_migration_config,
+    load_migration_role_config,
+)
 
 PROJECT_ROOT = get_project_root()
-MIGRATION_CONFIG_DIR = PROJECT_ROOT / "config" / "windows" / "migration"
 
 SUPPORTED_DATABASES = ["MSSQL", "MYSQL", "POSTGRESQL"]
 
@@ -17,10 +21,6 @@ DB_FIELD_MAP = {
     "MYSQL": ["HOST", "PORT", "DB", "USER", "PASSWORD", "SCHEMA"],
     "POSTGRESQL": ["HOST", "PORT", "DB", "USER", "PASSWORD", "SCHEMA"],
 }
-
-
-def load_migration_config(filename):
-    return load_config(MIGRATION_CONFIG_DIR / filename)
 
 
 def env_override(config, role_prefix):
@@ -130,12 +130,12 @@ def print_summary(source, dest):
 
 def main():
     try:
-        source_defaults = load_migration_config("source.conf")
-        dest_defaults = load_migration_config("destination.conf")
+        source_defaults = load_migration_role_config("source")
+        dest_defaults = load_migration_role_config("destination")
 
         db_defaults = {}
-        for db_file in ["mssql.conf", "mysql.conf", "postgresql.conf"]:
-            db_defaults.update(load_migration_config(db_file))
+        for db_name in ["mssql", "mysql", "postgresql"]:
+            db_defaults.update(load_migration_config(db_name))
 
         source_effective = build_effective_config(source_defaults, db_defaults, "SOURCE")
         dest_effective = build_effective_config(dest_defaults, db_defaults, "DESTINATION")

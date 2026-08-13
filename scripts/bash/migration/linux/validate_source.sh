@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+source "$(dirname "$0")/../../common/set_project_root.sh"
+
+export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
+
+echo
+echo "====================================="
+echo "VALIDATE SOURCE"
+echo "====================================="
+echo
+
+python3 "$PROJECT_ROOT/scripts/python/migration/validate_source.py"
+
+echo.
+echo "SOURCE VALIDATION COMPLETED"
+echo.
+
+exit 0
