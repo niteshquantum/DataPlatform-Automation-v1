@@ -93,7 +93,6 @@ pipeline {
 
         stage('Initialize Migration') {
             steps {
-                checkout scm
                 sh 'scripts/bash/migration/linux/initialize_migration.sh'
             }
         }
