@@ -217,11 +217,11 @@ fi
 
 echo "Driver Found:"
 echo "$EXPECTED_DRIVER"
-echo.
+echo
 echo "====================================="
 echo "${DB_TYPE} JDBC DRIVER VALIDATED"
 echo "====================================="
-echo.
+echo
 
 cd "$PROJECT_ROOT"
 
