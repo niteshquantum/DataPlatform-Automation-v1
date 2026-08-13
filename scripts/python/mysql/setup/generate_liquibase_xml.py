@@ -230,6 +230,22 @@ for table_name, columns in sorted(schema_registry.items()):
         generated_any = True
         continue
 
+    if removed_columns:
+        change_id = f"mysql-drop-{table_name}-{'-'.join(_normalize_name(c) for c in removed_columns)}"
+        filename = f"{change_id}.xml"
+        drop_column_xml = "".join(f'        <dropColumn tableName="{table_name}" columnName="{column}"/>\n' for column in removed_columns)
+        conditions = "".join(f'            <columnExists tableName="{table_name}" columnName="{column}"/>\n' for column in removed_columns)
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="{change_id}" author="tanisha">
+        <preConditions onFail="MARK_RAN"><and>
+{conditions}        </and></preConditions>
+{drop_column_xml}    </changeSet>
+</databaseChangeLog>
+'''
+        write_change_set(filename, xml_content)
+        generated_any = True
+
     if new_columns:
         change_id = f"mysql-add-{table_name}-{'-'.join(_normalize_name(c) for c in new_columns)}"
         filename = f"{change_id}.xml"

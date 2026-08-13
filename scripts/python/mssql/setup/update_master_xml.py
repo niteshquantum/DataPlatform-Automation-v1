@@ -31,40 +31,39 @@ if not master_xml.exists():
 tree = ET.parse(master_xml)
 root = tree.getroot()
 
-# Remove all existing includes
-for include_elem in root.findall(f"{{{NS}}}include"):
-    root.remove(include_elem)
-
-# Scan all XML files except master.xml
+# Build the desired include list from the actual XML changelogs present.
 xml_files = sorted(
     f for f in mssql_dir.glob("*.xml")
     if f.name != "master.xml"
 )
+existing_includes = [
+    elem.get("file")
+    for elem in root.findall(f"{{{NS}}}include")
+    if elem.get("file")
+]
+desired_includes = [xml_file.name for xml_file in xml_files]
 
-for xml_file in xml_files:
+if existing_includes == desired_includes:
+    print("master.xml already up to date")
+else:
+    # Remove all existing includes so the file can be rebuilt deterministically.
+    for include_elem in list(root.findall(f"{{{NS}}}include")):
+        root.remove(include_elem)
 
-    relative_path = xml_file.name
+    for relative_path in desired_includes:
+        include_elem = ET.SubElement(
+            root,
+            f"{{{NS}}}include"
+        )
 
-    include_elem = ET.SubElement(
-        root,
-        f"{{{NS}}}include"
+        include_elem.set("file", relative_path)
+        include_elem.set("relativeToChangelogFile", "true")
+        print(f"Added {relative_path}")
+
+    tree.write(
+        master_xml,
+        encoding="utf-8",
+        xml_declaration=True
     )
 
-    include_elem.set("file", relative_path)
-
-    # IMPORTANT
-    include_elem.set(
-        "relativeToChangelogFile",
-        "true"
-    )
-
-    print(f"Added {relative_path}")
-
-# Save
-tree.write(
-    master_xml,
-    encoding="utf-8",
-    xml_declaration=True
-)
-
-print("\nmaster.xml updated successfully")
+    print("\nmaster.xml updated successfully")
