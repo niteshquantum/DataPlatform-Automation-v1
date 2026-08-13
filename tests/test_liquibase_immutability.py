@@ -51,13 +51,40 @@ def test_mysql_existing_changeset_is_immutable():
 '''
         changeset_path = root / "liquibase" / "mysql" / "mysql-create-brands.xml"
         changeset_path.write_text(existing_xml, encoding="utf-8")
+        before_hash = _sha256(changeset_path)
 
         script_path = _copy_script(root, "scripts/python/mysql/setup/generate_liquibase_xml.py")
 
         _run_script(script_path)
 
         assert changeset_path.exists()
+        assert _sha256(changeset_path) == before_hash
         assert changeset_path.read_text(encoding="utf-8") == existing_xml
+
+
+def test_mysql_generator_is_idempotent_across_reruns():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+
+        (root / "metadata" / "mysql").mkdir(parents=True)
+        (root / "liquibase" / "mysql").mkdir(parents=True)
+
+        schema = {"brands": ["brand_id", "brand_name"]}
+        (root / "metadata" / "mysql" / "schema_registry.json").write_text(
+            json.dumps(schema), encoding="utf-8"
+        )
+
+        script_path = _copy_script(root, "scripts/python/mysql/setup/generate_liquibase_xml.py")
+
+        _run_script(script_path)
+        generated = sorted((root / "liquibase" / "mysql").glob("*.xml"))
+        assert generated
+        before = {p.name: _sha256(p) for p in generated}
+
+        _run_script(script_path)
+        after = {p.name: _sha256(p) for p in sorted((root / "liquibase" / "mysql").glob("*.xml"))}
+
+        assert before == after
 
 
 def test_mssql_existing_changeset_is_not_deleted_for_unchanged_schema():

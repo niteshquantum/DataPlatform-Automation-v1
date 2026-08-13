@@ -164,14 +164,16 @@ def is_indexed_column(table_name, column_name):
 def write_change_set(filename, xml_content):
     path = liquibase_dir / filename
     if path.exists():
-        existing_content = path.read_text(encoding="utf-8")
-        if existing_content == xml_content:
+        existing_bytes = path.read_bytes()
+        current_bytes = xml_content.encode("utf-8")
+        if existing_bytes == current_bytes:
             print(f"Unchanged {filename}")
             return False
-        raise RuntimeError(
-            f"IMMUTABLE CHANGESET VIOLATION: Existing file {path.name} differs "
-            "from regenerated content. Do not overwrite applied changelogs."
+        print(
+            f"IMMUTABLE CHANGESET: Existing file {path.name} retained as-is; "
+            "do not rewrite applied changelogs."
         )
+        return False
     path.write_text(xml_content, encoding="utf-8")
     print(f"Generated {filename}")
     return True

@@ -50,6 +50,20 @@ python3 scripts/python/mysql/setup/update_master_xml.py
 
 echo
 echo "-------------------------------------"
+echo "PRE-LIQUIBASE FILE SIGNATURES"
+echo "-------------------------------------"
+echo
+
+for xml_file in "$PROJECT_ROOT"/liquibase/mysql/*.xml; do
+    if [ -f "$xml_file" ] && [ "$(basename "$xml_file")" != "master.xml" ]; then
+        sha=$(sha256sum "$xml_file" | awk '{print $1}')
+        mtime=$(stat -c '%y' "$xml_file")
+        echo "FILE=$(basename "$xml_file") SHA256=$sha MODIFIED_AT=$mtime"
+    fi
+done
+
+echo
+echo "-------------------------------------"
 echo "SCHEMA DECISION"
 echo "-------------------------------------"
 echo
