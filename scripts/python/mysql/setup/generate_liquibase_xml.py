@@ -163,17 +163,21 @@ def is_indexed_column(table_name, column_name):
 
 def write_change_set(filename, xml_content):
     path = liquibase_dir / filename
+
     if path.exists():
         existing_bytes = path.read_bytes()
         current_bytes = xml_content.encode("utf-8")
+
         if existing_bytes == current_bytes:
             print(f"Unchanged {filename}")
             return False
-        print(
-            f"IMMUTABLE CHANGESET: Existing file {path.name} retained as-is; "
-            "do not rewrite applied changelogs."
+
+        raise RuntimeError(
+            f"IMMUTABLE_CHANGESET_VIOLATION: "
+            f"{filename} already exists with different content. "
+            f"Create a new Liquibase changeset instead of modifying it."
         )
-        return False
+
     path.write_text(xml_content, encoding="utf-8")
     print(f"Generated {filename}")
     return True
@@ -204,8 +208,8 @@ for table_name, columns in sorted(schema_registry.items()):
     </changeSet>
 </databaseChangeLog>
 '''
-        write_change_set(filename, xml_content)
-        generated_any = True
+        changed = write_change_set(filename, xml_content)
+        generated_any = generated_any or changed
         continue
 
     existing_named = {str(c).lower(): c for c in previous_columns}
@@ -228,8 +232,8 @@ for table_name, columns in sorted(schema_registry.items()):
     </changeSet>
 </databaseChangeLog>
 '''
-        write_change_set(filename, xml_content)
-        generated_any = True
+        changed = write_change_set(filename, xml_content)
+        generated_any = generated_any or changed
         continue
 
     if removed_columns:
@@ -245,8 +249,8 @@ for table_name, columns in sorted(schema_registry.items()):
 {drop_column_xml}    </changeSet>
 </databaseChangeLog>
 '''
-        write_change_set(filename, xml_content)
-        generated_any = True
+        changed = write_change_set(filename, xml_content)
+        generated_any = generated_any or changed
 
     if new_columns:
         change_id = f"mysql-add-{table_name}-{'-'.join(_normalize_name(c) for c in new_columns)}"
@@ -263,8 +267,8 @@ for table_name, columns in sorted(schema_registry.items()):
     </changeSet>
 </databaseChangeLog>
 '''
-        write_change_set(filename, xml_content)
-        generated_any = True
+        changed = write_change_set(filename, xml_content)
+        generated_any = generated_any or changed
 
     for column in clean_columns:
 
@@ -358,12 +362,12 @@ for table_name, columns in sorted(schema_registry.items()):
     </databaseChangeLog>
     '''
 
-        write_change_set(
+        changed = write_change_set(
             filename,
             xml_content
         )
 
-        generated_any = True
+        generated_any = generated_any or changed
 
 if not generated_any:
     print("No schema changes detected. Nothing to generate.")
