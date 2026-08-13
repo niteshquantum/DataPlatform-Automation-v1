@@ -6,7 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from scripts.python.common.config_loader import load_migration_config
+from scripts.python.common.config_loader import (
+    load_migration_config,
+    load_migration_role_config,
+)
 from scripts.python.migration.initialize import (
     build_effective_config,
     mask_password,
