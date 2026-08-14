@@ -44,8 +44,6 @@ echo "UPDATING MASTER XML"
 echo "-------------------------------------"
 echo
 
-rm -f "$PROJECT_ROOT/liquibase/mssql/master.xml"
-
 python3 scripts/python/mssql/setup/update_master_xml.py
 
 echo
@@ -56,12 +54,16 @@ echo
 
 LOAD_REQUIRED=false
 
+# See the MySQL flow: pending immutable changelogs must be applied even when
+# this invocation did not create them, otherwise data_loader reads a stale
+# target schema and correctly rejects source columns.
+echo "Validating and applying pending Liquibase changesets..."
+bash "$PROJECT_ROOT/scripts/bash/mssql/setup/run_liquibase.sh"
+
 if [ "$SCHEMA_CHANGED" = "true" ]; then
 
     echo "Schema changes detected."
-    echo "Running Liquibase..."
-
-    bash "$PROJECT_ROOT/scripts/bash/mssql/setup/run_liquibase.sh"
+    echo "New immutable schema changesets were created."
 
     LOAD_REQUIRED=true
 

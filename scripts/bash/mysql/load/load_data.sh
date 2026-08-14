@@ -44,8 +44,6 @@ echo "UPDATING MASTER XML"
 echo "-------------------------------------"
 echo
 
-rm -f "$PROJECT_ROOT/liquibase/mysql/master.xml"
-
 python3 scripts/python/mysql/setup/update_master_xml.py
 
 echo
@@ -70,12 +68,18 @@ echo
 
 LOAD_REQUIRED=false
 
+# `schema_changed` only means this invocation created a changelog file.  A
+# previous interrupted run can leave immutable, unapplied changelogs behind;
+# always let Liquibase validate and apply the master changelog before querying
+# the target schema in data_loader.py.  Liquibase update is a no-op for rows
+# already present in DATABASECHANGELOG.
+echo "Validating and applying pending Liquibase changesets..."
+bash "$PROJECT_ROOT/scripts/bash/mysql/setup/run_liquibase.sh"
+
 if [ "$SCHEMA_CHANGED" = "true" ]; then
 
     echo "Schema changes detected."
-    echo "Running Liquibase..."
-
-    bash "$PROJECT_ROOT/scripts/bash/mysql/setup/run_liquibase.sh"
+    echo "New immutable schema changesets were created."
 
     LOAD_REQUIRED=true
 

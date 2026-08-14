@@ -39,8 +39,6 @@ echo UPDATING MASTER XML
 echo -------------------------------------
 echo.
 
-if exist liquibase\mssql\master.xml del /f /q liquibase\mssql\master.xml
-
 python scripts\python\mssql\setup\update_master_xml.py
 if errorlevel 1 exit /b 1
 

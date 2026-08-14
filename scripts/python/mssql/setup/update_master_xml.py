@@ -31,7 +31,8 @@ if not master_xml.exists():
 tree = ET.parse(master_xml)
 root = tree.getroot()
 
-# Build the desired include list from the actual XML changelogs present.
+# Preserve existing include order and append only newly created changelogs.
+# De-duplicate existing entries so a rerun cannot execute a file twice.
 xml_files = sorted(
     f for f in mssql_dir.glob("*.xml")
     if f.name != "master.xml"
@@ -41,7 +42,13 @@ existing_includes = [
     for elem in root.findall(f"{{{NS}}}include")
     if elem.get("file")
 ]
-desired_includes = [xml_file.name for xml_file in xml_files]
+desired_includes = []
+for include in existing_includes:
+    if include not in desired_includes:
+        desired_includes.append(include)
+for xml_file in xml_files:
+    if xml_file.name not in desired_includes:
+        desired_includes.append(xml_file.name)
 
 if existing_includes == desired_includes:
     print("master.xml already up to date")

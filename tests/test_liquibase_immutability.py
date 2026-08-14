@@ -1,6 +1,7 @@
 import hashlib
 import json
 import runpy
+import sys
 import shutil
 import tempfile
 from pathlib import Path
@@ -24,7 +25,7 @@ def _run_script(path: Path):
     runpy.run_path(str(path), run_name="__main__")
 
 
-def test_mysql_existing_changeset_is_immutable():
+def test_mysql_existing_changeset_with_different_content_fails_without_rewrite():
     with tempfile.TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
 
@@ -36,26 +37,26 @@ def test_mysql_existing_changeset_is_immutable():
             json.dumps(schema), encoding="utf-8"
         )
 
-        existing_xml = '''<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet id="mysql-create-brands" author="tanisha">
-        <preConditions onFail="MARK_RAN">
-            <not><tableExists tableName="brands"/></not>
-        </preConditions>
-        <createTable tableName="brands">
-        <column name="brand_id" type="INTEGER"/>
-        <column name="brand_name" type="VARCHAR(255)"/>
-        </createTable>
-    </changeSet>
-</databaseChangeLog>
-'''
-        changeset_path = root / "liquibase" / "mysql" / "mysql-create-brands.xml"
+        (root / "liquibase" / "mysql" / "mysql-create-brands.xml").write_text(
+            '''<databaseChangeLog><changeSet><createTable tableName="brands"><column name="brand_id" type="VARCHAR(255)"/><column name="brand_name" type="VARCHAR(255)"/></createTable></changeSet></databaseChangeLog>''',
+            encoding="utf-8",
+        )
+        existing_xml = "not the generated immutable definition\n"
+        changeset_path = root / "liquibase" / "mysql" / "mysql-modify-brands-brand_id-varchar255-to-decimal.xml"
         changeset_path.write_text(existing_xml, encoding="utf-8")
         before_hash = _sha256(changeset_path)
 
         script_path = _copy_script(root, "scripts/python/mysql/setup/generate_liquibase_xml.py")
 
-        _run_script(script_path)
+        try:
+            (root / "metadata" / "mysql" / "datatype_registry.json").write_text(
+                json.dumps({"brands": {"brand_id": {"final_type": "DECIMAL"}}}), encoding="utf-8"
+            )
+            _run_script(script_path)
+        except RuntimeError as exc:
+            assert "IMMUTABLE_CHANGESET_VIOLATION" in str(exc)
+        else:
+            raise AssertionError("expected immutable changeset violation")
 
         assert changeset_path.exists()
         assert _sha256(changeset_path) == before_hash
@@ -120,3 +121,90 @@ def test_mssql_existing_changeset_is_not_deleted_for_unchanged_schema():
 
         assert changeset_path.exists(), "existing changeset should not be deleted"
         assert _sha256(changeset_path) == before_hash
+
+
+def test_mysql_datatype_transitions_get_distinct_immutable_changesets():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mysql").mkdir(parents=True)
+        (root / "liquibase" / "mysql").mkdir(parents=True)
+        (root / "metadata" / "mysql" / "schema_registry.json").write_text(
+            json.dumps({"accounts": ["balance"]}), encoding="utf-8"
+        )
+        datatype_path = root / "metadata" / "mysql" / "datatype_registry.json"
+        datatype_path.write_text(json.dumps({"accounts": {"balance": {"final_type": "VARCHAR(255)"}}}), encoding="utf-8")
+        script_path = _copy_script(root, "scripts/python/mysql/setup/generate_liquibase_xml.py")
+        _run_script(script_path)
+
+        datatype_path.write_text(json.dumps({"accounts": {"balance": {"final_type": "DECIMAL(10,2)"}}}), encoding="utf-8")
+        _run_script(script_path)
+        first = root / "liquibase" / "mysql" / "mysql-modify-accounts-balance-varchar255-to-decimal102.xml"
+        assert first.exists()
+        first_hash = _sha256(first)
+
+        datatype_path.write_text(json.dumps({"accounts": {"balance": {"final_type": "FLOAT"}}}), encoding="utf-8")
+        _run_script(script_path)
+        second = root / "liquibase" / "mysql" / "mysql-modify-accounts-balance-decimal102-to-float.xml"
+        assert second.exists()
+        assert _sha256(first) == first_hash
+
+        _run_script(script_path)
+        assert _sha256(first) == first_hash
+        assert json.loads((root / "metadata" / "mysql" / "schema_status.json").read_text())["schema_changed"] is False
+
+
+def test_mssql_generator_is_idempotent_and_new_changesets_are_semantic():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mssql").mkdir(parents=True)
+        (root / "liquibase" / "mssql").mkdir(parents=True)
+        registry = root / "metadata" / "mssql" / "schema_registry.json"
+        registry.write_text(json.dumps({"accounts": ["id"]}), encoding="utf-8")
+        script_path = _copy_script(root, "scripts/python/mssql/setup/generate_liquibase_xml.py")
+        _run_script(script_path)
+        first = root / "liquibase" / "mssql" / "mssql-create-accounts.xml"
+        first_hash = _sha256(first)
+        _run_script(script_path)
+        assert _sha256(first) == first_hash
+        assert json.loads((root / "metadata" / "mssql" / "schema_status.json").read_text())["schema_changed"] is False
+
+        registry.write_text(json.dumps({"accounts": ["id", "balance"]}), encoding="utf-8")
+        _run_script(script_path)
+        assert (root / "liquibase" / "mssql" / "mssql-add-accounts-balance.xml").exists()
+        assert _sha256(first) == first_hash
+
+
+def test_mysql_view_template_has_loader_contract():
+    template_dir = REPO_ROOT / "scripts" / "python" / "common" / "objects"
+    sys.path.insert(0, str(template_dir))
+    try:
+        from template_loader import load_template
+        rendered = load_template("mysql", "view").format(
+            view_name="v_accounts", columns="id", table_name="accounts", limit="10"
+        )
+    finally:
+        sys.path.remove(str(template_dir))
+    assert "CREATE OR REPLACE VIEW v_accounts AS" in rendered
+    assert "LIMIT 10;" in rendered
+
+
+def test_master_updater_is_idempotent_and_deduplicates_includes():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        directory = root / "liquibase" / "mysql"
+        directory.mkdir(parents=True)
+        (directory / "mysql-create-a.xml").write_text("<databaseChangeLog/>", encoding="utf-8")
+        (directory / "mysql-create-b.xml").write_text("<databaseChangeLog/>", encoding="utf-8")
+        master = directory / "master.xml"
+        master.write_text(
+            '''<?xml version="1.0"?><databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"><include file="mysql-create-a.xml" relativeToChangelogFile="true"/><include file="mysql-create-a.xml" relativeToChangelogFile="true"/></databaseChangeLog>''',
+            encoding="utf-8",
+        )
+        script_path = _copy_script(root, "scripts/python/mysql/setup/update_master_xml.py")
+        _run_script(script_path)
+        first_hash = _sha256(master)
+        text = master.read_text(encoding="utf-8")
+        assert text.count('file="mysql-create-a.xml"') == 1
+        assert text.count('file="mysql-create-b.xml"') == 1
+        _run_script(script_path)
+        assert _sha256(master) == first_hash

@@ -27,6 +27,11 @@ def _normalize_name(value):
     return str(value).strip().replace("\ufeff", "").lower()
 
 
+def _type_token(value):
+    """Stable filename-safe representation of a Liquibase datatype."""
+    return re.sub(r"[^a-z0-9]+", "", str(value).lower()) or "unknown"
+
+
 def get_column_datatype(table_name, column_name):
     """Resolve datatype with final_type > selected_type > detected_type > safe fallback."""
     table_metadata = datatype_registry.get(table_name, {})
@@ -44,10 +49,31 @@ def get_column_datatype(table_name, column_name):
 
 def parse_existing_table_types():
     existing_types = {}
-    files = sorted(f for f in liquibase_dir.glob("*.xml") if f.name != "master.xml")
+    transitions = []
+    files = {f.name: f for f in liquibase_dir.glob("*.xml") if f.name != "master.xml"}
+    # Master include order is Liquibase execution order.  It is also the only
+    # reliable ordering when semantic filenames sort differently from their
+    # datatype transitions (for example decimal-to-float before varchar-to-
+    # decimal).  Fall back to filename order before master.xml exists.
+    ordered_names = []
+    master = liquibase_dir / "master.xml"
+    if master.exists():
+        try:
+            ordered_names = re.findall(r'<include[^>]+file="([^"]+)"', master.read_text(encoding="utf-8"))
+        except OSError:
+            ordered_names = []
+    ordered_files = [files.pop(name) for name in ordered_names if name in files]
+    ordered_files.extend(files[name] for name in sorted(files))
     table_pattern = re.compile(r'tableName="([^"]+)"')
     column_pattern = re.compile(r'<column\s+name="([^"]+)"\s+type="([^"]+)"')
-    for file in files:
+    modify_pattern = re.compile(
+        r'<modifyDataType\s+tableName="([^"]+)"\s+columnName="([^"]+)"\s+newDataType="([^"]+)"',
+        re.DOTALL,
+    )
+    transition_name_pattern = re.compile(
+        r"^mysql-modify-(.+)-([^-]+)-([a-z0-9]+)-to-([a-z0-9]+)\.xml$"
+    )
+    for file in ordered_files:
         try:
             content = file.read_text(encoding="utf-8")
             table_match = table_pattern.search(content)
@@ -57,8 +83,30 @@ def parse_existing_table_types():
             existing_types.setdefault(table_name, {})
             for col_name, col_type in column_pattern.findall(content):
                 existing_types[table_name][col_name.lower()] = col_type.upper()
+            # A type transition becomes the baseline for the next transition.
+            # Without this, VARCHAR -> DECIMAL -> FLOAT was incorrectly named
+            # as VARCHAR -> FLOAT on the third run.
+            for changed_table, col_name, col_type in modify_pattern.findall(content):
+                existing_types.setdefault(changed_table.lower(), {})[col_name.lower()] = col_type.upper()
+            transition = transition_name_pattern.match(file.name)
+            if transition:
+                transitions.append((
+                    transition.group(1), transition.group(2), transition.group(3),
+                    transition.group(4),
+                ))
         except Exception:
             continue
+    # Semantic transition filenames encode a directed history.  Follow it from
+    # the create-table type rather than relying on lexical filename order.
+    for table_name, column_name, old_token, new_token in transitions:
+        current = existing_types.get(table_name, {}).get(column_name)
+        if current and _type_token(current) == old_token:
+            for file in ordered_files:
+                if file.name.endswith(f"-{old_token}-to-{new_token}.xml"):
+                    match = modify_pattern.search(file.read_text(encoding="utf-8"))
+                    if match:
+                        existing_types[table_name][column_name] = match.group(3).upper()
+                    break
     return existing_types
 
 
@@ -326,10 +374,12 @@ for table_name, columns in sorted(schema_registry.items()):
 
             continue
 
+        # A column can change type more than once.  The transition is part of
+        # the immutable changeset identity, so an older transition is never
+        # reused or overwritten by a later one.
         change_id = (
-            f"mysql-modify-"
-            f"{table_name}-"
-            f"{normalized}"
+            f"mysql-modify-{table_name}-{normalized}"
+            f"-{_type_token(old_type)}-to-{_type_token(new_type)}"
         )
 
         filename = f"{change_id}.xml"

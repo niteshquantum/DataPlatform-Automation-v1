@@ -31,7 +31,9 @@ if not master_xml.exists():
 tree = ET.parse(master_xml)
 root = tree.getroot()
 
-# Build the desired include list from the actual XML changelogs present.
+# Preserve historical include order.  Existing includes are changelog history;
+# only append changelogs that have not yet been included.  A duplicate include
+# is removed because it would cause Liquibase to process the same file twice.
 xml_files = sorted(
     f for f in mysql_dir.glob("*.xml")
     if f.name not in {"master.xml", "master_objects.xml"}
@@ -41,7 +43,13 @@ existing_includes = [
     for elem in root.findall(f"{{{NS}}}include")
     if elem.get("file")
 ]
-desired_includes = [xml_file.name for xml_file in xml_files]
+desired_includes = []
+for include in existing_includes:
+    if include not in desired_includes:
+        desired_includes.append(include)
+for xml_file in xml_files:
+    if xml_file.name not in desired_includes:
+        desired_includes.append(xml_file.name)
 
 if existing_includes == desired_includes:
     print("master.xml already up to date")
