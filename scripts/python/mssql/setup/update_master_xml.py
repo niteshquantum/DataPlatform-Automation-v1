@@ -31,11 +31,12 @@ if not master_xml.exists():
 tree = ET.parse(master_xml)
 root = tree.getroot()
 
-# Preserve existing include order and append only newly created changelogs.
-# De-duplicate existing entries so a rerun cannot execute a file twice.
+# Preserve valid existing include order and append only newly created
+# changelogs.  An include is valid only when it resolves to an XML file inside
+# this directory; master.xml and master_objects.xml are not schema changesets.
 xml_files = sorted(
     f for f in mssql_dir.glob("*.xml")
-    if f.name != "master.xml"
+    if f.name not in {"master.xml", "master_objects.xml"}
 )
 existing_includes = [
     elem.get("file")
@@ -44,6 +45,14 @@ existing_includes = [
 ]
 desired_includes = []
 for include in existing_includes:
+    include_path = mssql_dir / include
+    if (
+        Path(include).name != include
+        or include in {"master.xml", "master_objects.xml"}
+        or not include_path.is_file()
+    ):
+        print(f"Removed stale master.xml include: {include}")
+        continue
     if include not in desired_includes:
         desired_includes.append(include)
 for xml_file in xml_files:

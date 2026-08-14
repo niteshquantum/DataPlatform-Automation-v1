@@ -208,3 +208,37 @@ def test_master_updater_is_idempotent_and_deduplicates_includes():
         assert text.count('file="mysql-create-b.xml"') == 1
         _run_script(script_path)
         assert _sha256(master) == first_hash
+
+
+def test_mssql_master_updater_removes_only_missing_includes_and_validator_fails_clearly():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        directory = root / "liquibase" / "mssql"
+        directory.mkdir(parents=True)
+        valid = directory / "mssql-create-employees.xml"
+        valid.write_text("<databaseChangeLog/>", encoding="utf-8")
+        master = directory / "master.xml"
+        master.write_text(
+            '''<?xml version="1.0"?><databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"><include file="mssql-create-employees.xml" relativeToChangelogFile="true"/><include file="001_create_employees.xml" relativeToChangelogFile="true"/></databaseChangeLog>''',
+            encoding="utf-8",
+        )
+        updater = _copy_script(root, "scripts/python/mssql/setup/update_master_xml.py")
+        validator = _copy_script(root, "scripts/python/mssql/setup/validate_master_xml.py")
+        _run_script(updater)
+        first_hash = _sha256(master)
+        text = master.read_text(encoding="utf-8")
+        assert 'file="mssql-create-employees.xml"' in text
+        assert "001_create_employees.xml" not in text
+        _run_script(updater)
+        assert _sha256(master) == first_hash
+
+        validation = runpy.run_path(str(validator), run_name="validator")
+        validation["validate_master_xml"]()
+        valid.unlink()
+        try:
+            validation["validate_master_xml"]()
+        except RuntimeError as exc:
+            assert "MSSQL_CHANGELOG_INTEGRITY_ERROR" in str(exc)
+            assert "mssql-create-employees.xml" in str(exc)
+        else:
+            raise AssertionError("expected missing changelog validation failure")

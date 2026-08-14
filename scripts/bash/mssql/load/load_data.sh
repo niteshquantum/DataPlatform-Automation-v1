@@ -46,6 +46,8 @@ echo
 
 python3 scripts/python/mssql/setup/update_master_xml.py
 
+python3 scripts/python/mssql/setup/validate_master_xml.py
+
 echo
 echo "-------------------------------------"
 echo "SCHEMA DECISION"
