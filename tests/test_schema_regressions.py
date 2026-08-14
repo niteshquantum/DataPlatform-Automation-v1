@@ -73,6 +73,15 @@ class SchemaDetectorRegressionTests(unittest.TestCase):
         self.assertTrue(differences("DECIMAL(10,2)", "DECIMAL(18,0)"))
         self.assertTrue(differences("INTEGER", "DATE"))
 
+    def test_mssql_datatype_contract_rejects_ambiguous_parameterized_types(self):
+        from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
+
+        for datatype in ("VARCHAR", "NVARCHAR", "CHAR", "NCHAR", "VARBINARY", "DECIMAL", "NUMERIC"):
+            with self.assertRaises(ValueError):
+                validate_mssql_datatype(datatype)
+        for datatype in ("VARCHAR(255)", "VARCHAR(MAX)", "NVARCHAR(80)", "NVARCHAR(MAX)", "CHAR(1)", "NCHAR(1)", "VARBINARY(MAX)", "DECIMAL(10,2)"):
+            validate_mssql_datatype(datatype)
+
 
 if __name__ == "__main__":
     unittest.main()

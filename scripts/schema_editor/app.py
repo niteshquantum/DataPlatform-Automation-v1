@@ -9,6 +9,8 @@ import sys
 import socket
 import configparser
 
+from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
+
 app = Flask(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -35,7 +37,7 @@ def home():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    return render_template("index.html", data=data)
+    return render_template("index.html", data=data, database=DATABASE)
 
 
 @app.route("/save", methods=["POST"])
@@ -47,7 +49,8 @@ def save():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Save user-selected datatypes
+    # Validate all submitted values before mutating the datatype contract.
+    # MSSQL requires an explicit length/precision for parameterized types.
     for key, value in request.form.items():
         try:
             table, column = key.split("__", 1)
@@ -59,6 +62,16 @@ def save():
 
         if column not in data[table]:
             return f"Unknown column: {table}.{column}", 400
+
+        if DATABASE == "mssql":
+            try:
+                validate_mssql_datatype(value)
+            except ValueError as exc:
+                return str(exc), 400
+
+    # Save user-selected datatypes exactly as submitted after validation.
+    for key, value in request.form.items():
+        table, column = key.split("__", 1)
 
         data[table][column]["selected_type"] = value
 

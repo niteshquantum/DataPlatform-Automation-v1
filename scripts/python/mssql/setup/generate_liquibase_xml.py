@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
+from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
+
 
 ROOT = Path(__file__).resolve().parents[4]
 SCHEMA_FILE = ROOT / "metadata" / "mssql" / "schema_registry.json"
@@ -210,6 +212,7 @@ def get_column_datatype(table_name, column_name, registry):
             for key in ("final_type", "selected_type", "detected_type"):
                 value = metadata.get(key)
                 if isinstance(value, str) and value.strip():
+                    validate_mssql_datatype(value)
                     return value.strip().upper()
     return "VARCHAR(255)"
 

@@ -73,6 +73,12 @@
 
     <td>
 
+        {% if database == "mssql" %}
+        <input name="{{ table }}__{{ column }}"
+               value="{{ info.selected_type }}"
+               list="mssql-datatypes"
+               required>
+        {% else %}
         <select name="{{ table }}__{{ column }}">
 
             <option value="INTEGER"
@@ -100,6 +106,7 @@
             {% if info.selected_type=="BOOLEAN" %}selected{% endif %}>BOOLEAN</option>
 
         </select>
+        {% endif %}
 
     </td>
 
@@ -118,6 +125,26 @@
 </button>
 
 </form>
+
+{% if database == "mssql" %}
+<datalist id="mssql-datatypes">
+    <option value="INTEGER">
+    <option value="BIGINT">
+    <option value="VARCHAR(50)">
+    <option value="VARCHAR(255)">
+    <option value="VARCHAR(MAX)">
+    <option value="NVARCHAR(255)">
+    <option value="NVARCHAR(MAX)">
+    <option value="CHAR(1)">
+    <option value="NCHAR(1)">
+    <option value="VARBINARY(MAX)">
+    <option value="DECIMAL(18,0)">
+    <option value="DECIMAL(10,2)">
+    <option value="DATE">
+    <option value="TIMESTAMP">
+    <option value="BOOLEAN">
+</datalist>
+{% endif %}
 
 </body>
 

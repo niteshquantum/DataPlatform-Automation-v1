@@ -224,6 +224,40 @@ def test_mssql_uses_registry_types_and_generates_drop_and_modify_changesets():
         assert before == after
 
 
+def test_mssql_generator_rejects_bare_varchar_without_touching_history():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mssql").mkdir(parents=True)
+        (root / "liquibase" / "mssql").mkdir(parents=True)
+        historical = root / "liquibase" / "mssql" / "mssql-create-orders.xml"
+        historical.write_text(
+            '''<?xml version="1.0"?><databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"><changeSet id="mssql-create-orders" author="tanisha"><createTable tableName="orders"><column name="order_id" type="VARCHAR"/></createTable></changeSet></databaseChangeLog>''',
+            encoding="utf-8",
+        )
+        before_hash = _sha256(historical)
+        (root / "metadata" / "mssql" / "schema_registry.json").write_text(json.dumps({
+            "orders": ["order_id"],
+            "products": ["product_id"],
+            "sales_reconciliation": ["export_log_id", "settlement_cycle_code"],
+        }), encoding="utf-8")
+        (root / "metadata" / "mssql" / "datatype_registry.json").write_text(json.dumps({
+            "orders": {"order_id": {"selected_type": "VARCHAR"}},
+            "products": {"product_id": {"selected_type": "VARCHAR"}},
+            "sales_reconciliation": {
+                "export_log_id": {"selected_type": "VARCHAR"},
+                "settlement_cycle_code": {"selected_type": "VARCHAR"},
+            },
+        }), encoding="utf-8")
+        script_path = _copy_script(root, "scripts/python/mssql/setup/generate_liquibase_xml.py")
+        try:
+            _run_script(script_path)
+        except ValueError as exc:
+            assert "requires an explicit length or MAX" in str(exc)
+        else:
+            raise AssertionError("bare MSSQL VARCHAR must be rejected")
+        assert _sha256(historical) == before_hash
+
+
 def test_mssql_rename_requires_explicit_mapping_and_ambiguous_change_is_add_drop():
     with tempfile.TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
