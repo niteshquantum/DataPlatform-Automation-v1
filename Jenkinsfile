@@ -43,7 +43,7 @@ pipeline {
 
         stage('Verify Download') {
             steps {
-                    bat 'python3 scripts\\python\\common\\verify_download.py'
+                    bat 'python scripts\\python\\common\\verify_download.py'
                 }
             }
         }
