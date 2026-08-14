@@ -59,6 +59,6 @@ pipeline {
         //         bat 'scripts\\batch\\mssql\\migration\\run_migration_pipeline.bat'
         //     }
         // }
-    }
+    
 }
 
