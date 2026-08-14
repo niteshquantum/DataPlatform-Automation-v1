@@ -30,6 +30,42 @@ DATA_FILE = (
 )
 
 
+_MSSQL_GENERIC_TO_MSSQL = {
+    "TEXT": "VARCHAR(MAX)",
+    "INTEGER": "INT",
+    "NUMERIC": "DECIMAL(18,0)",
+    "TIMESTAMP": "DATETIME2(7)",
+    "DATE": "DATE",
+    "BOOLEAN": "BIT",
+}
+
+
+def _mssql_default_for(detected_type, selected_type):
+    """Derive a valid MSSQL editor value from detected_type when selected_type is invalid."""
+    if selected_type is None:
+        selected_type = ""
+    selected_type = str(selected_type).strip().upper()
+
+    try:
+        validate_mssql_datatype(selected_type)
+        return selected_type
+    except ValueError:
+        pass
+
+    detected = str(detected_type or "").strip().upper()
+    if detected in _MSSQL_GENERIC_TO_MSSQL:
+        return _MSSQL_GENERIC_TO_MSSQL[detected]
+
+    if selected_type in {"VARCHAR", "NVARCHAR", "VARBINARY"}:
+        return f"{selected_type}(MAX)"
+    if selected_type in {"CHAR", "NCHAR"}:
+        return f"{selected_type}(1)"
+    if selected_type in {"DECIMAL", "NUMERIC"}:
+        return f"{selected_type}(18,0)"
+
+    return selected_type
+
+
 @app.route("/")
 def home():
     if not DATA_FILE.exists():
@@ -37,6 +73,14 @@ def home():
 
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    if DATABASE == "mssql":
+        for table, columns in data.items():
+            for column, info in columns.items():
+                info["selected_type"] = _mssql_default_for(
+                    info.get("detected_type"),
+                    info.get("selected_type"),
+                )
 
     return render_template("index.html", data=data, database=DATABASE)
 

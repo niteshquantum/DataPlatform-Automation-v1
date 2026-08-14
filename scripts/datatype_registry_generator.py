@@ -42,6 +42,21 @@ def detect_datatype(values):
     return "TEXT"
 
 
+_MSSQL_TYPE_MAP = {
+    "TEXT": "VARCHAR(MAX)",
+    "INTEGER": "INT",
+    "NUMERIC": "DECIMAL(18,0)",
+    "TIMESTAMP": "DATETIME2(7)",
+    "DATE": "DATE",
+    "BOOLEAN": "BIT",
+}
+
+
+def _mssql_type(value):
+    value = str(value or "").strip().upper()
+    return _MSSQL_TYPE_MAP.get(value, value)
+
+
 def main():
 
     project_root = Path(__file__).parent.parent
@@ -165,6 +180,9 @@ def main():
                 sample_data.get(column, [])
             )
 
+            if db_type == "mssql":
+                detected = _mssql_type(detected)
+
             existing_column = existing_registry.get(table, {}).get(column, {})
             previous_selected = existing_column.get("selected_type") if isinstance(existing_column, dict) else None
             previous_final = existing_column.get("final_type") if isinstance(existing_column, dict) else None
@@ -179,6 +197,10 @@ def main():
             final_type = previous_final if isinstance(previous_final, str) and previous_final.strip() else selected_type
             if previous_final == previous_detected or previous_final == previous_selected == previous_detected:
                 final_type = selected_type
+
+            if db_type == "mssql":
+                selected_type = _mssql_type(selected_type)
+                final_type = _mssql_type(final_type)
 
             datatype_registry[table][column] = {
 
