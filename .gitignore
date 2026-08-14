@@ -148,6 +148,12 @@ objects/**/generated/
 # Existing architecture defaults to ignoring DB-level contents
 liquibase/*/*
 
+# Immutable schema migrations are repository history, not disposable runtime
+# output.  Their database-specific semantic filenames are intentionally
+# versioned with the migration manifest.
+!liquibase/mysql/mysql-*.xml
+!liquibase/mssql/mssql-*.xml
+
 # Keep required static Liquibase entry points
 !liquibase/*/master.xml
 !liquibase/*/liquibase.properties

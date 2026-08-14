@@ -164,6 +164,8 @@ def test_mssql_generator_is_idempotent_and_new_changesets_are_semantic():
         _run_script(script_path)
         first = root / "liquibase" / "mssql" / "mssql-create-accounts.xml"
         first_hash = _sha256(first)
+        manifest = json.loads((root / "metadata" / "mssql" / "migration_manifest.json").read_text())
+        assert manifest["migrations"][0]["file"] == first.name
         _run_script(script_path)
         assert _sha256(first) == first_hash
         assert json.loads((root / "metadata" / "mssql" / "schema_status.json").read_text())["schema_changed"] is False
@@ -172,6 +174,24 @@ def test_mssql_generator_is_idempotent_and_new_changesets_are_semantic():
         _run_script(script_path)
         assert (root / "liquibase" / "mssql" / "mssql-add-accounts-balance.xml").exists()
         assert _sha256(first) == first_hash
+
+
+def test_mssql_applied_changeset_without_source_fails_before_generation():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mssql").mkdir(parents=True)
+        (root / "liquibase" / "mssql").mkdir(parents=True)
+        script_path = _copy_script(root, "scripts/python/mssql/setup/generate_liquibase_xml.py")
+        module = runpy.run_path(str(script_path), run_name="mssql_generator")
+        try:
+            module["verify_applied_history"](
+                {}, [("001", "tanisha", "liquibase/mssql/001_create_sales_reconciliation.xml")]
+            )
+        except RuntimeError as exc:
+            assert "IMMUTABLE_MIGRATION_HISTORY_MISSING" in str(exc)
+            assert "mssql:001:tanisha" in str(exc)
+        else:
+            raise AssertionError("missing applied source artifact must fail")
 
 
 def test_mysql_view_template_has_loader_contract():
