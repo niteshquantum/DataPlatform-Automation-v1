@@ -66,6 +66,38 @@ def test_mssql_editor_normalizes_bare_varchar_using_detected_type():
         assert 'value="VARCHAR(MAX)"' in response.data.decode()
 
 
+def test_mssql_editor_keeps_detected_bare_varchar_unresolved_without_guessing_length():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        registry = Path(tmp_dir) / "datatype_registry.json"
+        registry.write_text(json.dumps({
+            "orders": {
+                "order_id": {
+                    "detected_type": "VARCHAR",
+                    "selected_type": "",
+                }
+            }
+        }), encoding="utf-8")
+        with patch.object(editor, "DATA_FILE", registry), patch.object(editor, "DATABASE", "mssql"):
+            editor.app.config["TESTING"] = True
+
+            response = editor.app.test_client().get("/")
+            assert response.status_code == 200
+            html = response.data.decode()
+            assert 'value="VARCHAR"' in html
+            assert 'value="VARCHAR(MAX)"' in html
+            assert 'value="VARCHAR(255)"' in html
+
+            reject = editor.app.test_client().post("/save", data={"orders__order_id": "VARCHAR"})
+            assert reject.status_code == 400
+            assert "requires an explicit length or MAX" in reject.data.decode()
+
+            accept_255 = editor.app.test_client().post("/save", data={"orders__order_id": "VARCHAR(255)"})
+            assert accept_255.status_code == 200
+
+            accept_max = editor.app.test_client().post("/save", data={"orders__order_id": "VARCHAR(MAX)"})
+            assert accept_max.status_code == 200
+
+
 def test_mssql_editor_preserves_explicit_varchar255():
     with tempfile.TemporaryDirectory() as tmp_dir:
         registry = Path(tmp_dir) / "datatype_registry.json"

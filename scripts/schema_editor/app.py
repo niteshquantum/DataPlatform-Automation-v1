@@ -41,22 +41,16 @@ _MSSQL_GENERIC_TO_MSSQL = {
 
 
 def _mssql_default_for(detected_type, selected_type):
-    """Preserve an explicit user selection; only fall back to detected defaults for invalid or missing values."""
+    """Preserve explicit values exactly and keep unresolved bare MSSQL suggestions visible without guessing a length."""
     if selected_type is not None:
         value = str(selected_type).strip()
         if value:
-            try:
-                return normalize_mssql_datatype(value)
-            except ValueError:
-                pass
+            return value
 
     if detected_type is not None:
         value = str(detected_type).strip()
         if value:
-            try:
-                return normalize_mssql_datatype(value)
-            except ValueError:
-                pass
+            return value
 
     return "VARCHAR(MAX)"
 

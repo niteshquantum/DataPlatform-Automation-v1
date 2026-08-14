@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.python.common.mssql_datatype_validation import normalize_mssql_datatype, validate_mssql_datatype
+from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
 
 
 def detect_datatype(values):
@@ -62,11 +62,14 @@ def _mssql_type(value):
     value = str(value or "").strip()
     if not value:
         return ""
-    return _MSSQL_TYPE_MAP.get(value.upper(), normalize_mssql_datatype(value))
+    upper = value.upper()
+    if upper in _MSSQL_TYPE_MAP:
+        return _MSSQL_TYPE_MAP[upper]
+    return value
 
 
 def resolve_registry_datatype(existing_column, detected):
-    """Preserve explicit user choices while still normalizing detected generic defaults."""
+    """Keep detected bare MSSQL parameterized types unresolved so Schema Editor can require an explicit choice."""
     if not isinstance(existing_column, dict):
         return _mssql_type(detected)
 
@@ -87,9 +90,7 @@ def resolve_registry_datatype(existing_column, detected):
         except ValueError:
             if key in {"selected_type", "final_type"}:
                 raise
-            if normalized in _MSSQL_TYPE_MAP:
-                return _MSSQL_TYPE_MAP[normalized]
-            continue
+            return candidate
 
     return _mssql_type(detected)
 
