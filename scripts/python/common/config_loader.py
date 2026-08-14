@@ -1,5 +1,6 @@
 from pathlib import Path
 import platform
+import os
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -38,7 +39,12 @@ def load_database_config(database_name):
             f"{database_name}.conf"
         )
 
-    return load_config(config_file)
+    config = load_config(config_file)
+    # CI supplies this one authoritative runtime value.  Persistent/developer
+    # environments omit it and retain the configured MSSQL_DB default.
+    if database_name.lower() == "mssql" and os.environ.get("MSSQL_DATABASE"):
+        config["MSSQL_DB"] = os.environ["MSSQL_DATABASE"]
+    return config
 
 
 def load_common_config(config_name):

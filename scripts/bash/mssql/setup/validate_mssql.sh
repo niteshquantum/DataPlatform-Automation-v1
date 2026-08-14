@@ -21,7 +21,7 @@ fi
 
 MSSQL_HOST=$(grep "^MSSQL_HOST=" "$CONFIG_FILE" | cut -d'=' -f2)
 MSSQL_PORT=$(grep "^MSSQL_PORT=" "$CONFIG_FILE" | cut -d'=' -f2)
-MSSQL_DB=$(grep "^MSSQL_DB=" "$CONFIG_FILE" | cut -d'=' -f2)
+source "$PROJECT_ROOT/scripts/bash/mssql/setup/resolve_database.sh"
 MSSQL_USER=$(grep "^MSSQL_USER=" "$CONFIG_FILE" | cut -d'=' -f2)
 MSSQL_PASSWORD=$(grep "^MSSQL_PASSWORD=" "$CONFIG_FILE" | cut -d'=' -f2)
 
@@ -64,6 +64,9 @@ echo "Validating SQL Server connection..."
 -C \
 -l 30 \
 -Q "SELECT @@VERSION;" > /dev/null
+
+"$SQLCMD" -S "${MSSQL_HOST},${MSSQL_PORT}" -U "${MSSQL_USER}" -P "${MSSQL_PASSWORD}" -C -l 30 \
+-Q "IF DB_ID(N'${MSSQL_DATABASE}') IS NULL THROW 50000, 'Resolved MSSQL database does not exist', 1;" > /dev/null
 
 
 echo

@@ -21,7 +21,7 @@ fi
 
 MSSQL_HOST=$(grep "^MSSQL_HOST=" "$CONFIG_FILE" | cut -d'=' -f2)
 MSSQL_PORT=$(grep "^MSSQL_PORT=" "$CONFIG_FILE" | cut -d'=' -f2)
-MSSQL_DB=$(grep "^MSSQL_DB=" "$CONFIG_FILE" | cut -d'=' -f2)
+source "$PROJECT_ROOT/scripts/bash/mssql/setup/resolve_database.sh"
 MSSQL_USER=$(grep "^MSSQL_USER=" "$CONFIG_FILE" | cut -d'=' -f2)
 MSSQL_PASSWORD=$(grep "^MSSQL_PASSWORD=" "$CONFIG_FILE" | cut -d'=' -f2)
 MSSQL_DRIVER_VERSION=$(grep "^MSSQL_DRIVER_VERSION=" "$CONFIG_FILE" | cut -d'=' -f2)
@@ -48,7 +48,7 @@ fi
 
 cd "$PROJECT_ROOT"
 
-echo "Database : $MSSQL_DB"
+echo "Database : $MSSQL_DATABASE"
 echo "Host     : $MSSQL_HOST"
 echo "Port     : $MSSQL_PORT"
 echo "User     : $MSSQL_USER"
@@ -71,7 +71,7 @@ fi
 --driver=com.microsoft.sqlserver.jdbc.SQLServerDriver \
 --search-path="$PROJECT_ROOT" \
 --changeLogFile="$CHANGELOG" \
---url="jdbc:sqlserver://$MSSQL_HOST:$MSSQL_PORT;databaseName=$MSSQL_DB;encrypt=true;trustServerCertificate=true" \
+--url="jdbc:sqlserver://$MSSQL_HOST:$MSSQL_PORT;databaseName=$MSSQL_DATABASE;encrypt=true;trustServerCertificate=true" \
 --username="$MSSQL_USER" \
 "${PASSWORD_OPTION[@]}" \
 update

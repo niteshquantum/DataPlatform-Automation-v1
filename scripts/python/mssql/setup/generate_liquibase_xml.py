@@ -1,6 +1,7 @@
 """Generate immutable MSSQL Liquibase changelogs from the schema registry."""
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -59,7 +60,7 @@ def applied_changesets():
     try:
         connection = pyodbc.connect(
             f"DRIVER={{{driver}}};SERVER={config['MSSQL_HOST']},{config.get('MSSQL_PORT', '1433')};"
-            f"DATABASE={config['MSSQL_DB']};UID={config['MSSQL_USER']};PWD={config.get('MSSQL_PASSWORD', '')};"
+            f"DATABASE={os.environ.get('MSSQL_DATABASE', config['MSSQL_DB'])};UID={config['MSSQL_USER']};PWD={config.get('MSSQL_PASSWORD', '')};"
             "Encrypt=yes;TrustServerCertificate=yes;"
         )
         try:
