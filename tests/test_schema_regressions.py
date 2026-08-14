@@ -50,6 +50,29 @@ class SchemaDetectorRegressionTests(unittest.TestCase):
         typed_actual = {"orders": {"total_amount": {"name": "total_amount", "type": "VARCHAR(255)"}}}
         self.assertIn("Expected: DECIMAL(10,2); Actual: VARCHAR(255)", module.schema_differences(expected, typed_actual)[0])
 
+    def test_mssql_type_equivalence_preserves_parameters_and_detects_real_drift(self):
+        module_path = Path(__file__).resolve().parents[1] / "scripts" / "python" / "mssql" / "setup" / "validate_schema_drift.py"
+        spec = importlib.util.spec_from_file_location("mssql_type_equivalence", module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        def differences(expected_type, actual_type):
+            expected = {"orders": {"value": {"name": "value", "type": expected_type}}}
+            actual = {"orders": {"value": {"name": "value", "type": actual_type}}}
+            return module.schema_differences(expected, actual)
+
+        self.assertEqual(differences("TEXT", "VARCHAR(MAX)"), [])
+        self.assertEqual(differences("INTEGER", "INT"), [])
+        self.assertEqual(differences("NUMERIC(10,2)", "DECIMAL(10,2)"), [])
+        self.assertEqual(differences("NUMERIC", "DECIMAL(18,0)"), [])
+        self.assertEqual(differences("TIMESTAMP", "DATETIME2(7)"), [])
+        self.assertEqual(module._actual_type("timestamp", 8, 0, 0), "ROWVERSION")
+        self.assertTrue(differences("TIMESTAMP", "ROWVERSION"))
+        self.assertTrue(differences("VARCHAR(100)", "VARCHAR(255)"))
+        self.assertTrue(differences("VARCHAR(100)", "VARCHAR(MAX)"))
+        self.assertTrue(differences("DECIMAL(10,2)", "DECIMAL(18,0)"))
+        self.assertTrue(differences("INTEGER", "DATE"))
+
 
 if __name__ == "__main__":
     unittest.main()

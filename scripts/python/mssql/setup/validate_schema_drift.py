@@ -1,5 +1,6 @@
 """Fail closed when the persistent MSSQL schema diverges from Liquibase history."""
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -15,11 +16,39 @@ from scripts.python.mssql.setup.generate_liquibase_xml import (
 
 
 def canonical_type(value):
-    return "".join(str(value).upper().replace("NUMERIC", "DECIMAL").split())
+    """Return a precise MSSQL storage-type comparison key.
+
+    Source metadata uses portable Liquibase names (for example INTEGER and
+    TIMESTAMP), whereas SQL Server catalogues report MSSQL names.  Only known
+    SQL Server/Liquibase equivalents are folded; all explicit parameters stay
+    part of the key so drift detection remains strict.
+    """
+    text = "".join(str(value).upper().split())
+    match = re.fullmatch(r"([A-Z0-9_]+)(?:\(([^()]*)\))?", text)
+    if not match:
+        return text
+    base, parameters = match.groups()
+    if base == "TEXT":
+        return "VARCHAR(MAX)"
+    if base == "INTEGER":
+        return "INT"
+    if base == "NUMERIC":
+        base = "DECIMAL"
+    # The source detector's TIMESTAMP means a date/time value.  Liquibase maps
+    # that portable expectation to DATETIME2(7) on MSSQL.  Actual SQL Server
+    # TIMESTAMP/ROWVERSION is represented as ROWVERSION by _actual_type(), so
+    # it is never confused with this date/time expectation.
+    if base == "TIMESTAMP":
+        return "DATETIME2(7)"
+    if base in {"DECIMAL", "DATETIME2"} and parameters is None:
+        parameters = "18,0" if base == "DECIMAL" else "7"
+    return f"{base}({parameters})" if parameters is not None else base
 
 
 def _actual_type(type_name, max_length, precision, scale):
     name = str(type_name).upper()
+    if name in {"TIMESTAMP", "ROWVERSION"}:
+        return "ROWVERSION"
     if name in {"VARCHAR", "CHAR", "VARBINARY", "BINARY"}:
         return f"{name}(MAX)" if max_length == -1 else f"{name}({max_length})"
     if name in {"NVARCHAR", "NCHAR"}:
