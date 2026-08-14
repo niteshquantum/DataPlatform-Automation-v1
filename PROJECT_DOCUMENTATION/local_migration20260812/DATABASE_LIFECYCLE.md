@@ -1,4 +1,6 @@
-# Database Lifecycle — Windows Migration Pipeline
+# Database Lifecycle — Migration Pipeline
+
+This document describes how the migration pipeline handles the destination database lifecycle for both Windows and Linux environments.
 
 ## Destination Database Handling
 
@@ -74,7 +76,7 @@ Continue
 
 **The migration pipeline must NEVER automatically DROP an existing destination database.**
 
-This behavior was introduced because earlier testing failed when the destination database did not exist.
+This behavior was introduced because earlier testing failed when the destination database did not exist. Auto-dropping is not implemented and should never be added.
 
 ---
 
@@ -87,3 +89,5 @@ Observed destination databases during local testing:
 | PostgreSQL | `test_db_postgre` |
 | MySQL | `test_db` / `test_db_mysql` |
 | MSSQL | `test_db_mssql` |
+
+These are local test databases. No production databases were dropped during testing.
