@@ -163,7 +163,14 @@ def _normalize_column_name(column):
 
 
 def _detect_renames(existing_columns, current_columns):
-    """Return a conservative rename map for one-to-one column renames."""
+    """Return no inferred renames.
+
+    CSV/JSON headers do not carry durable column identity, so a name-only
+    heuristic cannot prove a rename safely.  MSSQL rename migrations therefore
+    require an explicit mapping in metadata/mssql/schema_renames.json.
+    """
+    return {}
+    """Legacy heuristic retained below only for historical context."""
     existing_norm = [_normalize_column_name(col) for col in existing_columns]
     current_norm = [_normalize_column_name(col) for col in current_columns]
 
@@ -283,34 +290,17 @@ def update_schema_registry(table_name, columns, registry_path):
             for col in columns
         ]
 
-        if table_name in registry:
-
-            existing_columns = [
-                col.replace('\ufeff', '').strip()
-                for col in registry[table_name]
-            ]
-
-            new_columns = []
-            seen = set()
-
-            for col in existing_columns + columns:
-                key = col.lower()
-
-                if key not in seen:
-                    seen.add(key)
-                    new_columns.append(col)
-
-            added_columns = [
-                col for col in new_columns
-                if col not in existing_columns
-            ]
-
-            registry[table_name] = new_columns
-            
-            
-
-        else:
-            registry[table_name] = columns
+        # The registry is the current source contract, not an accumulation of
+        # every header ever observed.  Preserve source order while removing
+        # duplicate headers case-insensitively.
+        current_columns = []
+        seen = set()
+        for column in columns:
+            key = column.lower()
+            if key not in seen:
+                seen.add(key)
+                current_columns.append(column)
+        registry[table_name] = current_columns
 
         with open(registry_path, 'w', encoding='utf-8') as f:
             json.dump(registry, f, indent=2)

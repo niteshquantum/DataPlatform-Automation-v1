@@ -48,6 +48,10 @@ fi
 
 cd "$PROJECT_ROOT"
 
+# The persistent target must exactly match the repository state represented by
+# already-applied changesets before Liquibase is allowed to apply new ones.
+python3 scripts/python/mssql/setup/validate_schema_drift.py --mode baseline
+
 echo "Database : $MSSQL_DATABASE"
 echo "Host     : $MSSQL_HOST"
 echo "Port     : $MSSQL_PORT"
@@ -75,6 +79,10 @@ fi
 --username="$MSSQL_USER" \
 "${PASSWORD_OPTION[@]}" \
 update
+
+# A successful update must leave the target equal to the full current
+# repository-defined schema; this is validation only, never repair.
+python3 scripts/python/mssql/setup/validate_schema_drift.py --mode current
 
 echo
 echo "====================================="

@@ -52,10 +52,6 @@ pipeline {
         label 'ubuntu-node'
     }
 
-    environment {
-        MSSQL_DATABASE = "ecommerce_mssql_ci_${BUILD_NUMBER}"
-    }
-
     options {
         disableConcurrentBuilds()
     }

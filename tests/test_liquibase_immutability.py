@@ -176,6 +176,77 @@ def test_mssql_generator_is_idempotent_and_new_changesets_are_semantic():
         assert _sha256(first) == first_hash
 
 
+def test_mssql_uses_registry_types_and_generates_drop_and_modify_changesets():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mssql").mkdir(parents=True)
+        (root / "liquibase" / "mssql").mkdir(parents=True)
+        registry = root / "metadata" / "mssql" / "schema_registry.json"
+        types = root / "metadata" / "mssql" / "datatype_registry.json"
+        registry.write_text(json.dumps({"orders": ["id", "amount", "obsolete"]}), encoding="utf-8")
+        types.write_text(json.dumps({"orders": {
+            "id": {"final_type": "INTEGER"},
+            "amount": {"selected_type": "VARCHAR(255)"},
+            "obsolete": {"detected_type": "DATE"},
+        }}), encoding="utf-8")
+        script_path = _copy_script(root, "scripts/python/mssql/setup/generate_liquibase_xml.py")
+        _run_script(script_path)
+        create = root / "liquibase" / "mssql" / "mssql-create-orders.xml"
+        create_text = create.read_text(encoding="utf-8")
+        assert 'name="id" type="INTEGER"' in create_text
+        assert 'name="amount" type="VARCHAR(255)"' in create_text
+        assert 'name="obsolete" type="DATE"' in create_text
+        create_hash = _sha256(create)
+
+        registry.write_text(json.dumps({"orders": ["id", "amount"]}), encoding="utf-8")
+        types.write_text(json.dumps({"orders": {
+            "id": {"final_type": "INTEGER"},
+            "amount": {"final_type": "DECIMAL(10,2)"},
+        }}), encoding="utf-8")
+        _run_script(script_path)
+        assert (root / "liquibase" / "mssql" / "mssql-drop-orders-obsolete.xml").exists()
+        modify = root / "liquibase" / "mssql" / "mssql-modify-orders-amount-varchar255-to-decimal102.xml"
+        assert modify.exists()
+        assert 'newDataType="DECIMAL(10,2)"' in modify.read_text(encoding="utf-8")
+        assert _sha256(create) == create_hash
+        modify_hash = _sha256(modify)
+        types.write_text(json.dumps({"orders": {
+            "id": {"final_type": "INTEGER"},
+            "amount": {"final_type": "FLOAT"},
+        }}), encoding="utf-8")
+        _run_script(script_path)
+        second_modify = root / "liquibase" / "mssql" / "mssql-modify-orders-amount-decimal102-to-float.xml"
+        assert second_modify.exists()
+        assert _sha256(modify) == modify_hash
+        before = {path.name: _sha256(path) for path in (root / "liquibase" / "mssql").glob("*.xml")}
+        _run_script(script_path)
+        after = {path.name: _sha256(path) for path in (root / "liquibase" / "mssql").glob("*.xml")}
+        assert before == after
+
+
+def test_mssql_rename_requires_explicit_mapping_and_ambiguous_change_is_add_drop():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mssql").mkdir(parents=True)
+        (root / "liquibase" / "mssql").mkdir(parents=True)
+        registry = root / "metadata" / "mssql" / "schema_registry.json"
+        registry.write_text(json.dumps({"customers": ["customer_name"]}), encoding="utf-8")
+        script_path = _copy_script(root, "scripts/python/mssql/setup/generate_liquibase_xml.py")
+        _run_script(script_path)
+        registry.write_text(json.dumps({"customers": ["customer_full_name"]}), encoding="utf-8")
+        (root / "metadata" / "mssql" / "schema_renames.json").write_text(
+            json.dumps({"customers": {"customer_name": "customer_full_name"}}), encoding="utf-8"
+        )
+        _run_script(script_path)
+        assert (root / "liquibase" / "mssql" / "mssql-rename-customers-customer_name-customer_full_name.xml").exists()
+
+        registry.write_text(json.dumps({"customers": ["first_name", "last_name"]}), encoding="utf-8")
+        (root / "metadata" / "mssql" / "schema_renames.json").unlink()
+        _run_script(script_path)
+        assert (root / "liquibase" / "mssql" / "mssql-add-customers-first_name-last_name.xml").exists()
+        assert (root / "liquibase" / "mssql" / "mssql-drop-customers-customer_full_name.xml").exists()
+
+
 def test_mssql_applied_changeset_without_source_fails_before_generation():
     with tempfile.TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)

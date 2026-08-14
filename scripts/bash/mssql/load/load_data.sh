@@ -22,6 +22,8 @@ echo
 
 python3 scripts/schema_detector.py mssql
 
+python3 scripts/datatype_registry_generator.py mssql
+
 echo
 echo "-------------------------------------"
 echo "GENERATING LIQUIBASE XML"

@@ -169,8 +169,16 @@ def main():
             previous_selected = existing_column.get("selected_type") if isinstance(existing_column, dict) else None
             previous_final = existing_column.get("final_type") if isinstance(existing_column, dict) else None
 
+            previous_detected = existing_column.get("detected_type") if isinstance(existing_column, dict) else None
+            # Keep an explicit editor override, but do not freeze an
+            # auto-selected prior detection forever.  A genuine new detection
+            # becomes the current expected type unless a user chose otherwise.
             selected_type = previous_selected if isinstance(previous_selected, str) and previous_selected.strip() else detected
+            if previous_selected == previous_detected:
+                selected_type = detected
             final_type = previous_final if isinstance(previous_final, str) and previous_final.strip() else selected_type
+            if previous_final == previous_detected or previous_final == previous_selected == previous_detected:
+                final_type = selected_type
 
             datatype_registry[table][column] = {
 
