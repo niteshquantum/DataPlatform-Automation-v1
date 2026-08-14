@@ -43,9 +43,6 @@ pipeline {
 
         stage('Verify Download') {
             steps {
-                withEnv([
-                    "DATABASE=mssql"
-                ]) {
                     bat 'python3 scripts\\python\\common\\verify_download.py'
                 }
             }
