@@ -85,8 +85,32 @@ def applied_changesets():
         raise RuntimeError(f"MSSQL_MIGRATION_HISTORY_CHECK_UNAVAILABLE: {exc}") from exc
 
 
+def is_object_managed_changeset(change_id, author, filename):
+    """Return whether a DATABASECHANGELOG row belongs to object deployment.
+
+    Object XML is deliberately generated under ``liquibase/mssql/objects`` and
+    deployed through ``master_objects.xml``.  Its stable generated identities
+    are not schema migrations and therefore cannot be required to appear in
+    the immutable schema-migration manifest.  The identity check also handles
+    legacy object runs whose Liquibase filename was recorded as the object
+    master rather than the included generated XML.
+    """
+    object_identity = bool(re.fullmatch(
+        r"(?:view|function|procedure|trigger|index)-[1-9][0-9]*",
+        str(change_id),
+        re.IGNORECASE,
+    )) and str(author).lower() == "automation"
+    if not object_identity:
+        return False
+    path = str(filename).replace("\\", "/").lower()
+    return "liquibase/mssql/objects/" in path or path.endswith("liquibase/mssql/master_objects.xml") or not path
+
+
 def verify_applied_history(source, applied):
     for change_id, author, filename in applied:
+        if is_object_managed_changeset(change_id, author, filename):
+            print(f"Object-managed Liquibase history retained outside schema manifest: mssql:{change_id}:{author}")
+            continue
         if "liquibase/mssql" in filename.replace("\\", "/").lower() and (change_id, author) not in source:
             raise RuntimeError("IMMUTABLE_MIGRATION_HISTORY_MISSING: "
                                f"Applied changeset mssql:{change_id}:{author} has no matching immutable source definition.")

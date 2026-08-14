@@ -265,6 +265,31 @@ def test_mssql_applied_changeset_without_source_fails_before_generation():
             raise AssertionError("missing applied source artifact must fail")
 
 
+def test_mssql_object_managed_view_history_is_not_treated_as_schema_history():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "metadata" / "mssql").mkdir(parents=True)
+        (root / "liquibase" / "mssql").mkdir(parents=True)
+        script_path = _copy_script(root, "scripts/python/mssql/setup/generate_liquibase_xml.py")
+        module = runpy.run_path(str(script_path), run_name="mssql_generator")
+
+        # generate_view_xml.py creates view-{n} with author automation under
+        # liquibase/mssql/objects/... and deploys it via master_objects.xml.
+        module["verify_applied_history"](
+            {}, [("view-1", "automation", "liquibase/mssql/objects/generated/views/v_orders.xml")]
+        )
+
+        # The exception is strictly limited to object-managed identities.
+        try:
+            module["verify_applied_history"](
+                {}, [("view-1", "automation", "liquibase/mssql/mssql-create-orders.xml")]
+            )
+        except RuntimeError as exc:
+            assert "IMMUTABLE_MIGRATION_HISTORY_MISSING" in str(exc)
+        else:
+            raise AssertionError("schema changelog path must retain immutable-history protection")
+
+
 def test_mysql_view_template_has_loader_contract():
     template_dir = REPO_ROOT / "scripts" / "python" / "common" / "objects"
     sys.path.insert(0, str(template_dir))
