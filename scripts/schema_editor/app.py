@@ -12,7 +12,7 @@ import configparser
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
+from scripts.python.common.mssql_datatype_validation import normalize_mssql_datatype, validate_mssql_datatype
 
 app = Flask(__name__)
 
@@ -41,29 +41,24 @@ _MSSQL_GENERIC_TO_MSSQL = {
 
 
 def _mssql_default_for(detected_type, selected_type):
-    """Derive a valid MSSQL editor value from detected_type when selected_type is invalid."""
-    if selected_type is None:
-        selected_type = ""
-    selected_type = str(selected_type).strip().upper()
+    """Preserve an explicit user selection; only fall back to detected defaults for invalid or missing values."""
+    if selected_type is not None:
+        value = str(selected_type).strip()
+        if value:
+            try:
+                return normalize_mssql_datatype(value)
+            except ValueError:
+                pass
 
-    try:
-        validate_mssql_datatype(selected_type)
-        return selected_type
-    except ValueError:
-        pass
+    if detected_type is not None:
+        value = str(detected_type).strip()
+        if value:
+            try:
+                return normalize_mssql_datatype(value)
+            except ValueError:
+                pass
 
-    detected = str(detected_type or "").strip().upper()
-    if detected in _MSSQL_GENERIC_TO_MSSQL:
-        return _MSSQL_GENERIC_TO_MSSQL[detected]
-
-    if selected_type in {"VARCHAR", "NVARCHAR", "VARBINARY"}:
-        return f"{selected_type}(MAX)"
-    if selected_type in {"CHAR", "NCHAR"}:
-        return f"{selected_type}(1)"
-    if selected_type in {"DECIMAL", "NUMERIC"}:
-        return f"{selected_type}(18,0)"
-
-    return selected_type
+    return "VARCHAR(MAX)"
 
 
 @app.route("/")

@@ -124,3 +124,45 @@ def test_mssql_editor_save_with_normalized_initial_value_succeeds():
             assert response.status_code == 200
             assert json.loads(registry.read_text(encoding="utf-8"))["orders"]["order_id"]["selected_type"] == "VARCHAR(MAX)"
             timer.start.assert_called_once()
+
+
+from scripts.datatype_registry_generator import resolve_registry_datatype
+
+
+def test_mssql_registry_regeneration_preserves_user_selected_varchar_max_for_text():
+    existing = {
+        "detected_type": "TEXT",
+        "selected_type": "VARCHAR(MAX)",
+        "final_type": "VARCHAR(MAX)",
+    }
+    assert resolve_registry_datatype(existing, "TEXT") == "VARCHAR(MAX)"
+
+
+def test_mssql_registry_regeneration_preserves_user_selected_varchar255_for_text():
+    existing = {
+        "detected_type": "TEXT",
+        "selected_type": "VARCHAR(255)",
+        "final_type": "VARCHAR(255)",
+    }
+    assert resolve_registry_datatype(existing, "TEXT") == "VARCHAR(255)"
+
+
+def test_mssql_registry_regeneration_keeps_decimal_and_bit_values():
+    for value in ("DECIMAL(12,2)", "BIT"):
+        existing = {
+            "detected_type": "NUMERIC",
+            "selected_type": value,
+            "final_type": value,
+        }
+        assert resolve_registry_datatype(existing, "NUMERIC") == value
+
+
+def test_mssql_datatype_validator_rejects_bare_varchar():
+    from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
+
+    try:
+        validate_mssql_datatype("VARCHAR")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("bare VARCHAR should be rejected")

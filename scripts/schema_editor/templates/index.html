@@ -128,7 +128,7 @@
 
 {% if database == "mssql" %}
 <datalist id="mssql-datatypes">
-    <option value="INTEGER">
+    <option value="INT">
     <option value="BIGINT">
     <option value="VARCHAR(50)">
     <option value="VARCHAR(255)">
@@ -138,11 +138,11 @@
     <option value="CHAR(1)">
     <option value="NCHAR(1)">
     <option value="VARBINARY(MAX)">
+    <option value="DECIMAL(12,2)">
     <option value="DECIMAL(18,0)">
-    <option value="DECIMAL(10,2)">
+    <option value="BIT">
     <option value="DATE">
-    <option value="TIMESTAMP">
-    <option value="BOOLEAN">
+    <option value="DATETIME2(7)">
 </datalist>
 {% endif %}
 

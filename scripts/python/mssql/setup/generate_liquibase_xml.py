@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-from scripts.python.common.mssql_datatype_validation import validate_mssql_datatype
+from scripts.python.common.mssql_datatype_validation import normalize_mssql_datatype, validate_mssql_datatype
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -211,9 +211,30 @@ def get_column_datatype(table_name, column_name, registry):
         if isinstance(metadata, dict):
             for key in ("final_type", "selected_type", "detected_type"):
                 value = metadata.get(key)
-                if isinstance(value, str) and value.strip():
-                    validate_mssql_datatype(value)
-                    return value.strip().upper()
+                if not isinstance(value, str) or not value.strip():
+                    continue
+
+                candidate = value.strip()
+                normalized = candidate.upper()
+                alias_map = {
+                    "TEXT": "VARCHAR(MAX)",
+                    "BOOLEAN": "BIT",
+                    "NUMERIC": "DECIMAL(18,0)",
+                    "INTEGER": "INT",
+                    "TIMESTAMP": "DATETIME2(7)",
+                }
+
+                try:
+                    validate_mssql_datatype(candidate)
+                    if key == "detected_type" and normalized in alias_map:
+                        return alias_map[normalized]
+                    return candidate.upper()
+                except ValueError:
+                    if key in {"selected_type", "final_type"}:
+                        raise
+                    if normalized in alias_map:
+                        return alias_map[normalized]
+                    continue
     return "VARCHAR(255)"
 
 
