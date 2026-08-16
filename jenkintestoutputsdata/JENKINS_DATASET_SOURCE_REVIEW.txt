@@ -1,0 +1,848 @@
+================================================================================
+JENKINS DATASET SOURCE — INVESTIGATION REPORT
+================================================================================
+
+Project: DataPlatform-Automation-v1
+Branch: feature/jenkins-dataset-source-links
+Report Date: 2026-08-14
+Scope: Jenkins dataset source handling — download, extraction, verification
+Status: INVESTIGATION ONLY — NO CODE MODIFIED
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+The Jenkins dataset pipeline supports two source types: Google Drive and local.
+The current implementation downloads/acquires a dataset, extracts it if it is a
+ZIP archive, and verifies the result. A separate Jenkins stage performs download
+verification.
+
+Key finding: The Verify Download stage fails on Windows Jenkins agents because
+the Jenkinsfile invokes `python3` instead of `python`. This is a blocking bug
+that makes the second stage always fail, even when the download stage succeeds.
+
+Additional design gap: When FORCE_DOWNLOAD=false and an existing archive is
+valid, the system reuses it without checking whether it matches the current
+source URL. This means a different Google Drive URL with the same configured
+filename would reuse the old archive.
+
+================================================================================
+2. CURRENT ARCHITECTURE
+================================================================================
+
+Jenkinsfile
+   |
+   +-- stage('Download Dataset')
+   |       |
+   |       +-- withEnv(SOURCE_TYPE, SOURCE_PATH, DATABASE=mssql)
+   |       |       |
+   |       |       +-- download_dataset.bat
+   |       |               |
+   |       |               +-- set_project_root.bat
+   |       |               +-- install_7zip.bat
+   |       |               |       |
+   |       |               |       +-- install_7zip.ps1
+   |       |               |
+   |       |               +-- download_dataset.ps1
+   |       |                       |
+   |       |                       +-- download_dataset.py
+   |       |                       |       |
+   |       |                       |       +-- config_loader.load_common_config("dataset")
+   |       |                       |       +-- source_utils.get_output_filename()
+   |       |                       |       +-- source_utils.is_archive_file()
+   |       |                       |       +-- downloader_factory.get_downloader()
+   |       |                       |       +-- archive_utils.validate_archive()
+   |       |                       |       +-- dataset_state.build_download_state()
+   |       |                       |       +-- dataset_state.save_state()
+   |       |                       |
+   |       |                       |       [google_drive.py]  -- uses gdown
+   |       |                       |       [local.py]         -- uses shutil
+   |       |                       |
+   |       |                       +-- extract_dataset.py
+   |       |                               |
+   |       |                               +-- config_loader.load_common_config("dataset")
+   |       |                               +-- source_utils.get_output_filename()
+   |       |                               +-- archive_utils.validate_archive()
+   |       |                               +-- archive_utils.extract_archive()
+   |       |                               +-- archive_utils.list_archive_folders()
+   |       |                               +-- dataset_state.load_state()
+   |       |                               +-- dataset_state.build_extraction_state()
+   |       |                               +-- dataset_state.save_state()
+   |       |
+   +-- stage('Verify Download')
+           |
+           +-- verify_download.py
+                   |
+                   +-- config_loader.load_common_config("dataset")
+                   +-- source_utils.get_output_filename()
+                   +-- source_utils.is_archive_file()
+
+================================================================================
+3. CURRENT CALL FLOW
+================================================================================
+
+Jenkinsfile (root)
+  |
+  |-- parameters: SOURCE_TYPE, SOURCE_PATH, RUN_ASSESSMENT
+  |-- withEnv: SOURCE_TYPE, SOURCE_PATH, DATABASE=mssql
+  |
+  +-- Download Dataset
+  |     |
+  |     +-- scripts\batch\common\download_dataset.bat
+  |           |
+  |           +-- set_project_root.bat (sets PROJECT_ROOT)
+  |           +-- install_7zip.bat
+  |           |     +-- install_7zip.ps1
+  |           |           +-- config/common/tools.conf
+  |           |           +-- downloads 7z2501-x64.exe if not present
+  |           |
+  |           +-- download_dataset.ps1
+  |                 |
+  |                 +-- scripts/python/common/download_dataset.py
+  |                 |     |
+  |                 |     +-- load_common_config("dataset") -> config/common/dataset.conf
+  |                 |     +-- source_type resolution:
+  |                 |     |     os.getenv("SOURCE_TYPE") or config.get("SOURCE_TYPE")
+  |                 |     |     if empty and DATASET_URL exists -> "google_drive"
+  |                 |     |     else -> ValueError
+  |                 |     +-- source_path resolution:
+  |                 |     |     os.getenv("SOURCE_PATH") or config.get("SOURCE_PATH")
+  |                 |     +-- database resolution:
+  |                 |     |     os.getenv("DATABASE") or config.get("DATABASE")
+  |                 |     +-- output filename via source_utils.get_output_filename()
+  |                 |     +-- destination directory:
+  |                 |     |     archive -> config["DOWNLOAD_DIRECTORY"] (incoming/archive)
+  |                 |     |     non-archive -> incoming/<database>
+  |                 |     +-- downloader_factory.get_downloader(source_type)
+  |                 |     +-- downloader.download(config, output_path)
+  |                 |     +-- archive validation (if archive)
+  |                 |     +-- dataset_state.save_state()
+  |                 |
+  |                 +-- scripts/python/common/extract_dataset.py
+  |                       |
+  |                       +-- load_common_config("dataset")
+  |                       +-- output filename resolution
+  |                       +-- archive_file path
+  |                       +-- if not archive -> skip extraction
+  |                       +-- validate_archive(archive_file)
+  |                       +-- list_archive_folders(archive_file)
+  |                       +-- load_state()
+  |                       +-- extraction skip logic:
+  |                       |     fresh_download = download_ts > extraction_ts (or no extraction_ts)
+  |                       |     can_skip = not force and not fresh_download and status == "EXTRACTED_COMPLETE"
+  |                       |     if can_skip:
+  |                       |         check archive path + sha256 match state
+  |                       |         check all expected folders exist
+  |                       |         if all match -> skip extraction
+  |                       |         else -> re-extract
+  |                       +-- extract_and_merge_zip()
+  |                       |     +-- zipfile.ZipFile.extractall() with overwrite
+  |                       |     +-- fallback to 7-Zip on NotImplementedError
+  |                       +-- build_extraction_state()
+  |                       +-- save_state()
+  |                       +-- DELETE_ARCHIVE handling
+  |
+  +-- Verify Download
+        |
+        +-- bat 'python scripts\python\common\verify_download.py'
+              |
+              +-- load_common_config("dataset")
+              +-- source_type/path/database resolution (same precedence)
+              +-- output_filename via source_utils.get_output_filename()
+              +-- if archive:
+              |     check incoming/archive/<filename> exists
+              |     print size
+              +-- else:
+              |     check incoming/<database>/ exists and has files
+              +-- print "Download verification passed."
+
+================================================================================
+4. JENKINS REVIEW
+================================================================================
+
+Jenkinsfile location: F:\Quantumatrix\Projects\DataEng\Datav1\Projectv1\Jenkinsfile
+
+Parameters:
+  - SOURCE_TYPE: choice (google_drive, local)
+  - SOURCE_PATH: string (optional)
+  - RUN_ASSESSMENT: boolean (default true)
+
+Stages:
+  1. Download Dataset
+     - withEnv sets SOURCE_TYPE, SOURCE_PATH, DATABASE=mssql
+     - Calls scripts\batch\common\download_dataset.bat
+  2. Verify Download
+     - Calls bat 'python scripts\python\common\verify_download.py'
+     - In run #9 (1), changed to 'python' instead of 'python3'
+
+Key observations:
+  - DATABASE is hardcoded to "mssql" in withEnv. No Jenkins parameter to change it.
+  - The assessment stage is commented out.
+  - No checkout scm in the dataset Jenkinsfile stages (unlike migration).
+  - Jenkinsfile is in the root, not in a subdirectory.
+
+================================================================================
+5. BATCH REVIEW
+================================================================================
+
+Files inspected:
+  - scripts\batch\common\download_dataset.bat
+  - scripts\batch\common\install_7zip.bat
+  - scripts\batch\common\set_project_root.bat
+
+download_dataset.bat call chain:
+  1. set_project_root.bat -> sets PROJECT_ROOT
+  2. install_7zip.bat -> install_7zip.ps1 -> installs 7-Zip if missing
+  3. download_dataset.ps1 -> runs download_dataset.py + extract_dataset.py
+
+install_7zip.bat:
+  - Calls PowerShell install_7zip.ps1
+  - Exits with code 1 on failure
+
+set_project_root.bat:
+  - Sets PROJECT_ROOT to 3 levels up from batch file location
+  - Validates config directory exists
+
+================================================================================
+6. PYTHON REVIEW
+================================================================================
+
+Core modules:
+
+  scripts/python/common/download_dataset.py
+    - Entry point for download stage
+    - Config loading: load_common_config("dataset")
+    - Source resolution: env > config file
+    - Source type auto-detection: if SOURCE_TYPE empty and DATASET_URL exists -> google_drive
+    - Output filename resolution via source_utils
+    - Archive vs non-archive branching
+    - Skip logic for existing archives (FORCE_DOWNLOAD)
+    - State management via dataset_state
+    - Temp file download for archives (atomic rename)
+
+  scripts/python/common/extract_dataset.py
+    - Entry point for extraction (called by download_dataset.ps1)
+    - Validates archive before extraction
+    - Lists top-level folders in archive
+    - Skip logic based on timestamps and state
+    - extract_and_merge_zip() with overwrite behavior
+    - Falls back to 7-Zip for unsupported compression
+    - verify_dataset() built-in verification
+
+  scripts/python/common/verify_download.py
+    - Separate verification stage
+    - Checks archive existence OR incoming directory files
+    - No overlap with extract_dataset.py verification? Actually some overlap.
+
+  scripts/python/common/source_utils.py
+    - get_output_filename(): determines output filename
+      * google_drive -> config["DATASET_NAME"] always
+      * local -> Path(source_path).name
+      * None/other -> config["DATASET_NAME"]
+    - is_archive_file(): checks .zip suffix
+
+  scripts/python/common/archive_utils.py
+    - validate_archive(): zipfile.testzip() with 7-Zip fallback
+    - extract_archive(): zipfile.extractall() with 7-Zip fallback
+    - list_archive_folders(): top-level folder enumeration
+    - get_7zip_executable(): PATH or C:\Program Files\7-Zip\7z.exe
+
+  scripts/python/common/dataset_state.py
+    - STATE_FILE: metadata/common/dataset_state.json
+    - build_download_state(): records sha256, source_url, archive info, timestamp
+    - build_extraction_state(): records extraction timestamp, folder structure
+    - mark_download_invalid() / mark_extraction_invalid()
+    - _sha256(), _zip_top_folders() helpers
+
+  scripts/python/common/factory/downloader_factory.py
+    - Auto-discovers downloaders from scripts/python/common/downloaders/
+    - Maps SOURCE_TYPE to module
+
+  scripts/python/common/downloaders/google_drive.py
+    - SOURCE_TYPE = "google_drive"
+    - Uses gdown.download()
+    - Source path resolution: env SOURCE_PATH -> config SOURCE_PATH -> config DATASET_URL
+    - Prints download summary
+
+  scripts/python/common/downloaders/local.py
+    - SOURCE_TYPE = "local"
+    - shutil.copy2 for files
+    - Directory iteration for folders (copies .csv and .json only)
+    - OVERWRITE/NEW tracking
+    - Raises error if no CSV/JSON files in folder
+
+================================================================================
+7. CONFIG REVIEW
+================================================================================
+
+Config file: config/common/dataset.conf
+
+Contents:
+  DATASET_URL=https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+  DATASET_NAME=TestingDataset.zip
+  DOWNLOAD_DIRECTORY=incoming/archive
+  AUTO_EXTRACT=true
+  DELETE_ARCHIVE=false
+  FORCE_DOWNLOAD=false
+  SOURCE_TYPE=
+  SOURCE_PATH=
+  FORCE_EXTRACT=false
+
+Precedence rules (from code):
+  1. Environment variable (Jenkins withEnv)
+  2. Config file value
+
+Important behavior:
+  - Empty environment variables do NOT override config defaults
+    because Python uses `os.getenv("X") or config.get("X")`
+  - SOURCE_TYPE auto-detection: if empty and DATASET_URL exists -> "google_drive"
+  - DATABASE is hardcoded to "mssql" in Jenkinsfile, not parameterized
+
+Google Drive URL configuration:
+  - DATASET_URL in dataset.conf
+  - Can be overridden by Jenkins SOURCE_PATH parameter
+
+Local path configuration:
+  - SOURCE_PATH in dataset.conf
+  - Can be overridden by Jenkins SOURCE_PATH parameter
+
+Archive naming:
+  - Google Drive: always config["DATASET_NAME"] (TestingDataset.zip)
+  - Local file: Path(source_path).name
+  - Local folder: destination is the folder itself (no single filename)
+
+================================================================================
+8. GOOGLE DRIVE BEHAVIOR
+================================================================================
+
+Current behavior:
+  - Uses gdown library for download
+  - gdown converts Drive view URL to direct download URL (uc?id=...)
+  - Downloads to temp file in destination directory
+  - Validates archive after download
+  - Renames temp to final filename
+  - Records state with sha256, source_url, timestamp
+
+SOURCE_PATH override:
+  - If Jenkins SOURCE_PATH is provided, it overrides config DATASET_URL
+  - If Jenkins SOURCE_PATH is empty, falls back to config DATASET_URL
+  - The output filename ALWAYS comes from config DATASET_NAME
+  - The Drive file ID is NOT explicitly tracked (only the full URL in state)
+
+Repeated same source:
+  - If FORCE_DOWNLOAD=false and archive exists and validates:
+    Download is skipped. State is NOT updated.
+  - Extraction skip logic checks:
+    * archive path matches state
+    * archive sha256 matches state
+    * all expected folders exist in incoming/
+  - If all match, extraction is skipped
+
+Different source, same filename:
+  - Output filename is always TestingDataset.zip (from config)
+  - If FORCE_DOWNLOAD=false:
+    * Existing TestingDataset.zip is validated as ZIP
+    * If valid, download is SKIPPED
+    * Old archive is reused regardless of source URL
+    * State still has old source_url
+  - If FORCE_DOWNLOAD=true:
+    * New download overwrites old archive
+    * State is updated with new source_url and sha256
+    * Extraction runs because download_timestamp > extraction_timestamp
+
+Risk: FORCE_DOWNLOAD=false does NOT verify source identity. A different Drive
+URL producing a valid ZIP with the same filename would be silently reused.
+
+================================================================================
+9. LOCAL SOURCE BEHAVIOR
+================================================================================
+
+Local folder (SOURCE_PATH = F:\Quantumatrix\Raw Data\mssql):
+  - output_file = destination directory (incoming/mssql)
+  - downloader copies .csv and .json files only
+  - Existing files are overwritten (shutil.copy2)
+  - CSV/JSON counts tracked
+  - No archive created, no extraction needed
+
+Local ZIP (SOURCE_PATH = F:\Data\TestingDataset.zip):
+  - output_file = incoming/archive/TestingDataset.zip
+  - File is copied to destination
+  - If exists and FORCE_DOWNLOAD=false, validated and skipped
+  - Extraction runs if archive is new/changed
+
+Invalid local path:
+  - Path.exists() returns False
+  - FileNotFoundError raised: "Local dataset not found: <path>"
+
+Empty local path:
+  - Falls back to config SOURCE_PATH (also empty in current config)
+  - ValueError: "SOURCE_PATH is not configured."
+
+Local path with spaces:
+  - Path handles spaces correctly
+  - Observed working: "F:\Quantumatrix\Raw Data\mssql"
+
+================================================================================
+10. ARCHIVE BEHAVIOR
+================================================================================
+
+Archive naming:
+  - Fixed by source_utils.get_output_filename()
+  - Google Drive: always config["DATASET_NAME"]
+  - Local file: source path basename
+  - No dynamic/duplicate naming (no "TestingDataset (1).zip")
+
+Archive preservation:
+  - Archive is kept in incoming/archive/ by default
+  - DELETE_ARCHIVE=false in current config
+  - If DELETE_ARCHIVE=true, archive is deleted after successful extraction
+
+Archive reuse:
+  - If FORCE_DOWNLOAD=false and archive exists and validates as ZIP:
+    Download is skipped entirely
+  - No source URL comparison on existing archive
+  - No timestamp comparison on existing archive
+  - Only ZIP structural validation is performed
+
+Archive overwrite:
+  - New download uses temp file, then atomic rename
+  - Old archive is replaced, not merged
+  - No duplicate filename creation
+
+================================================================================
+11. EXTRACTION BEHAVIOR
+================================================================================
+
+Tool:
+  - Primary: Python zipfile module
+  - Fallback: 7-Zip (for unsupported compression like Deflate64)
+
+Destination:
+  - incoming/ (project root)
+  - Top-level folders from archive are extracted directly under incoming/
+
+Overwrite behavior:
+  - extract_and_merge_zip() explicitly unlinks existing files before writing
+  - PermissionError during unlink triggers warning, then attempts overwrite
+  - zipfile.extractall() with 7-Zip fallback also overwrites
+
+Stale files:
+  - Extraction is merge-based, not clean-based
+  - If new archive has fewer files than old extraction, old files remain
+  - Example: old archive had mongodb/, mssql/, mysql/, postgresql/
+            new archive has only mssql/, mysql/
+            mongodb/ and postgresql/ folders remain in incoming/
+
+Fresh download detection:
+  - Compares download_timestamp vs extraction_timestamp in state
+  - fresh_download = True if download_ts exists and (no extraction_ts or download_ts > extraction_ts)
+
+Extraction skip:
+  - can_skip = not FORCE_EXTRACT and not fresh_download and extraction_status == "EXTRACTED_COMPLETE"
+  - If can_skip, additionally checks:
+    * archive path matches state archive_path
+    * archive sha256 matches state dataset_identity
+    * all expected folders exist in incoming/
+  - If any check fails, re-extraction occurs
+
+Partial extraction:
+  - If extraction fails halfway, partial files/folders remain
+  - No cleanup of partial extraction
+  - State is marked EXTRACTED_INVALID only if post-extraction folder check fails
+  - During extract_and_merge_zip, exceptions propagate and partial files remain
+
+================================================================================
+12. VERIFICATION BEHAVIOR
+================================================================================
+
+Two verification mechanisms exist:
+
+A. extract_dataset.py -> verify_dataset()
+   - Built into the download stage
+   - For archives:
+     * Checks archive exists OR incoming has data
+     * Lists top-level folders from archive
+     * Verifies each folder exists in incoming/
+     * Prints "[OK] Verified folder: <name>"
+   - For non-archives:
+     * Prints generic success message
+
+B. verify_download.py (separate Jenkins stage)
+   - For archives:
+     * Checks incoming/archive/<filename> exists
+     * Prints file size
+   - For non-archives:
+     * Checks incoming/<database>/ exists and has files
+     * Lists files
+
+Relationship:
+  - These are overlapping/duplicate, not complementary
+  - verify_dataset() checks folder structure after extraction
+  - verify_download.py checks archive presence (or incoming files for non-archive)
+  - For archives, verify_download.py does NOT check folder structure
+  - For non-archives, verify_dataset() is minimal while verify_download.py is more thorough
+
+Current issue:
+  - Verify Download stage fails due to python3/python issue
+  - So this verification is currently non-functional in Jenkins
+
+================================================================================
+13. LOGGING REVIEW
+================================================================================
+
+Batch layer:
+  - Simple echo sections (=====================================)
+  - Error messages with exit codes
+  - 7-Zip status messages
+
+PowerShell layer:
+  - Write-Host for section headers
+  - ErrorActionPreference = "Stop"
+  - Throws on failure
+
+Python layer:
+  - Print statements for headers (= * 60)
+  - [INFO], [SUCCESS], [WARNING], [ERROR] prefixes used
+  - Source URL/path printed in downloaders
+  - File sizes printed
+  - Counts printed for local copy
+
+Observations:
+  - Log levels are informal (print-based, not logging module)
+  - Duplicate headers: "DOWNLOADING DATASET" appears in both batch and Python
+  - "DATASET READY" appears in batch and PowerShell
+  - Source URL is visible in logs (no secrets, but full Drive URL exposed)
+  - No sensitive data in logs (passwords not present)
+  - Temp filenames exposed in logs (tmpXXXX.tmp)
+  - Final summary is sufficient but duplicated across stages
+
+Issues:
+  - No structured logging
+  - No log levels beyond print prefixes
+  - python3/python discrepancy causes stage failure (not a logging issue per se, but affects output)
+
+================================================================================
+14. TEST RUN COMPARISON
+================================================================================
+
+Run #4 (commit aea0821)
+  Source Type:       GOOGLE_DRIVE (default/configured)
+  Source Path:       Not shown in summary (used config DATASET_URL)
+  Database:          mssql
+  Archive Name:      TestingDataset.zip
+  Archive Dest:      incoming/archive/TestingDataset.zip
+  Input Type:        ZIP Archive
+  Download Result:   SUCCESS (tmp84lxx53x.tmp -> TestingDataset.zip)
+  Extraction Result: SUCCESS (fresh download detected, forced extraction)
+  Verified Folders:  mongodb, mssql, mysql, postgresql
+  Verify Download:   FAILED (python3 not found, exit code 9009)
+  Final Result:      FAILURE
+
+Run #5 (commit aea0821)
+  Source Type:       GOOGLE_DRIVE
+  Source Path:       https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+  Database:          mssql
+  Archive Name:      TestingDataset.zip
+  Archive Dest:      incoming/archive/TestingDataset.zip
+  Input Type:        ZIP Archive
+  Download Result:   SUCCESS (tmprp6o51qp.tmp -> TestingDataset.zip)
+  Extraction Result: SUCCESS (fresh download detected, forced extraction)
+  Verified Folders:  mongodb, mssql, mysql, postgresql
+  Verify Download:   FAILED (python3 not found, exit code 9009)
+  Final Result:      FAILURE
+
+Run #6 (commit aea0821)
+  Source Type:       GOOGLE_DRIVE
+  Source Path:       https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+  Database:          mssql
+  Archive Name:      TestingDataset.zip
+  Archive Dest:      incoming/archive/TestingDataset.zip
+  Input Type:        ZIP Archive
+  Download Result:   SUCCESS (tmp38zb2x63.tmp -> TestingDataset.zip)
+  Extraction Result: SUCCESS (fresh download detected, forced extraction)
+  Verified Folders:  mongodb, mssql, mysql, postgresql
+  Verify Download:   FAILED (python3 not found, exit code 9009)
+  Final Result:      FAILURE
+
+Run #7 (1) (commit aea0821)
+  Source Type:       GOOGLE_DRIVE
+  Source Path:       https://drive.google.com/file/d/13eu9LpxTyfhD3xlkVzLrsvxncXAV7VIG/view?usp=drive_link
+  Database:          mssql
+  Archive Name:      TestingDataset.zip
+  Archive Dest:      incoming/archive/TestingDataset.zip
+  Input Type:        ZIP Archive
+  Download Result:   SUCCESS (tmpn5q5jzrk.tmp -> TestingDataset.zip, 17.7k)
+  Extraction Result: SUCCESS (fresh download detected, forced extraction)
+  Verified Folders:  mongodb, mssql, mysql, postgresql
+  Verify Download:   FAILED (python3 not found, exit code 9009)
+  Final Result:      FAILURE
+  Note: Different Drive file ID, but same output filename.
+
+Run #8 (commit aea0821)
+  Source Type:       LOCAL
+  Source Path:       F:\Quantumatrix\Raw Data\mssql
+  Database:          mssql
+  Archive Name:      N/A (folder copy)
+  Archive Dest:      incoming/mssql (directory)
+  Input Type:        Folder
+  Download Result:   SUCCESS (3 files overwritten: employees.csv, orders.csv, products.csv)
+  Extraction Result: SKIPPED (not an archive)
+  Verified:          Generic success message
+  Verify Download:   FAILED (python3 not found, exit code 9009)
+  Final Result:      FAILURE
+
+Run #9 (1) (commit 010f8ea)
+  Source Type:       GOOGLE_DRIVE (default/configured)
+  Source Path:       Not shown in summary
+  Database:          mssql
+  Archive Name:      TestingDataset.zip
+  Archive Dest:      incoming/archive/TestingDataset.zip
+  Input Type:        ZIP Archive
+  Download Result:   SUCCESS (tmpi94qonut.tmp -> TestingDataset.zip)
+  Extraction Result: SUCCESS (fresh download detected, forced extraction)
+  Verified Folders:  mongodb, mssql, mysql, postgresql
+  Verify Download:   SUCCESS (used 'python' instead of 'python3')
+  Final Result:      SUCCESS
+  Note: Jenkinsfile was updated between run #8 and #9 (commit message: "update jenkins file")
+
+Chronological pattern:
+  - Runs #4-8 use python3 in Verify Download -> always FAIL
+  - Run #9 uses python -> succeeds
+  - All Google Drive runs download fresh because Jenkins workspace is fresh each time
+  - Run #7 shows different Drive URL but same filename, downloaded successfully
+
+================================================================================
+15. EDGE CASE MATRIX
+================================================================================
+
+| Case | Current Support | Current Behavior | Risk | Relevant File |
+|------|----------------|-----------------|------|---------------|
+| 1. Configured Google Drive source | Supported | Downloads from config DATASET_URL, extracts, verifies | Low | download_dataset.py, google_drive.py |
+| 2. Jenkins Google Drive source | Supported | Overrides config URL, downloads, extracts | Low | download_dataset.py, google_drive.py |
+| 3. Same Google Drive source repeated | Supported | Archive reused if valid, extraction skipped | Low (if FORCE_DOWNLOAD=false) | download_dataset.py, extract_dataset.py |
+| 4. Different Google Drive source | Supported | New download if FORCE_DOWNLOAD=true; old archive reused if false | MEDIUM | download_dataset.py |
+| 5. Same filename, different Drive source | Supported but risky | Same filename always; old archive reused if valid and FORCE_DOWNLOAD=false | HIGH | source_utils.py, download_dataset.py |
+| 6. Local folder | Supported | Copies CSV/JSON files to incoming/<database>/ | Low | local.py |
+| 7. Local ZIP | Supported | Copies ZIP to incoming/archive/, extracts | Low | download_dataset.py, local.py |
+| 8. Invalid local path | Supported (error) | FileNotFoundError raised | Low | local.py |
+| 9. Empty source path | Supported (error) | ValueError: SOURCE_PATH not configured | Low | local.py, download_dataset.py |
+| 10. Local path with spaces | Supported | Works correctly | Low | local.py, Path handling |
+| 11. Invalid Drive URL | Supported (error) | gdown fails, exception propagated | Low | google_drive.py |
+| 12. Inaccessible/private Drive file | Supported (error) | gdown fails, exception propagated | Low | google_drive.py |
+| 13. Empty SOURCE_PATH | Supported (fallback) | Falls back to config DATASET_URL or DATASET_PATH | Low | download_dataset.py |
+| 14. Drive URL with different dataset name | Unsupported | Filename always from config DATASET_NAME | Low | source_utils.py |
+| 15. Downloaded content is not ZIP | Supported (error) | validate_archive fails, temp deleted, output deleted if invalid | Low | download_dataset.py, archive_utils.py |
+| 16. Corrupted ZIP | Supported (error) | validate_archive catches, temp/output cleaned, exception raised | Low | download_dataset.py, archive_utils.py |
+| 17. Large ZIP | Supported | 7-Zip fallback with progress heartbeat | Low | archive_utils.py |
+| 18. Existing archive (FORCE_DOWNLOAD=false) | Supported | Download skipped if archive validates as ZIP | MEDIUM (no source check) | download_dataset.py |
+| 19. Existing extracted data | Supported | Extraction skipped if state matches | Low | extract_dataset.py |
+| 20. Extraction failure halfway | Supported (partial) | Partial files remain, no cleanup | MEDIUM | extract_and_merge_zip() |
+| 21. Missing database folder in archive | Supported (error) | post-extraction check fails, state marked invalid | Low | extract_dataset.py |
+| 22. MSSQL-only dataset | Supported | Works with local folder or archive | Low | download_dataset.py |
+| 23. Multiple databases dataset | Supported | Archive with mongodb/, mssql/, mysql/, postgresql/ | Low | extract_dataset.py |
+| 24. Duplicate archive filename | Not produced | Always writes to exact same path; no (1) suffix | Low | download_dataset.py |
+| 25. Repeated Jenkins execution | Supported | Fresh workspace each time; always downloads fresh | Low | Jenkins behavior |
+| 26. Verify Download stage | Broken on Windows | Uses python3 which doesn't exist; stage always fails | HIGH | Jenkinsfile |
+
+================================================================================
+16. CURRENT BUGS
+================================================================================
+
+BUG-1: Verify Download stage fails on Windows Jenkins
+  File: Jenkinsfile (root)
+  Line: bat 'python3 scripts\python\common\verify_download.py'
+  Symptom: "Python was not found; run without arguments to install from the Microsoft Store"
+           Exit code 9009
+  Impact: The verification stage always fails on Windows, making the pipeline red
+          even when the download succeeded.
+  Evidence: Runs #4, #5, #6, #7 (1), #8 all show this failure.
+  Fix: Change 'python3' to 'python' in the Jenkinsfile.
+
+BUG-2: Source identity not verified on existing archive reuse
+  File: scripts/python/common/download_dataset.py
+  Lines: 126-156
+  Symptom: When FORCE_DOWNLOAD=false and an archive exists and validates as ZIP,
+           the existing archive is reused without checking if it matches the
+           current source URL or Drive file ID.
+  Impact: A different Google Drive URL with the same configured filename would
+          silently reuse the old archive. The state still records the old URL.
+  Evidence: Code analysis — validate_archive() only checks ZIP structure, not
+            source identity. No URL comparison exists in the skip logic.
+  Fix: Add source URL / Drive file ID comparison to the skip logic.
+
+================================================================================
+17. DESIGN GAPS
+================================================================================
+
+GAP-1: No source identity tracking in download skip logic
+  Current: Only ZIP structural validation + file existence
+  Needed: Compare source URL or Drive file ID or archive checksum against state
+  Impact: Silent reuse of wrong dataset when FORCE_DOWNLOAD=false
+
+GAP-2: Duplicate verification logic
+  extract_dataset.py has verify_dataset()
+  verify_download.py has verify_download()
+  verify_incoming.py exists as another verification variant
+  Impact: Three different verification implementations with overlapping scope.
+          The separate Jenkins stage uses verify_download.py which does not
+          check folder structure for archives.
+
+GAP-3: No cleanup of partial extraction
+  If extract_and_merge_zip() fails halfway, partial files/folders remain.
+  No rollback or cleanup mechanism exists.
+  Impact: Stale partial data in incoming/ directory.
+
+GAP-4: Merge-based extraction leaves stale files
+  New archive with fewer files than previous extraction leaves old files behind.
+  No pre-extraction cleanup of incoming/ folders.
+  Impact: Stale data from previous datasets can contaminate new loads.
+
+GAP-5: Hardcoded DATABASE=mssql in Jenkinsfile
+  Current: DATABASE is hardcoded in withEnv
+  Needed: Parameterize DATABASE to support other database types
+  Impact: Cannot run pipeline for MySQL/PostgreSQL datasets without code change
+
+GAP-6: No parallel download support
+  Current: Sequential download and extraction
+  Impact: Large datasets take longer than necessary
+
+GAP-7: State file is single-dataset
+  metadata/common/dataset_state.json tracks only one dataset
+  Impact: Cannot track multiple datasets or pipeline runs independently
+
+GAP-8: No retry logic for transient failures
+  Current: Single attempt for download and extraction
+  Impact: Transient network issues cause full pipeline failure
+
+================================================================================
+18. RISKS
+================================================================================
+
+RISK-1: Wrong dataset reused silently
+  When FORCE_DOWNLOAD=false and a valid archive exists, the system does not
+  verify that the archive matches the current source. A different Drive URL
+  producing a same-named ZIP would be silently reused.
+
+RISK-2: Stale extracted data
+  Merge-based extraction does not clean old files. A new dataset with fewer
+  tables leaves old extracted files in incoming/.
+
+RISK-3: Partial extraction without cleanup
+  If extraction fails, partial data remains. Next run may skip extraction
+  (if state says complete) or re-extract on top of partial data.
+
+RISK-4: Verification stage always fails on Windows
+  The python3/python mismatch means the Verify Download stage never passes
+  on Windows Jenkins. This masks real verification issues.
+
+RISK-5: State file corruption
+  dataset_state.json is a single flat file with no backup. Corruption or
+  concurrent writes could lose state.
+
+RISK-6: 7-Zip dependency not verified before use
+  7-Zip is installed in the download stage but not re-verified before
+  extraction. If 7-Zip installation silently fails, extraction would fail
+  on archives requiring 7-Zip.
+
+================================================================================
+19. RECOMMENDED CHANGE AREAS
+================================================================================
+
+Files that SHOULD eventually be changed (DO NOT change now):
+
+A. Jenkinsfile (root)
+   - Change 'python3' to 'python' in Verify Download stage
+   - Consider parameterizing DATABASE
+
+B. scripts/python/common/download_dataset.py
+   - Add source identity check to archive reuse skip logic
+   - Compare source URL / Drive file ID / checksum against state
+
+C. scripts/python/common/extract_dataset.py
+   - Add pre-extraction cleanup option
+   - Add partial extraction cleanup on failure
+   - Consider deduplicating with verify_download.py
+
+D. scripts/python/common/verify_download.py
+   - Add folder structure verification for archives
+   - Consider merging with extract_dataset.py verification
+
+E. scripts/python/common/dataset_state.py
+   - Support multiple datasets or run IDs
+   - Add backup/rotation for state file
+
+F. scripts/python/common/downloaders/google_drive.py
+   - Track Drive file ID explicitly in state
+   - Add retry logic for transient failures
+
+G. config/common/dataset.conf
+   - Consider adding SOURCE_IDENTITY or CHECKSUM verification config
+   - Consider adding CLEAN_INCOMING_BEFORE_EXTRACT option
+
+================================================================================
+20. PROPOSED TEST PLAN
+================================================================================
+
+Minimum tests to run after changes:
+
+1. Same Google Drive source, repeated execution
+   - Verify download is skipped
+   - Verify extraction is skipped
+   - Verify state is unchanged
+
+2. Different Google Drive URL, same filename, FORCE_DOWNLOAD=false
+   - Verify old archive is NOT reused (should fail or re-download)
+   - Verify source identity check works
+
+3. Different Google Drive URL, same filename, FORCE_DOWNLOAD=true
+   - Verify new archive is downloaded
+   - Verify extraction runs
+   - Verify state is updated
+
+4. Local folder with spaces in path
+   - Verify copy succeeds
+   - Verify files appear in incoming/<database>/
+
+5. Local ZIP file
+   - Verify copy succeeds
+   - Verify extraction runs
+   - Verify incoming folders created
+
+6. Invalid local path
+   - Verify FileNotFoundError
+   - Verify pipeline fails gracefully
+
+7. Empty SOURCE_PATH with no config fallback
+   - Verify ValueError for local
+   - Verify falls back to DATASET_URL for google_drive
+
+8. Corrupted ZIP download
+   - Verify validate_archive catches it
+   - Verify temp and output files are cleaned
+   - Verify pipeline fails gracefully
+
+9. Large ZIP requiring 7-Zip
+   - Verify 7-Zip fallback extraction
+   - Verify progress logging
+
+10. Verify Download stage on Windows
+    - Verify python (not python3) is used
+    - Verify archive presence check works
+    - Verify incoming folder check works for non-archives
+
+11. Partial extraction recovery
+    - Simulate extraction failure
+    - Verify partial files are cleaned or handled
+    - Verify next run recovers correctly
+
+12. Stale file detection
+    - Extract archive A (has folders X, Y, Z)
+    - Extract archive B (has folders X, Y only)
+    - Verify folder Z is cleaned or flagged
+
+================================================================================
+END OF REPORT
+================================================================================
+
+Report location:
+F:\QUANTUMATRIX\PROJECTS\DATAENG\DATAV1\PROJECTV1\JENKINTESTOUTPUTSDATA\JENKINS_DATASET_SOURCE_REVIEW.txt

@@ -25,6 +25,12 @@ pipeline {
             defaultValue: true,
             description: 'Run database assessment after successful load.'
         )
+
+        booleanParam(
+            name: 'FORCE_DOWNLOAD',
+            defaultValue: false,
+            description: 'Force dataset download instead of reusing an existing archive.'
+        )
     }
 
     stages {
@@ -34,7 +40,8 @@ pipeline {
                 withEnv([
                     "SOURCE_TYPE=${params.SOURCE_TYPE}",
                     "SOURCE_PATH=${params.SOURCE_PATH}",
-                    "DATABASE=mssql"
+                    "DATABASE=mssql",
+                    "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
                 ]) {
                     bat 'scripts\\batch\\common\\download_dataset.bat'
                 }

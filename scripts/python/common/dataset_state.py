@@ -43,11 +43,12 @@ def save_state(state: dict):
         json.dump(state, f, indent=2)
 
 
-def build_download_state(config: dict, archive_path: Path) -> dict:
+def build_download_state(config: dict, archive_path: Path, source_type: str, source_url: str) -> dict:
     state = load_state()
     state["state_version"] = "1.0"
     state["dataset_identity"] = _sha256(archive_path)
-    state["source_url"] = config.get("DATASET_URL", "")
+    state["source_type"] = source_type
+    state["source_url"] = source_url
     state["archive_filename"] = config.get("DATASET_NAME", "")
     state["archive_path"] = str(archive_path)
     state["archive_size_bytes"] = archive_path.stat().st_size

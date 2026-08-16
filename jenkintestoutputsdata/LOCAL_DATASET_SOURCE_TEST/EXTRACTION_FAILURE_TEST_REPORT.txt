@@ -1,0 +1,60 @@
+TEST E1
+Result: PASS
+Exit Code: 0
+Expected: Normal extraction succeeds, state marks valid, validated_extracted_structure contains only actual dataset folders
+Actual: Extraction succeeded. State marks EXTRACTED_COMPLETE. NOTE: validated_extracted_structure incorrectly includes "archive" directory.
+State: EXTRACTED_COMPLETE
+Important Log: [SUCCESS] Dataset extracted and merged successfully. [OK] Verified folder: mongodb, mssql, mysql, postgresql
+Finding: Extraction works. validated_extracted_structure includes "archive" because extract_dataset.py lists all directories in incoming/. This is a pre-existing bug.
+
+TEST E2
+Result: PASS
+Exit Code: 0
+Expected: old mongodb folder removed, mssql/mysql remain, archive directory preserved
+Actual: mongodb removed. mssql/mysql extracted correctly. Archive directory preserved with multiple ZIPs.
+State: EXTRACTED_COMPLETE
+Important Log: [INFO] Removed previous extracted folder: mongodb. [INFO] Removed previous extracted folder: mssql. [INFO] Removed previous extracted folder: mysql.
+Finding: Stale data cleanup works. archive folder not deleted.
+
+TEST E3
+Result: PASS
+Exit Code: 1
+Expected: Clean failure, non-zero exit code, no false SUCCESS
+Actual: ValueError: Corrupt archive entry during validation. Download failed with clear error.
+State: DOWNLOADED_VALID (from previous run, not updated)
+Important Log: ValueError: Corrupt archive entry: mssql/employees.csv. DATASET DOWNLOAD FAILED.
+Finding: Corrupted ZIP fails cleanly during download validation before state is updated.
+
+TEST E4
+Result: PASS (with finding)
+Exit Code: 1
+Expected: Extraction failure, state marked invalid
+Actual: Extraction failed during pre-cleanup (read-only file). BUT state was NOT marked invalid. State still shows EXTRACTED_COMPLETE from previous run.
+State: EXTRACTED_COMPLETE (unchanged)
+Important Log: PermissionError during shutil.rmtree. DATASET EXTRACTION FAILED.
+Finding: BUG - Pre-extraction cleanup failure does not call mark_extraction_invalid() because cleanup is outside the try-except block.
+
+TEST E5
+Result: PASS
+Exit Code: 0
+Expected: Old state without source_type/source_url triggers reprocessing
+Actual: [INFO] No previous dataset state found. Download proceeded. State updated with new source_type/source_url.
+State: EXTRACTED_COMPLETE with source_type=local, source_url present
+Important Log: [INFO] No previous dataset state found. [INFO] Downloading current source.
+Finding: Old state correctly detected. Source reprocessed instead of silently reused.
+
+TEST E6
+Result: PASS
+Exit Code: 0
+Expected: mssql folder copied successfully
+Actual: employees.csv overwritten, orders.csv and products.csv copied. 3 files in incoming/mssql.
+State: N/A (non-archive, no state update)
+Important Log: [OVERWRITE] employees.csv replaced. [NEW] orders.csv copied. [NEW] products.csv copied.
+Finding: Local folder copy works correctly.
+
+TEST E7
+Result: PASS
+Exit Code: 0
+Expected: Verification passes
+Actual: [OK] Downloaded archive found. Download verification passed.
+Finding: Verification passes for extracted dataset.

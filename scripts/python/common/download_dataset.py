@@ -13,7 +13,9 @@ from scripts.python.common.config_loader import (
 
 from scripts.python.common.dataset_state import (
     build_download_state,
-    save_state
+    save_state,
+    load_state,
+    _sha256
 )
 
 from scripts.python.common.archive_utils import (
@@ -117,28 +119,60 @@ def download_dataset():
         )
 
     force = (
-        config.get(
-            "FORCE_DOWNLOAD",
-            "false"
-        ).lower() == "true"
-    )
+        os.getenv("FORCE_DOWNLOAD")
+        or config.get("FORCE_DOWNLOAD", "false")
+    ).lower() == "true"
 
-    if source and source.is_file():
+    if output_file.exists() and not force:
 
-        if output_file.exists() and not force:
+        if archive:
 
             print()
-            print("[INFO] Dataset already exists:")
-            print(f"Location : {output_file}")
+            print("[INFO] Checking existing archive...")
 
-            if archive:
+            try:
+                validate_archive(output_file)
+            except Exception as exc:
+                print()
+                print(f"[WARNING] Archive validation failed : {exc}")
+                print("[INFO] Downloading current source.")
+            else:
+                print("[INFO] Existing archive is valid.")
+                print("[INFO] Checking source identity...")
 
-                try:
-                    validate_archive(output_file)
+                state = load_state()
+                prev_source_type = state.get("source_type")
+                prev_source_url = state.get("source_url")
+                prev_archive_sha256 = state.get("archive_sha256")
 
-                    print("[INFO] Existing archive already verified.")
+                if source_type.lower() == "google_drive":
+                    current_source_url = (
+                        os.getenv("SOURCE_PATH")
+                        or config.get("SOURCE_PATH")
+                        or config.get("DATASET_URL", "")
+                    )
+                else:
+                    current_source_url = (
+                        os.getenv("SOURCE_PATH")
+                        or config.get("SOURCE_PATH")
+                        or ""
+                    )
+
+                current_archive_sha256 = _sha256(output_file)
+
+                has_required_fields = (
+                    prev_source_type is not None
+                    and prev_source_url is not None
+                    and prev_archive_sha256 is not None
+                )
+
+                if has_required_fields \
+                   and prev_source_type == source_type \
+                   and prev_source_url == current_source_url \
+                   and prev_archive_sha256 == current_archive_sha256:
+                    print("[INFO] Source identity matches.")
+                    print("[INFO] Reusing existing archive.")
                     print("[INFO] Download skipped.")
-
                     print()
                     print("=" * 60)
                     print("DATASET SUMMARY")
@@ -152,52 +186,54 @@ def download_dataset():
                     print("Input Type  : ZIP Archive")
                     print("Status      : SKIPPED")
                     print()
-
                     return output_file
+                else:
+                    if not has_required_fields:
+                        print("[INFO] No previous dataset state found.")
+                    else:
+                        print("[WARNING] Source identity mismatch.")
+                        print(f"[WARNING] Current source: {source_type} / {current_source_url}")
+                        print(f"[WARNING] Previous source: {prev_source_type} / {prev_source_url}")
+                    print("[INFO] Downloading current source.")
 
-                except Exception as exc:
+        elif source and source.is_file():
 
-                    print()
-                    print(f"[WARNING] Archive validation failed : {exc}")
-                    print("[INFO] Re-downloading archive...")
+            print()
+            print("[INFO] Dataset already exists:")
+            print(f"Location : {output_file}")
+
+            print()
+            print("=" * 60)
+            print("DATASET SUMMARY")
+            print("=" * 60)
+            print(f"Source Type : {source_type.upper()}")
+
+            if database:
+                print(f"Database    : {database.lower()}")
+
+            print(f"Destination : {destination_directory}")
+
+            if source.is_dir():
+
+                input_type = "Folder"
+
+            elif source.suffix.lower() == ".csv":
+
+                input_type = "CSV File"
+
+            elif source.suffix.lower() == ".json":
+
+                input_type = "JSON File"
 
             else:
 
-                print("[INFO] Dataset already exists.")
-                print(f"Location : {output_file}")
+                input_type = "File"
 
-                print()
-                print("=" * 60)
-                print("DATASET SUMMARY")
-                print("=" * 60)
-                print(f"Source Type : {source_type.upper()}")
+            print(f"Input Type  : {input_type}")
+            print("Status      : SKIPPED")
+            print()
 
-                if database:
-                    print(f"Database    : {database.lower()}")
-
-                print(f"Destination : {destination_directory}")
-
-                if source.is_dir():
-
-                    input_type = "Folder"
-
-                elif source.suffix.lower() == ".csv":
-
-                    input_type = "CSV File"
-
-                elif source.suffix.lower() == ".json":
-
-                    input_type = "JSON File"
-
-                else:
-
-                    input_type = "File"
-
-                print(f"Input Type  : {input_type}")
-                print("Status      : SKIPPED")
-                print()
-
-                return output_file
+            return output_file
 
     print()
 
@@ -259,36 +295,45 @@ def download_dataset():
 
             tmp_path.replace(output_file)
 
+            if source_type.lower() == "google_drive":
+                current_source_url = (
+                    os.getenv("SOURCE_PATH")
+                    or config.get("SOURCE_PATH")
+                    or config.get("DATASET_URL", "")
+                )
+            else:
+                current_source_url = (
+                    os.getenv("SOURCE_PATH")
+                    or config.get("SOURCE_PATH")
+                    or ""
+                )
+
             state = build_download_state(
                 config,
-                output_file
+                output_file,
+                source_type,
+                current_source_url
             )
 
             save_state(state)
 
             print()
-
-            print("Download completed successfully.")
-
-            print(f"Archive : {output_file}")
+            print("[INFO] Archive downloaded successfully.")
+            print(f"[INFO] SHA256: {state['archive_sha256']}")
+            print("[INFO] Dataset state updated.")
 
             print()
-
             print("=" * 60)
             print("DATASET SUMMARY")
             print("=" * 60)
-
             print(f"Source Type : {source_type.upper()}")
 
             if database:
                 print(f"Database    : {database.lower()}")
 
             print(f"Destination : {destination_directory}")
-
-            print(f"Input Type  : ZIP Archive")
-
+            print("Input Type  : ZIP Archive")
             print("Status      : SUCCESS")
-
             print()
 
             return output_file

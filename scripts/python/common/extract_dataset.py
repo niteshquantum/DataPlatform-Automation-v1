@@ -183,7 +183,23 @@ def extract_dataset():
             print("[WARNING] State does not match current archive.")
             print("[INFO] Re-extracting...")
 
-    extract_and_merge_zip(archive_file, incoming_path)
+    try:
+        previous_state = load_state()
+        previous_structure = previous_state.get("validated_extracted_structure", [])
+        previous_archive_top = set(previous_state.get("archive_top_structure", []))
+        if previous_structure:
+            for folder_name in previous_structure:
+                if folder_name not in previous_archive_top:
+                    continue
+                folder_path = incoming_path / folder_name
+                if folder_path.exists() and folder_path.is_dir():
+                    shutil.rmtree(folder_path)
+                    print(f"[INFO] Removed previous extracted folder: {folder_name}")
+
+        extract_and_merge_zip(archive_file, incoming_path)
+    except Exception as exc:
+        mark_extraction_invalid(str(exc))
+        raise
 
     actual_folders = sorted(
         str(p.relative_to(incoming_path))
@@ -197,6 +213,16 @@ def extract_dataset():
         raise RuntimeError(f"Extraction incomplete. Missing: {missing}")
 
     state = build_extraction_state(config, archive_file, incoming_path)
+    try:
+        archive_dir_relative = archive_file.parent.relative_to(incoming_path)
+        archive_dir_name = str(archive_dir_relative)
+    except ValueError:
+        archive_dir_name = None
+    if archive_dir_name:
+        state["validated_extracted_structure"] = sorted(
+            f for f in state.get("validated_extracted_structure", [])
+            if f != archive_dir_name
+        )
     save_state(state)
 
     if config.get("DELETE_ARCHIVE", "false").lower() == "true":

@@ -1,0 +1,53 @@
+TEST A1
+Result: PASS
+Exit code: 0
+Archive: F:\Quantumatrix\Projects\DataEng\atav1\Projectv1\incoming\archive\TestingDataset.zip
+SHA256: fd6c50a6fd88d0213d07a41c64fbf0c3c9cdcc62c5679d6e7ec43ba40fbaf566
+Source: google_drive / https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Important logs: [INFO] Archive downloaded successfully. [INFO] SHA256: fd6c50a... [INFO] Dataset state updated.
+Finding: First download succeeded. State contains source_type, source_url, archive_sha256.
+
+TEST A2
+Result: PASS
+Exit code: 0
+Archive: F:\Quantumatrix\Projects\DataEng\Datav1\Projectv1\incoming\archive\TestingDataset.zip
+SHA256: fd6c50a6fd88d0213d07a41c64fbf0c3c9cdcc62c5679d6e7ec43ba40fbaf566
+Source: google_drive / https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Important logs: [INFO] Checking existing archive... [INFO] Existing archive is valid. [INFO] Checking source identity... [INFO] Source identity matches. [INFO] Reusing existing archive. [INFO] Download skipped.
+Finding: Archive reuse works correctly. Extraction skipped due to valid state.
+
+TEST A3
+Result: PASS
+Exit code: 0
+Archive: F:\Quantumatrix\Projects\DataEng\Datav1\Projectv1\incoming\archive\TestingDataset.zip
+SHA256 (old): fd6c50a6fd88d0213d07a41c64fbf0c3c9cdcc62c5679d6e7ec43ba40fbaf566
+SHA256 (new): 6150a1ad1acc6518480b0ccecf038b9194177796099307529423c7181f010317
+Source (old): google_drive / https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Source (new): google_drive / https://drive.google.com/file/d/13eu9LpxTyfhD3xlkVzLrsvxncXAV7VIG/view?usp=drive_link
+Important logs: [WARNING] Source identity mismatch. [WARNING] Current source: google_drive / https://drive.google.com/file/d/13eu9LpxTyfhD3xlkVzLrsvxncXAV7VIG/view?usp=drive_link [WARNING] Previous source: google_drive / https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link [INFO] Downloading current source.
+Finding: Source identity mismatch detected. New archive downloaded and state updated. NOTE: First A3 run had extraction failure because previous validated_extracted_structure included the "archive" download directory, which was deleted before extraction. Fixed by filtering deletions against archive_top_structure.
+
+TEST A4
+Result: PASS
+Exit code: 0
+Archive: F:\Quantumatrix\Projects\DataEng\Datav1\Projectv1\incoming\archive\TestingDataset.zip
+SHA256: 6150a1ad1acc6518480b0ccecf038b9194177796099307529423c7181f010317
+Source: google_drive / https://drive.google.com/file/d/13eu9LpxTyfhD3xlkVzLrsvxncXAV7VIG/view?usp=drive_link
+Important logs: [INFO] Checking existing archive... [INFO] Existing archive is valid. [INFO] Checking source identity... [INFO] Source identity matches. [INFO] Reusing existing archive. [INFO] Download skipped.
+Finding: Same source B reuse works. Extraction skipped due to valid state.
+
+TEST A5
+Result: PASS
+Exit code: 0
+Archive: F:\Quantumatrix\Projects\DataEng\Datav1\Projectv1\incoming\archive\TestingDataset.zip
+SHA256: 6150a1ad1acc6518480b0ccecf038b9194177796099307529423c7181f010317
+Source: google_drive / https://drive.google.com/file/d/13eu9LpxTyfhD3xlkVzLrsvxncXAV7VIG/view?usp=drive_link
+Important logs: [INFO] Archive downloaded successfully. [INFO] SHA256: 6150a1ad... [INFO] Dataset state updated. [INFO] Fresh archive download detected... [INFO] Forcing extraction of the freshly downloaded archive.
+Finding: FORCE_DOWNLOAD=true bypassed archive reuse. New download and extraction occurred. NOTE: FORCE_DOWNLOAD must be set in config/common/dataset.conf, not as an environment variable. The code reads FORCE_DOWNLOAD from config only.
+
+VERIFY STAGE
+A1: PASS
+A2: PASS
+A3: PASS (after fix)
+A4: PASS
+A5: PASS

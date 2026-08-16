@@ -1,0 +1,140 @@
+Started by user Nitesh Patel
+Obtained Jenkinsfile from git https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/feature/jenkins-dataset-source-links^{commit}" # timeout=10
+Checking out Revision aea082168e148c933a651a0cdca40ec489a1032a (refs/remotes/origin/feature/jenkins-dataset-source-links)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f aea082168e148c933a651a0cdca40ec489a1032a # timeout=10
+Commit message: "update verify"
+ > git.exe rev-list --no-walk 38c9ce660df45f74c7bdcf57397291e6a1ee2d2e # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Download Dataset)
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod>scripts\batch\common\download_dataset.bat
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+=====================================
+INSTALLING 7-ZIP
+=====================================
+
+[SUCCESS] 7-Zip already installed.
+
+[SUCCESS] 7-ZIP READY
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+============================================================
+DATASET DOWNLOAD
+============================================================
+
+Source Type : GOOGLE_DRIVE
+Database    : mssql
+Destination : C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod\incoming\archive
+
+Downloading dataset from Google Drive...
+
+
+Google Drive Download
+---------------------
+Source URL  : https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Output File : tmp84lxx53x.tmp
+Destination : C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod\incoming\archive
+
+Downloading...
+From: https://drive.google.com/uc?id=1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC
+To: C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod\incoming\archive\tmp84lxx53x.tmp
+  0%|          | 0.00/13.7k [00:00<?, ?B/s]100%|##########| 13.7k/13.7k [00:00<?, ?B/s]
+
+Download Summary
+----------------
+File Name : tmp84lxx53x.tmp
+Size      : 0.01 MB
+
+Download completed successfully.
+Archive : C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod\incoming\archive\TestingDataset.zip
+
+============================================================
+DATASET SUMMARY
+============================================================
+Source Type : GOOGLE_DRIVE
+Database    : mssql
+Destination : C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod\incoming\archive
+Input Type  : ZIP Archive
+Status      : SUCCESS
+
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] Fresh archive download detected:
+[INFO] Last Download   : 2026-08-14T07:36:06.348874+00:00
+[INFO] Forcing extraction of the freshly downloaded archive.
+
+Extracting and merging dataset...
+
+[SUCCESS] Dataset extracted and merged successfully.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Verified folder: mongodb
+[OK] Verified folder: mssql
+[OK] Verified folder: mysql
+[OK] Verified folder: postgresql
+
+=====================================
+DATASET READY
+=====================================
+
+
+DATASET READY
+
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Download)
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\d14_testing_downlaod>python3 scripts\python\common\verify_download.py 
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 9009
+Finished: FAILURE
