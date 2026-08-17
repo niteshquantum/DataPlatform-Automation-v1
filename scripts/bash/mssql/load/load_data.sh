@@ -32,6 +32,17 @@ echo "GENERATING LIQUIBASE XML"
 echo "-------------------------------------"
 echo
 
+find "$PROJECT_ROOT/liquibase/mssql" -maxdepth 1 -type f -name "mssql-modify-*.xml" -print0 |
+while IFS= read -r -d '' stale_xml
+do
+    relative_xml="${stale_xml#"$PROJECT_ROOT"/}"
+
+    if ! git -C "$PROJECT_ROOT" ls-files --error-unmatch -- "$relative_xml" >/dev/null 2>&1
+    then
+        rm -f -- "$stale_xml"
+    fi
+done
+
 python3 scripts/python/mssql/setup/generate_liquibase_xml.py
 
 SCHEMA_STATUS="$PROJECT_ROOT/metadata/mssql/schema_status.json"
