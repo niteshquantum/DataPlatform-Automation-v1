@@ -121,7 +121,7 @@ def get_schema_editor_url():
     if network_conf.exists():
         try:
             config = configparser.ConfigParser()
-            config.read(network_conf)
+            config.read(network_conf, encoding="utf-8")
 
             port = int(
                 config["DEFAULT"].get(
@@ -137,8 +137,18 @@ def get_schema_editor_url():
 
             if host and host != "127.0.0.1":
                 return host, port
-        except Exception:
-            pass
+        except configparser.Error as exc:
+            print(
+                f"ERROR: Failed to parse {network_conf}: {exc}",
+                file=sys.stderr
+            )
+            sys.exit(1)
+        except Exception as exc:
+            print(
+                f"ERROR: Failed to load {network_conf}: {exc}",
+                file=sys.stderr
+            )
+            sys.exit(1)
 
     # Fallback: determine the local machine IP for display purposes.
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
