@@ -353,10 +353,10 @@ pipeline {
             when {
 
                 expression {
-
-                    return readFile(
-                        'admin_status.txt'
-                    ).trim() == 'true'
+                    return (
+                        readFile('admin_status.txt').trim() == 'true' &&
+                        env.MYSQL_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
+                    )
                 }
             }
 
