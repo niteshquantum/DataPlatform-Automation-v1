@@ -35,7 +35,7 @@ def home():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    return render_template("index.html", data=data)
+    return render_template("index.html", data=data, database=DATABASE)
 
 
 @app.route("/save", methods=["POST"])
@@ -98,6 +98,97 @@ def save():
     """, 200
 
 
+def _is_internal_ip(ip):
+    parts = ip.split(".")
+    if len(parts) != 4:
+        return True
+
+    try:
+        a, b, c, d = map(int, parts)
+    except ValueError:
+        return True
+
+    if a == 127:
+        return True
+
+    if a == 172 and 16 <= b <= 31:
+        return True
+
+    if a == 192 and b == 168 and c == 122:
+        return True
+
+    if a == 100 and 64 <= b <= 127:
+        return True
+
+    return False
+
+
+def _get_all_interface_ips():
+    ips = set()
+
+    try:
+        hostname = socket.gethostname()
+        for res in socket.getaddrinfo(hostname, None, family=socket.AF_INET):
+            ip = res[4][0]
+            if not ip.startswith("127."):
+                ips.add(ip)
+    except Exception:
+        pass
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ips.add(s.getsockname()[0])
+        finally:
+            s.close()
+    except Exception:
+        pass
+
+    try:
+        import subprocess
+        output = subprocess.check_output(
+            ["ip", "-4", "addr", "show"],
+            text=True,
+            stderr=subprocess.DEVNULL
+        )
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith("inet "):
+                parts = line.split()
+                if len(parts) >= 2:
+                    cidr = parts[1]
+                    ip = cidr.split("/")[0]
+                    if not ip.startswith("127."):
+                        ips.add(ip)
+    except Exception:
+        pass
+
+    return ips
+
+
+def _get_external_ip(interface_ips=None):
+    if interface_ips is None:
+        interface_ips = _get_all_interface_ips()
+
+    candidates = sorted(
+        ip for ip in interface_ips if not _is_internal_ip(ip)
+    )
+
+    for ip in candidates:
+        if ip.startswith("192.168."):
+            return ip
+
+    for ip in candidates:
+        if ip.startswith("10."):
+            return ip
+
+    if candidates:
+        return candidates[0]
+
+    return "127.0.0.1"
+
+
 def get_schema_editor_url():
     """
     Determine the URL that should be displayed to the user.
@@ -118,6 +209,9 @@ def get_schema_editor_url():
         )
     )
 
+    interface_ips = _get_all_interface_ips()
+    host = None
+
     if network_conf.exists():
         try:
             config = configparser.ConfigParser()
@@ -129,37 +223,21 @@ def get_schema_editor_url():
                     port
                 )
             )
+
+            configured_host = config["DEFAULT"].get(
+                "JENKINS_HOST",
+                ""
+            ).strip()
+
+            if configured_host and configured_host in interface_ips:
+                host = configured_host
         except Exception:
             pass
 
-    host = None
+    if not host:
+        host = _get_external_ip(interface_ips)
 
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        try:
-            s.connect(("8.8.8.8", 80))
-            host = s.getsockname()[0]
-        finally:
-            s.close()
-
-        if host and not host.startswith("127."):
-            return host, port
-    except Exception:
-        pass
-
-    try:
-        hostname = socket.gethostname()
-        addresses = socket.gethostbyname_ex(hostname)[2]
-
-        for ip in addresses:
-            if not ip.startswith("127."):
-                host = ip
-                break
-    except Exception:
-        pass
-
-    return host or "127.0.0.1", port
+    return host, port
 
 
 if __name__ == "__main__":
