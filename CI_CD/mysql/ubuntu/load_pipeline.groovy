@@ -80,7 +80,6 @@ pipeline {
                 'CSV',
                 'DATABASE'
             ],
-            defaultValue: 'CSV',
             description: 'Schema detection source'
         )
 
