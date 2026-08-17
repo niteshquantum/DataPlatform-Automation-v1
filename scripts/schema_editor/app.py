@@ -111,31 +111,30 @@ def get_schema_editor_url():
         / "network.conf"
     )
 
-    try:
-        config = configparser.ConfigParser()
+    port = int(
+        os.environ.get(
+            "SCHEMA_EDITOR_PORT",
+            "5000"
+        )
+    )
 
-        if network_conf.exists():
+    if network_conf.exists():
+        try:
+            config = configparser.ConfigParser()
             config.read(network_conf)
-
-            host = config["DEFAULT"].get(
-                "JENKINS_HOST",
-                "127.0.0.1"
-            )
 
             port = int(
                 config["DEFAULT"].get(
                     "SCHEMA_EDITOR_PORT",
-                    os.environ.get(
-                        "SCHEMA_EDITOR_PORT",
-                        "5000"
-                    )
+                    port
                 )
             )
+        except Exception:
+            pass
 
-            return host, port
+    host = None
 
-        # If network.conf does not exist, determine the
-        # local machine IP for display purposes.
+    try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         try:
@@ -144,25 +143,23 @@ def get_schema_editor_url():
         finally:
             s.close()
 
-        port = int(
-            os.environ.get(
-                "SCHEMA_EDITOR_PORT",
-                "5000"
-            )
-        )
-
-        return host, port
-
+        if host and not host.startswith("127."):
+            return host, port
     except Exception:
-        return (
-            "127.0.0.1",
-            int(
-                os.environ.get(
-                    "SCHEMA_EDITOR_PORT",
-                    "5000"
-                )
-            )
-        )
+        pass
+
+    try:
+        hostname = socket.gethostname()
+        addresses = socket.gethostbyname_ex(hostname)[2]
+
+        for ip in addresses:
+            if not ip.startswith("127."):
+                host = ip
+                break
+    except Exception:
+        pass
+
+    return host or "127.0.0.1", port
 
 
 if __name__ == "__main__":
