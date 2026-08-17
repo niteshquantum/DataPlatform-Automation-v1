@@ -79,7 +79,28 @@ pipeline {
     }
 
     stages {
+
+        stage('Initialize') {
+    agent any
+
+    steps {
+        checkout scm
+
+        script {
+            if (currentBuild.number == 1) {
+                echo "=========================================="
+                echo "FIRST BUILD DETECTED"
+                echo "Jenkins parameters have been initialized."
+                echo "Please use 'Build with Parameters' for the next build."
+                echo "=========================================="
+                currentBuild.result = 'SUCCESS'
+                return
+            }
+        }
+    }
+}
         stage('Initialize Migration') {
+
             steps {
                 checkout scm
                 bat 'scripts\\batch\\migration\\windows\\initialize_migration.bat'
