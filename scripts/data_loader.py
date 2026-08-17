@@ -212,6 +212,14 @@ def add_missing_columns(conn, db_type, table_name, missing_columns):
                 for col in missing_columns
             )
         )
+    elif db_type == "mysql":
+        sql = (
+            f"ALTER TABLE {quoted_table} "
+            + ", ".join(
+                f"ADD COLUMN {quote_name(col, db_type)} VARCHAR(255)"
+                for col in missing_columns
+            )
+        )
     else:
         definitions = ", ".join(
             f"{quote_name(col, db_type)} VARCHAR(255)"
