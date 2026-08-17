@@ -9,12 +9,9 @@ import sys
 import socket
 import configparser
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from scripts.python.common.mssql_datatype_validation import normalize_mssql_datatype, validate_mssql_datatype
-
 app = Flask(__name__)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DATABASE = (
     sys.argv[1].lower()
@@ -30,31 +27,6 @@ DATA_FILE = (
 )
 
 
-_MSSQL_GENERIC_TO_MSSQL = {
-    "TEXT": "VARCHAR(MAX)",
-    "INTEGER": "INT",
-    "NUMERIC": "DECIMAL(18,0)",
-    "TIMESTAMP": "DATETIME2(7)",
-    "DATE": "DATE",
-    "BOOLEAN": "BIT",
-}
-
-
-def _mssql_default_for(detected_type, selected_type):
-    """Preserve explicit values exactly and keep unresolved bare MSSQL suggestions visible without guessing a length."""
-    if selected_type is not None:
-        value = str(selected_type).strip()
-        if value:
-            return value
-
-    if detected_type is not None:
-        value = str(detected_type).strip()
-        if value:
-            return value
-
-    return "VARCHAR(MAX)"
-
-
 @app.route("/")
 def home():
     if not DATA_FILE.exists():
@@ -63,15 +35,7 @@ def home():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    if DATABASE == "mssql":
-        for table, columns in data.items():
-            for column, info in columns.items():
-                info["selected_type"] = _mssql_default_for(
-                    info.get("detected_type"),
-                    info.get("selected_type"),
-                )
-
-    return render_template("index.html", data=data, database=DATABASE)
+    return render_template("index.html", data=data)
 
 
 @app.route("/save", methods=["POST"])
@@ -83,8 +47,7 @@ def save():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Validate all submitted values before mutating the datatype contract.
-    # MSSQL requires an explicit length/precision for parameterized types.
+    # Save user-selected datatypes
     for key, value in request.form.items():
         try:
             table, column = key.split("__", 1)
@@ -96,16 +59,6 @@ def save():
 
         if column not in data[table]:
             return f"Unknown column: {table}.{column}", 400
-
-        if DATABASE == "mssql":
-            try:
-                validate_mssql_datatype(value)
-            except ValueError as exc:
-                return str(exc), 400
-
-    # Save user-selected datatypes exactly as submitted after validation.
-    for key, value in request.form.items():
-        table, column = key.split("__", 1)
 
         data[table][column]["selected_type"] = value
 
@@ -245,4 +198,3 @@ if __name__ == "__main__":
         debug=False,
         use_reloader=False
     )
-
