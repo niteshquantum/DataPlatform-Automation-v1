@@ -44,11 +44,6 @@ existing_files = sorted(
     if f.name != "master.xml"
 )
 
-for old_file in existing_files:
-    if old_file.name[0].isdigit():
-        old_file.unlink()
-
-existing_files = []
 covered_columns = {}
  
 column_pattern = re.compile(r'<column name="([^"]+)"')
@@ -65,6 +60,10 @@ for file in existing_files:
         covered_columns.setdefault(table_name, set()).update(cols)
     except Exception:
         pass
+
+for old_file in existing_files:
+    if old_file.name[0].isdigit():
+        old_file.unlink()
  
 next_number = len(existing_files) + 1
 generated_any = False

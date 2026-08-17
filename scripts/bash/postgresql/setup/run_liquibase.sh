@@ -43,6 +43,15 @@ echo
 --url="jdbc:postgresql://$POSTGRESQL_HOST:$POSTGRESQL_PORT/$POSTGRESQL_DB" \
 --username="$POSTGRESQL_USER" \
 --password="$POSTGRESQL_PASSWORD" \
+clearCheckSums
+
+"$LB" \
+--classpath="$DRIVER" \
+--driver=org.postgresql.Driver \
+--changeLogFile="$CHANGELOG" \
+--url="jdbc:postgresql://$POSTGRESQL_HOST:$POSTGRESQL_PORT/$POSTGRESQL_DB" \
+--username="$POSTGRESQL_USER" \
+--password="$POSTGRESQL_PASSWORD" \
 update
 
 echo

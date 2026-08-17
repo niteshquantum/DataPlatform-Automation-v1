@@ -74,6 +74,16 @@ fi
 --url="jdbc:sqlserver://$MSSQL_HOST:$MSSQL_PORT;databaseName=$MSSQL_DB;encrypt=true;trustServerCertificate=true" \
 --username="$MSSQL_USER" \
 "${PASSWORD_OPTION[@]}" \
+clearCheckSums
+
+"$LB" \
+--classpath="$DRIVER" \
+--driver=com.microsoft.sqlserver.jdbc.SQLServerDriver \
+--search-path="$PROJECT_ROOT" \
+--changeLogFile="$CHANGELOG" \
+--url="jdbc:sqlserver://$MSSQL_HOST:$MSSQL_PORT;databaseName=$MSSQL_DB;encrypt=true;trustServerCertificate=true" \
+--username="$MSSQL_USER" \
+"${PASSWORD_OPTION[@]}" \
 update
 
 echo

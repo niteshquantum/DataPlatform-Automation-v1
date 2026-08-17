@@ -43,6 +43,15 @@ echo
 --url="jdbc:mysql://$MYSQL_HOST:$MYSQL_PORT/$MYSQL_DB" \
 --username="$MYSQL_USER" \
 --password="$MYSQL_PASSWORD" \
+clearCheckSums
+
+"$LB" \
+--classpath="$DRIVER" \
+--driver=com.mysql.cj.jdbc.Driver \
+--changeLogFile="$CHANGELOG" \
+--url="jdbc:mysql://$MYSQL_HOST:$MYSQL_PORT/$MYSQL_DB" \
+--username="$MYSQL_USER" \
+--password="$MYSQL_PASSWORD" \
 update
 
 echo
