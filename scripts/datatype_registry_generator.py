@@ -73,6 +73,12 @@ def main():
     with open(schema_path, "r", encoding="utf-8") as f:
         schema = json.load(f)
 
+    existing_registry = {}
+
+    if db_type == "mysql" and datatype_path.exists():
+        with open(datatype_path, "r", encoding="utf-8") as f:
+            existing_registry = json.load(f)
+
     datatype_registry = {}
 
     incoming_dir = project_root / "incoming" / db_type
@@ -157,11 +163,18 @@ def main():
                 sample_data.get(column, [])
             )
 
+            existing_selection = (
+                existing_registry
+                .get(table, {})
+                .get(column, {})
+                .get("selected_type")
+            )
+
             datatype_registry[table][column] = {
 
                 "detected_type": detected,
 
-                "selected_type": detected,
+                "selected_type": existing_selection or detected,
 
                 "sample_value":
                     sample_data.get(column, [""])[0]

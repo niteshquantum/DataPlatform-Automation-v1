@@ -9,6 +9,12 @@ LIQUIBASE_INDEX_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 
     <changeSet id="{id}" author="automation">
 
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="{index_name}" tableName="{table_name}"/>
+            </not>
+        </preConditions>
+
         <sqlFile
             path="{sql_path}"
             relativeToChangelogFile="false"

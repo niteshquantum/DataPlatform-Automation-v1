@@ -73,10 +73,10 @@
 
     <td>
 
-        {% if database == "mssql" %}
+        {% if database == "mssql" or database == "mysql" %}
         <input name="{{ table }}__{{ column }}"
                value="{{ info.selected_type }}"
-               list="mssql-datatypes"
+               list="{{ database }}-datatypes"
                required>
         {% else %}
         <select name="{{ table }}__{{ column }}">
@@ -143,6 +143,20 @@
     <option value="BIT">
     <option value="DATE">
     <option value="DATETIME2(7)">
+</datalist>
+{% elif database == "mysql" %}
+<datalist id="mysql-datatypes">
+    <option value="INT">
+    <option value="BIGINT">
+    <option value="VARCHAR(50)">
+    <option value="VARCHAR(255)">
+    <option value="TEXT">
+    <option value="DECIMAL(12,2)">
+    <option value="DECIMAL(18,0)">
+    <option value="BOOLEAN">
+    <option value="DATE">
+    <option value="DATETIME">
+    <option value="TIMESTAMP">
 </datalist>
 {% endif %}
 
