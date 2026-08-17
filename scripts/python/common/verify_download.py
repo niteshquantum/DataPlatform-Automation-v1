@@ -42,6 +42,19 @@ def verify_download():
 
     archive = is_archive_file(output_filename)
 
+    if not database and not archive:
+        try:
+            from scripts.python.common.dataset_state import load_state
+            state = load_state()
+            database = state.get("resolved_database")
+        except Exception:
+            pass
+
+        if not database and source_path:
+            source = Path(source_path)
+            if source.exists() and source.is_dir():
+                database = source.name.strip().lower()
+
     if archive:
 
         download_dir = project_root / config["DOWNLOAD_DIRECTORY"]

@@ -43,7 +43,7 @@ def save_state(state: dict):
         json.dump(state, f, indent=2)
 
 
-def build_download_state(config: dict, archive_path: Path, source_type: str, source_url: str) -> dict:
+def build_download_state(config: dict, archive_path: Path, source_type: str, source_url: str, resolved_database: str = None, detected_databases: list = None) -> dict:
     state = load_state()
     state["state_version"] = "1.0"
     state["dataset_identity"] = _sha256(archive_path)
@@ -55,6 +55,12 @@ def build_download_state(config: dict, archive_path: Path, source_type: str, sou
     state["archive_sha256"] = _sha256(archive_path)
     state["download_timestamp"] = _now_iso()
     state["download_status"] = "DOWNLOADED_VALID"
+    if resolved_database:
+        state["resolved_database"] = resolved_database.lower()
+    if detected_databases:
+        state["detected_databases"] = sorted(
+            str(d).lower() for d in detected_databases
+        )
     return state
 
 

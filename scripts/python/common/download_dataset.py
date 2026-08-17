@@ -19,7 +19,8 @@ from scripts.python.common.dataset_state import (
 )
 
 from scripts.python.common.archive_utils import (
-    validate_archive
+    validate_archive,
+    list_archive_folders
 )
 
 from scripts.python.common.factory.downloader_factory import (
@@ -46,6 +47,22 @@ def create_directory(directory: Path):
     )
 
 
+def _resolve_database(config, source_type, source_path):
+    database = (
+        os.getenv("DATABASE")
+        or config.get("DATABASE")
+    )
+    if database:
+        return database.strip().lower()
+
+    if source_type and source_type.lower() == "local" and source_path:
+        source = Path(source_path)
+        if source.exists() and source.is_dir():
+            return source.name.strip().lower()
+
+    return None
+
+
 def download_dataset():
 
     config = load_common_config("dataset")
@@ -62,10 +79,7 @@ def download_dataset():
         or config.get("SOURCE_PATH")
     )
 
-    database = (
-        os.getenv("DATABASE")
-        or config.get("DATABASE")
-    )
+    database = _resolve_database(config, source_type, source_path)
 
     if not source_type:
         if config.get("DATASET_URL"):
@@ -179,11 +193,19 @@ def download_dataset():
                     print("=" * 60)
                     print(f"Source Type : {source_type.upper()}")
 
-                    if database:
-                        print(f"Database    : {database.lower()}")
-
                     print(f"Destination : {destination_directory}")
                     print("Input Type  : ZIP Archive")
+
+                    try:
+                        detected_databases = list_archive_folders(output_file)
+                    except Exception:
+                        detected_databases = []
+
+                    if detected_databases:
+                        print("Detected Databases:")
+                        for db in detected_databases:
+                            print(f"  {db}")
+
                     print("Status      : SKIPPED")
                     print()
                     return output_file
@@ -212,6 +234,9 @@ def download_dataset():
                 print(f"Database    : {database.lower()}")
 
             print(f"Destination : {destination_directory}")
+
+            if source_path:
+                print(f"Source Path : {source_path}")
 
             if source.is_dir():
 
@@ -243,7 +268,10 @@ def download_dataset():
         print(f"Database    : {database.lower()}")
 
     if source_path:
-        print(f"Source      : {source_path}")
+        if source_type and source_type.lower() == "google_drive":
+            print(f"Source URL  : {source_path}")
+        else:
+            print(f"Source Path : {source_path}")
     print(f"Destination : {destination_directory}")
 
     print()
@@ -295,6 +323,11 @@ def download_dataset():
 
             tmp_path.replace(output_file)
 
+            try:
+                detected_databases = list_archive_folders(output_file)
+            except Exception:
+                detected_databases = []
+
             if source_type.lower() == "google_drive":
                 current_source_url = (
                     os.getenv("SOURCE_PATH")
@@ -312,7 +345,8 @@ def download_dataset():
                 config,
                 output_file,
                 source_type,
-                current_source_url
+                current_source_url,
+                detected_databases=detected_databases
             )
 
             save_state(state)
@@ -320,6 +354,10 @@ def download_dataset():
             print()
             print("[INFO] Archive downloaded successfully.")
             print(f"[INFO] SHA256: {state['archive_sha256']}")
+            if detected_databases:
+                print("Detected Databases:")
+                for db in detected_databases:
+                    print(f"  {db}")
             print("[INFO] Dataset state updated.")
 
             print()
@@ -328,11 +366,14 @@ def download_dataset():
             print("=" * 60)
             print(f"Source Type : {source_type.upper()}")
 
-            if database:
-                print(f"Database    : {database.lower()}")
-
             print(f"Destination : {destination_directory}")
             print("Input Type  : ZIP Archive")
+
+            if detected_databases:
+                print("Detected Databases:")
+                for db in detected_databases:
+                    print(f"  {db}")
+
             print("Status      : SUCCESS")
             print()
 
@@ -377,6 +418,12 @@ def download_dataset():
         print(f"Database    : {database.lower()}")
 
     print(f"Destination : {destination_directory}")
+
+    if source_path:
+        if source_type and source_type.lower() == "google_drive":
+            print(f"Source URL  : {source_path}")
+        else:
+            print(f"Source Path : {source_path}")
 
     if source and source.is_dir():
 
