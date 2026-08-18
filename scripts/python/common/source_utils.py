@@ -9,6 +9,8 @@ def get_output_filename(source_type, source_path, config):
     source_type = source_type.lower()
 
     if source_type == "local":
+        if is_archive_file(source_path):
+            return config["DATASET_NAME"]
         return Path(source_path).name
 
     if source_type == "google_drive":

@@ -47,6 +47,7 @@ def _folder_has_supported_files(folder_path: Path) -> bool:
 
 
 def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
+    print("EXTRACTION START")
     print()
     print("Extracting and merging dataset...")
     print()
@@ -80,6 +81,7 @@ def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
         print("[INFO] Falling back to 7-Zip extraction...")
         extract_archive(archive_file, incoming_path)
 
+    print("EXTRACTION SUCCESS")
     print("[SUCCESS] Dataset extracted and merged successfully.")
 
 
@@ -183,6 +185,8 @@ def extract_dataset():
             print("[WARNING] State does not match current archive.")
             print("[INFO] Re-extracting...")
 
+    print("EXTRACTION START")
+
     try:
         previous_state = load_state()
         previous_structure = previous_state.get("validated_extracted_structure", [])
@@ -198,8 +202,11 @@ def extract_dataset():
 
         extract_and_merge_zip(archive_file, incoming_path)
     except Exception as exc:
+        print("EXTRACTION FAILURE")
         mark_extraction_invalid(str(exc))
         raise
+
+    print("EXTRACTION SUCCESS")
 
     actual_folders = sorted(
         str(p.relative_to(incoming_path))
@@ -209,6 +216,7 @@ def extract_dataset():
 
     missing = [f for f in expected_folders if f not in actual_folders]
     if missing:
+        print("EXTRACTION FAILURE")
         mark_extraction_invalid(f"Missing folders after extraction: {missing}")
         raise RuntimeError(f"Extraction incomplete. Missing: {missing}")
 
@@ -287,7 +295,10 @@ def verify_dataset():
         if folder_path.exists():
             print(f"[OK] Verified folder: {folder}")
         else:
+            print("VERIFY FAILURE")
             raise Exception(f"Verification failed: {folder} folder not found.")
+
+    print("VERIFY SUCCESS")
 
 
 def main():

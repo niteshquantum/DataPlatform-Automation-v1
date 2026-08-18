@@ -47,6 +47,24 @@ def has_7zip() -> bool:
 
     
 
+def _has_data_files(names: list) -> bool:
+    return any(
+        name.lower().endswith((".csv", ".json"))
+        for name in names
+    )
+
+
+def _has_data_files_7z(listing: str) -> bool:
+    for line in listing.splitlines():
+        parts = line.split()
+        if len(parts) < 6:
+            continue
+        path = " ".join(parts[5:]).replace("\\", "/")
+        if path.lower().endswith((".csv", ".json")):
+            return True
+    return False
+
+
 def validate_archive(archive_path: Path) -> None:
     """
     Validates a ZIP archive.
@@ -54,10 +72,19 @@ def validate_archive(archive_path: Path) -> None:
     First tries Python's zipfile module.
     If the archive uses an unsupported compression method
     (e.g. Deflate64), automatically falls back to 7-Zip.
+
+    Validation includes:
+    - ZIP structural integrity (testzip)
+    - Presence of at least one supported data file (.csv or .json)
     """
 
     try:
         with zipfile.ZipFile(archive_path, "r") as zf:
+            if not _has_data_files(zf.namelist()):
+                raise ValueError(
+                    "Archive contains no supported data files (.csv or .json)"
+                )
+
             bad = zf.testzip()
 
             if bad is not None:
@@ -82,6 +109,28 @@ def validate_archive(archive_path: Path) -> None:
             raise ValueError(
                 "Archive validation failed.\n"
                 f"{result.stderr}"
+            )
+
+        list_result = subprocess.run(
+            [
+                str(exe),
+                "l",
+                str(archive_path)
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        if list_result.returncode != 0:
+            raise ValueError(
+                "Archive content listing failed.\n"
+                f"{list_result.stderr}"
+            )
+
+        if not _has_data_files_7z(list_result.stdout):
+            raise ValueError(
+                "Archive contains no supported data files (.csv or .json)"
             )
 
 def extract_archive(archive_path: Path, destination: Path) -> None:

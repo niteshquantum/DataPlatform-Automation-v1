@@ -151,7 +151,7 @@ def download_dataset():
                 print(f"[WARNING] Archive validation failed : {exc}")
                 print("[INFO] Downloading current source.")
             else:
-                print("[INFO] Existing archive is valid.")
+                print("[INFO] ARCHIVE VALID")
                 print("[INFO] Checking source identity...")
 
                 state = load_state()
@@ -184,8 +184,8 @@ def download_dataset():
                    and prev_source_type == source_type \
                    and prev_source_url == current_source_url \
                    and prev_archive_sha256 == current_archive_sha256:
-                    print("[INFO] Source identity matches.")
-                    print("[INFO] Reusing existing archive.")
+                    print("[INFO] SOURCE IDENTITY MATCH")
+                    print("[INFO] ARCHIVE REUSE")
                     print("[INFO] Download skipped.")
                     print()
                     print("=" * 60)
@@ -213,7 +213,7 @@ def download_dataset():
                     if not has_required_fields:
                         print("[INFO] No previous dataset state found.")
                     else:
-                        print("[WARNING] Source identity mismatch.")
+                        print("[WARNING] SOURCE IDENTITY MISMATCH")
                         print(f"[WARNING] Current source: {source_type} / {current_source_url}")
                         print(f"[WARNING] Previous source: {prev_source_type} / {prev_source_url}")
                     print("[INFO] Downloading current source.")
@@ -304,6 +304,19 @@ def download_dataset():
 
         tmp_path = None
 
+        if source_type.lower() == "google_drive":
+            current_source_url = (
+                os.getenv("SOURCE_PATH")
+                or config.get("SOURCE_PATH")
+                or config.get("DATASET_URL", "")
+            )
+        else:
+            current_source_url = (
+                os.getenv("SOURCE_PATH")
+                or config.get("SOURCE_PATH")
+                or ""
+            )
+
         try:
 
             with tempfile.NamedTemporaryFile(
@@ -314,32 +327,23 @@ def download_dataset():
 
                 tmp_path = Path(tmp.name)
 
+            print("DOWNLOAD START")
             downloader.download(
                 config,
                 str(tmp_path)
             )
 
+            print("DOWNLOAD VALIDATION")
             validate_archive(tmp_path)
+            print("ARCHIVE VALID")
 
+            print("ARCHIVE REPLACEMENT")
             tmp_path.replace(output_file)
 
             try:
                 detected_databases = list_archive_folders(output_file)
             except Exception:
                 detected_databases = []
-
-            if source_type.lower() == "google_drive":
-                current_source_url = (
-                    os.getenv("SOURCE_PATH")
-                    or config.get("SOURCE_PATH")
-                    or config.get("DATASET_URL", "")
-                )
-            else:
-                current_source_url = (
-                    os.getenv("SOURCE_PATH")
-                    or config.get("SOURCE_PATH")
-                    or ""
-                )
 
             state = build_download_state(
                 config,
@@ -352,12 +356,20 @@ def download_dataset():
             save_state(state)
 
             print()
-            print("[INFO] Archive downloaded successfully.")
-            print(f"[INFO] SHA256: {state['archive_sha256']}")
+            print(f"Source Type : {source_type.upper()}")
+            if source_type.lower() == "google_drive":
+                print(f"Source URL  : {current_source_url}")
+            elif source_path:
+                print(f"Source Path : {source_path}")
+            print(f"Archive     : {output_file}")
+            print(f"Archive Size: {output_file.stat().st_size} bytes")
+            print(f"SHA256      : {state['archive_sha256']}")
             if detected_databases:
                 print("Detected Databases:")
                 for db in detected_databases:
                     print(f"  {db}")
+
+            print("[INFO] Archive downloaded successfully.")
             print("[INFO] Dataset state updated.")
 
             print()
@@ -365,21 +377,24 @@ def download_dataset():
             print("DATASET SUMMARY")
             print("=" * 60)
             print(f"Source Type : {source_type.upper()}")
-
-            print(f"Destination : {destination_directory}")
+            if source_type.lower() == "google_drive":
+                print(f"Source URL  : {current_source_url}")
+            elif source_path:
+                print(f"Source Path : {source_path}")
             print("Input Type  : ZIP Archive")
-
+            print(f"Archive     : {output_file}")
+            print(f"Archive Size: {output_file.stat().st_size} bytes")
+            print(f"SHA256      : {state['archive_sha256']}")
             if detected_databases:
                 print("Detected Databases:")
                 for db in detected_databases:
                     print(f"  {db}")
-
             print("Status      : SUCCESS")
             print()
 
             return output_file
 
-        except Exception:
+        except Exception as exc:
 
             if tmp_path and tmp_path.exists():
                 tmp_path.unlink(missing_ok=True)
@@ -391,6 +406,17 @@ def download_dataset():
 
                 except Exception:
                     output_file.unlink(missing_ok=True)
+
+            print()
+            print(f"Source Type : {source_type.upper()}")
+            if source_type.lower() == "google_drive":
+                print(f"Source URL  : {current_source_url}")
+            elif source_path:
+                print(f"Source Path : {source_path}")
+            print(f"Downloaded File : {tmp_path}")
+            print("ARCHIVE INVALID")
+            print("Archive Validation : FAILED")
+            print(f"Reason : {exc}")
 
             raise
 
