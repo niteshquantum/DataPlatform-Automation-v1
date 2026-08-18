@@ -62,6 +62,27 @@ pipeline {
             defaultValue: true,
             description: 'Run database assessment after successful load.'
         )
+
+        choice(
+            name: 'SOURCE_TYPE',
+            choices: [
+                'google_drive',
+                'local'
+            ],
+            description: 'Select dataset source.'
+        )
+
+        string(
+            name: 'SOURCE_PATH',
+            defaultValue: '',
+            description: 'Dataset location (Google Drive URL or local path)'
+        )
+
+        booleanParam(
+            name: 'FORCE_DOWNLOAD',
+            defaultValue: false,
+            description: 'Force dataset download instead of reusing an existing archive.'
+        )
     }
 
 
@@ -201,7 +222,30 @@ pipeline {
                         'Download Dataset'
                     ) {
 
-                        bat 'scripts\\batch\\common\\download_dataset.bat'
+                        withEnv([
+                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
+                            "SOURCE_PATH=${params.SOURCE_PATH}",
+                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
+                        ]) {
+
+                            bat 'scripts\\batch\\common\\download_dataset.bat'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Verify Download') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage(
+                        'Verify Download'
+                    ) {
+
+                        bat 'python scripts\\python\\common\\verify_download.py'
                     }
                 }
             }

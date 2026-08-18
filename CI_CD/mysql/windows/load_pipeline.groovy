@@ -132,7 +132,6 @@ pipeline {
 
                 script {
                     env.MYSQL_LOAD_LOGGING_INITIALIZED = 'true'
-                    env.SCHEMA_SOURCE = params.SCHEMA_SOURCE
                 }
             }
         }
