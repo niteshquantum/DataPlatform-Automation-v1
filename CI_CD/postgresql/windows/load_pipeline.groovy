@@ -265,14 +265,46 @@ stage('Schema Editor') {
 
         script {
 
-            runTrackedStage('Schema Editor') {
+            bat """
+                python scripts\\logging\\logger.py stage-start ^
+                --database postgresql ^
+                --action load ^
+                --build-number "${env.BUILD_NUMBER}" ^
+                --stage-name "Schema Editor"
+            """
 
-                bat 'scripts\\batch\\common\\start_schema_editor.bat postgresql'
+            def schemaEditorStatus = bat(
+                script: 'scripts\\batch\\common\\start_schema_editor.bat postgresql',
+                returnStatus: true
+            )
 
+            if (schemaEditorStatus == 0) {
+                bat """
+                    python scripts\\logging\\logger.py stage-end ^
+                    --database postgresql ^
+                    --action load ^
+                    --build-number "${env.BUILD_NUMBER}" ^
+                    --stage-name "Schema Editor" ^
+                    --status SUCCESS
+                """
+                echo 'Schema Editor started successfully.'
+                return
             }
 
-        }
+            bat """
+                python scripts\\logging\\logger.py stage-end ^
+                --database postgresql ^
+                --action load ^
+                --build-number "${env.BUILD_NUMBER}" ^
+                --stage-name "Schema Editor" ^
+                --status SKIPPED
+            """
 
+            echo 'WARNING: Schema Editor could not be started.'
+            echo 'Schema Editor stage will be skipped.'
+            echo 'Continuing PostgreSQL LOAD pipeline without Schema Editor.'
+            currentBuild.result = 'SUCCESS'
+        }
     }
 
 }

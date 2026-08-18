@@ -120,7 +120,11 @@ class TestSchemaEditorNetwork(unittest.TestCase):
         content = open('scripts/batch/common/start_schema_editor.bat', 'r', encoding='utf-8').read()
         self.assertIn('start "Schema Editor" /b', content)
         self.assertIn('scripts\\schema_editor\\app.py', content)
-        self.assertIn('Get-NetTCPConnection -LocalPort', content)
+        self.assertIn('netstat -an', content)
+        self.assertIn('curl.exe', content)
+        self.assertIn('Schema Editor started successfully', content)
+        self.assertNotIn('START_CMD=\\"', content)
+        self.assertIn('exit /b 1', content)
 
 
 if __name__ == "__main__":
