@@ -70,7 +70,13 @@ def execute(Map context) {
 
                     runTrackedStage('Download Dataset') {
 
-                        sh './scripts/bash/common/download_dataset.sh'
+                        withEnv([
+                            "SOURCE_TYPE=${context.sourceType}",
+                            "SOURCE_PATH=${context.sourcePath}",
+                            "FORCE_DOWNLOAD=${context.forceDownload}"
+                        ]) {
+                            sh './scripts/bash/common/download_dataset.sh'
+                        }
                     }
         }
 

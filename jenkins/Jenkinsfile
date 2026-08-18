@@ -301,6 +301,24 @@ pipeline {
         choice(name: 'DATABASE', choices: ['MYSQL', 'POSTGRESQL', 'MONGODB', 'MSSQL'], description: 'Select Database')
         choice(name: 'ACTION', choices: ['SETUP', 'LOAD', 'CLEANUP'], description: 'Select Action')
         choice(name: 'CLEANUP_MODE', choices: ['PRESERVE_DATA', 'DELETE_DATA'], description: 'Select cleanup mode when ACTION is CLEANUP')
+        choice(
+            name: 'SOURCE_TYPE',
+            choices: [
+                'google_drive',
+                'local'
+            ],
+            description: 'Select dataset source.'
+        )
+        string(
+            name: 'SOURCE_PATH',
+            defaultValue: '',
+            description: 'Dataset location (Google Drive URL or local path)'
+        )
+        booleanParam(
+            name: 'FORCE_DOWNLOAD',
+            defaultValue: false,
+            description: 'Force dataset download instead of reusing an existing archive.'
+        )
         string(name: 'USERNAME', defaultValue: '', description: 'RBAC Username')
         password(name: 'PASSWORD', defaultValue: '', description: 'RBAC Password')
     }
@@ -355,7 +373,16 @@ pipeline {
                         env.ROUTED_OS
                     ) {
                         def tracker = load 'jenkins/common/common_stage_tracker.groovy'
-                        def context = [database: env.ROUTED_DATABASE, action: env.ROUTED_ACTION, operatingSystem: env.ROUTED_OS, node: env.ROUTED_NODE, cleanupMode: params.CLEANUP_MODE]
+                        def context = [
+                            database: env.ROUTED_DATABASE,
+                            action: env.ROUTED_ACTION,
+                            operatingSystem: env.ROUTED_OS,
+                            node: env.ROUTED_NODE,
+                            cleanupMode: params.CLEANUP_MODE,
+                            sourceType: params.SOURCE_TYPE,
+                            sourcePath: params.SOURCE_PATH,
+                            forceDownload: params.FORCE_DOWNLOAD
+                        ]
                         module.execute(context + [runTrackedStage: { String stageName, Closure stageBody -> tracker.track(context, stageName, stageBody) }])
                     }
                 }

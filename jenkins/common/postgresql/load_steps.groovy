@@ -93,8 +93,29 @@ def execute(Map context) {
                         'Download Dataset'
                     ) {
 
-                        bat 'scripts\\batch\\common\\download_dataset.bat'
+                        withEnv([
+                            "SOURCE_TYPE=${context.sourceType}",
+                            "SOURCE_PATH=${context.sourcePath}",
+                            "FORCE_DOWNLOAD=${context.forceDownload}"
+                        ]) {
+                            bat 'scripts\\batch\\common\\download_dataset.bat'
+                        }
                     }
+        }
+
+
+        stage('Verify Download') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Verify Download') {
+
+                        bat 'python scripts\\python\\common\\verify_download.py'
+                    }
+                }
+            }
         }
 
 
