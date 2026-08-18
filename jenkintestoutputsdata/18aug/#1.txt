@@ -1,0 +1,176 @@
+Started by user Nitesh Patel
+Obtained Jenkinsfile from git https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in C:\Users\Admin\.jenkins\workspace\18_download_test
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+Cloning the remote Git repository
+Cloning repository https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe init C:\Users\Admin\.jenkins\workspace\18_download_test # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+ > git.exe config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+ > git.exe rev-parse "refs/remotes/origin/feature/jenkins-dataset-source-links^{commit}" # timeout=10
+Checking out Revision 7d328ff26938ed7a2ffb5a533b550ebd5b1f02ea (refs/remotes/origin/feature/jenkins-dataset-source-links)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 7d328ff26938ed7a2ffb5a533b550ebd5b1f02ea # timeout=10
+Commit message: "Improve dataset source handling and archive validation"
+First time build. Skipping changelog.
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Download Dataset)
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\18_download_test>scripts\batch\common\download_dataset.bat
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+=====================================
+INSTALLING 7-ZIP
+=====================================
+
+[SUCCESS] 7-Zip already installed.
+
+[SUCCESS] 7-ZIP READY
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+============================================================
+DATASET DOWNLOAD
+============================================================
+
+Source Type : GOOGLE_DRIVE
+Destination : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\archive
+
+Downloading dataset from Google Drive...
+
+DOWNLOAD START
+
+Google Drive Download
+---------------------
+Source URL  : https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Output File : tmpbacl2wyp.tmp
+Destination : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\archive
+
+Downloading...
+From: https://drive.google.com/uc?id=1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC
+To: C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\archive\tmpbacl2wyp.tmp
+  0%|          | 0.00/13.7k [00:00<?, ?B/s]100%|##########| 13.7k/13.7k [00:00<00:00, 17.7MB/s]
+
+Download Summary
+----------------
+File Name : tmpbacl2wyp.tmp
+Size      : 0.01 MB
+DOWNLOAD VALIDATION
+ARCHIVE VALID
+ARCHIVE REPLACEMENT
+
+Source Type : GOOGLE_DRIVE
+Source URL  : https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Archive     : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\archive\TestingDataset.zip
+Archive Size: 13660 bytes
+SHA256      : fd6c50a6fd88d0213d07a41c64fbf0c3c9cdcc62c5679d6e7ec43ba40fbaf566
+Detected Databases:
+  mongodb
+  mssql
+  mysql
+  postgresql
+[INFO] Archive downloaded successfully.
+[INFO] Dataset state updated.
+
+============================================================
+DATASET SUMMARY
+============================================================
+Source Type : GOOGLE_DRIVE
+Source URL  : https://drive.google.com/file/d/1J96umqV5NM9M4bDG238EYkJ5GsNJAYnC/view?usp=drive_link
+Input Type  : ZIP Archive
+Archive     : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\archive\TestingDataset.zip
+Archive Size: 13660 bytes
+SHA256      : fd6c50a6fd88d0213d07a41c64fbf0c3c9cdcc62c5679d6e7ec43ba40fbaf566
+Detected Databases:
+  mongodb
+  mssql
+  mysql
+  postgresql
+Status      : SUCCESS
+
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] Fresh archive download detected:
+[INFO] Last Download   : 2026-08-18T06:05:33.027250+00:00
+[INFO] Forcing extraction of the freshly downloaded archive.
+EXTRACTION START
+EXTRACTION START
+
+Extracting and merging dataset...
+
+EXTRACTION SUCCESS
+[SUCCESS] Dataset extracted and merged successfully.
+EXTRACTION SUCCESS
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Verified folder: mongodb
+[OK] Verified folder: mssql
+[OK] Verified folder: mysql
+[OK] Verified folder: postgresql
+VERIFY SUCCESS
+
+=====================================
+DATASET READY
+=====================================
+
+
+DATASET READY
+
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Download)
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\18_download_test>python scripts\python\common\verify_download.py 
+
+============================================================
+VERIFY DOWNLOAD
+============================================================
+
+[OK] Downloaded archive found:
+  File : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\archive\TestingDataset.zip
+  Size : 0.01 MB
+
+Download verification passed.
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS

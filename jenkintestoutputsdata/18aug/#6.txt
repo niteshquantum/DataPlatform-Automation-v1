@@ -1,0 +1,147 @@
+Started by user Nitesh Patel
+Obtained Jenkinsfile from git https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in C:\Users\Admin\.jenkins\workspace\18_download_test
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git.exe
+No credentials specified
+ > git.exe rev-parse --resolve-git-dir C:\Users\Admin\.jenkins\workspace\18_download_test\.git # timeout=10
+Fetching changes from the remote Git repository
+ > git.exe config remote.origin.url https://github.com/niteshquantum/DataPlatform-Automation-v1.git # timeout=10
+Fetching upstream changes from https://github.com/niteshquantum/DataPlatform-Automation-v1.git
+ > git.exe --version # timeout=10
+ > git --version # 'git version 2.43.0.windows.1'
+ > git.exe fetch --tags --force --progress -- https://github.com/niteshquantum/DataPlatform-Automation-v1.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git.exe rev-parse "refs/remotes/origin/feature/jenkins-dataset-source-links^{commit}" # timeout=10
+Checking out Revision 7d328ff26938ed7a2ffb5a533b550ebd5b1f02ea (refs/remotes/origin/feature/jenkins-dataset-source-links)
+ > git.exe config core.sparsecheckout # timeout=10
+ > git.exe checkout -f 7d328ff26938ed7a2ffb5a533b550ebd5b1f02ea # timeout=10
+Commit message: "Improve dataset source handling and archive validation"
+ > git.exe rev-list --no-walk 7d328ff26938ed7a2ffb5a533b550ebd5b1f02ea # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Download Dataset)
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\18_download_test>scripts\batch\common\download_dataset.bat
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+=====================================
+INSTALLING 7-ZIP
+=====================================
+
+[SUCCESS] 7-Zip already installed.
+
+[SUCCESS] 7-ZIP READY
+
+=====================================
+DOWNLOADING DATASET
+=====================================
+
+
+============================================================
+DATASET DOWNLOAD
+============================================================
+
+Source Type : LOCAL
+Database    : mysql
+Source Path : F:\Quantumatrix\Raw Data\mysql
+Destination : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\mysql
+
+Copying local dataset folder...
+
+
+Scanning local folder...
+[OVERWRITE]
+employees.csv replaced.
+[OVERWRITE]
+orders.csv replaced.
+[OVERWRITE]
+products.csv replaced.
+
+Local Dataset Summary
+---------------------
+CSV Files              : 3
+JSON Files             : 0
+Total Files            : 3
+Total Files Copied     : 0
+Total Files Overwritten: 3
+Target Folder          : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\mysql
+
+Copy operation completed successfully.
+Destination : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\mysql
+
+============================================================
+DATASET SUMMARY
+============================================================
+Source Type : LOCAL
+Database    : mysql
+Destination : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\mysql
+Source Path : F:\Quantumatrix\Raw Data\mysql
+Input Type  : Folder
+Status      : SUCCESS
+
+
+============================================================
+DATASET PREPARATION
+============================================================
+
+[INFO] No extraction required.
+
+============================================================
+DATASET VERIFICATION
+============================================================
+[OK] Dataset verified successfully.
+[OK] Dataset is ready for loading.
+
+=====================================
+DATASET READY
+=====================================
+
+
+DATASET READY
+
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Download)
+[Pipeline] bat
+
+C:\Users\Admin\.jenkins\workspace\18_download_test>python scripts\python\common\verify_download.py 
+
+============================================================
+VERIFY DOWNLOAD
+============================================================
+
+[OK] Downloaded files found:
+  Directory : C:\Users\Admin\.jenkins\workspace\18_download_test\incoming\mysql
+  Files     : 4
+    - customer.csv
+    - employees.csv
+    - orders.csv
+    - products.csv
+
+Download verification passed.
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
