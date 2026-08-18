@@ -134,8 +134,46 @@ pipeline {
             }
         }
 
+        stage('Check MongoDB Instance') {
+
+    steps {
+
+        script {
+
+            runTrackedStage('Check MongoDB Instance') {
+
+                def output = sh(
+                    script: './scripts/bash/mongodb/setup/check_instance.sh 2>&1 || true',
+                    returnStdout: true
+                ).trim()
+
+                echo output
+
+                def stateLine = output.readLines().find {
+                    it.startsWith('INSTANCE_STATE=')
+                }
+
+                if (!stateLine) {
+                    error "INSTANCE_STATE not found"
+                }
+
+                env.MONGODB_INITIAL_INSTANCE_STATE =
+                    stateLine.replace('INSTANCE_STATE=', '').trim()
+
+                echo "MongoDB Instance State: ${env.MONGODB_INITIAL_INSTANCE_STATE}"
+            }
+        }
+    }
+}
+
 
         stage('Install MongoDB') {
+
+            when {
+                expression {
+                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
+                }
+            }
 
             steps {
 
@@ -152,6 +190,12 @@ pipeline {
 
         stage('Install Mongosh') {
 
+            when {
+                expression {
+                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
+                }
+            }
+
             steps {
 
                 script {
@@ -166,6 +210,12 @@ pipeline {
 
 
         stage('Configure Global Mongosh') {
+
+            when {
+                expression {
+                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
+                }
+            }
 
             steps {
 
