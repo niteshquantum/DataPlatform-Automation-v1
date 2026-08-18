@@ -84,16 +84,7 @@ pipeline {
 
     parameters {
 
-        choice(
-            name: 'SCHEMA_SOURCE',
-            choices: [
-                'CSV',
-                'DATABASE'
-            ],
-            defaultValue: 'CSV',
-            description: 'Schema detection source'
-        )
-
+       
         booleanParam(
             name: 'RUN_ASSESSMENT',
             defaultValue: true,
@@ -351,19 +342,14 @@ pipeline {
             }
         }
 
-                stage('Schema Detection') {
+    stage('Schema Detection') {
 
         steps {
 
             script {
 
                 runTrackedStage('Schema Detection') {
-
-                    if (params.SCHEMA_SOURCE == 'DATABASE') {
-                        bat 'python scripts\\schema_extractor.py mysql'
-                    } else {
                         bat 'python scripts\\schema_detector.py mysql'
-                    }
 
                 }
 
