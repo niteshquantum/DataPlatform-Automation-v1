@@ -117,8 +117,10 @@ class TestSchemaEditorNetwork(unittest.TestCase):
                 schema_editor_app.ensure_windows_firewall_access(5000)
 
     def test_start_schema_editor_command_uses_project_path_and_background_launch(self):
-        self.assertIn('start "Schema Editor" /b', open('scripts/batch/common/start_schema_editor.bat', 'r', encoding='utf-8').read())
-        self.assertIn('scripts\\schema_editor\\app.py', open('scripts/batch/common/start_schema_editor.bat', 'r', encoding='utf-8').read())
+        content = open('scripts/batch/common/start_schema_editor.bat', 'r', encoding='utf-8').read()
+        self.assertIn('start "Schema Editor" /b', content)
+        self.assertIn('scripts\\schema_editor\\app.py', content)
+        self.assertIn('Get-NetTCPConnection -LocalPort', content)
 
 
 if __name__ == "__main__":

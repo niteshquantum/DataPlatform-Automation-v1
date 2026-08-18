@@ -21,20 +21,43 @@ if exist "%PROJECT_ROOT%\outputs\logs" (
 )
 
 set "START_LOG=%LOG_DIR%\schema_editor_%SCHEMA_EDITOR_DATABASE%.log"
+set "APP_PATH=%PROJECT_ROOT%\scripts\schema_editor\app.py"
 
 where py >nul 2>&1
 if not errorlevel 1 (
-    set "PYTHON_CMD=py -3"
+    set "PYTHON_EXE=py"
+    set "PYTHON_ARGS=-3"
 ) else (
-    set "PYTHON_CMD=python"
+    set "PYTHON_EXE=python"
+    set "PYTHON_ARGS="
 )
 
-start "Schema Editor" /b cmd /c "%PYTHON_CMD% \"%PROJECT_ROOT%\scripts\schema_editor\app.py\" %SCHEMA_EDITOR_DATABASE% >> \"%START_LOG%\" 2>&1"
+set "START_CMD=\"%PYTHON_EXE%\" %PYTHON_ARGS% \"%APP_PATH%\" %SCHEMA_EDITOR_DATABASE% >> \"%START_LOG%\" 2>&1"
 
+start "Schema Editor" /b cmd /c %START_CMD%
 if errorlevel 1 (
     echo ERROR: Failed to launch Schema Editor in background.
     exit /b 1
 )
 
-echo Schema Editor background launch started for database %SCHEMA_EDITOR_DATABASE% on port %SCHEMA_EDITOR_PORT%
+for /l %%N in (1,1,30) do (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-NetTCPConnection -LocalPort %SCHEMA_EDITOR_PORT% -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' }).Count -gt 0" >nul 2>&1
+    if not errorlevel 1 goto :started
+    ping -n 2 127.0.0.1 >nul 2>&1
+)
+
+echo ERROR: Schema Editor did not start listening on localhost:%SCHEMA_EDITOR_PORT% within 30 seconds.
+if exist "%START_LOG%" (
+    echo Log file: %START_LOG%
+    type "%START_LOG%"
+)
+exit /b 1
+
+:started
+if exist "%START_LOG%" (
+    echo Schema Editor started successfully for database %SCHEMA_EDITOR_DATABASE% on port %SCHEMA_EDITOR_PORT%.
+    echo Log file: %START_LOG%
+) else (
+    echo Schema Editor started successfully for database %SCHEMA_EDITOR_DATABASE% on port %SCHEMA_EDITOR_PORT%.
+)
 exit /b 0
