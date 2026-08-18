@@ -95,6 +95,16 @@ def build_firewall_rule_name(port):
     return f"Schema Editor Port {port} (LAN)"
 
 
+def windows_firewall_rule_exists(rule_name):
+    check = subprocess.run(
+        ["netsh", "advfirewall", "firewall", "show", "rule", f"name={rule_name}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return check.returncode == 0 and "No rules match" not in check.stdout.lower()
+
+
 def windows_firewall_rule_matches_profile(rule, port):
     if not isinstance(rule, dict):
         return False
@@ -108,30 +118,36 @@ def parse_linux_default_route_ip(route_output):
     if not route_output:
         return None
 
-    default_route_lines = []
+    default_dev = None
     for line in route_output.splitlines():
         cleaned = line.strip()
         if not cleaned:
             continue
         lower = cleaned.lower()
-        if "default" in lower or "0.0.0.0" in lower:
-            default_route_lines.append(cleaned)
-
-    for line in default_route_lines:
-        dev_match = re.search(r"\bdev\s+(\S+)", line, re.IGNORECASE)
+        if "default" not in lower and "0.0.0.0" not in lower:
+            continue
+        dev_match = re.search(r"\bdev\s+(\S+)", cleaned, re.IGNORECASE)
         if not dev_match:
             continue
         dev = dev_match.group(1)
-        if is_virtual_interface_name(dev):
-            continue
-        src_match = re.search(r"\bsrc\s+(\d+\.\d+\.\d+\.\d+)", line, re.IGNORECASE)
-        if not src_match:
-            continue
-        ip = src_match.group(1)
-        if is_valid_ipv4(ip) and not ip.startswith("127."):
-            return ip
+        if not is_virtual_interface_name(dev):
+            default_dev = dev
+            break
 
-    if default_route_lines:
+    if default_dev:
+        for line in route_output.splitlines():
+            cleaned = line.strip()
+            if not cleaned:
+                continue
+            dev_match = re.search(r"\bdev\s+(\S+)", cleaned, re.IGNORECASE)
+            if not dev_match or dev_match.group(1) != default_dev:
+                continue
+            src_match = re.search(r"\bsrc\s+(\d+\.\d+\.\d+\.\d+)", cleaned, re.IGNORECASE)
+            if not src_match:
+                continue
+            ip = src_match.group(1)
+            if is_valid_ipv4(ip) and not ip.startswith("127."):
+                return ip
         return None
 
     for line in route_output.splitlines():
@@ -143,7 +159,10 @@ def parse_linux_default_route_ip(route_output):
             continue
         ip = src_match.group(1)
         if is_valid_ipv4(ip) and not ip.startswith("127."):
-            return ip
+            dev_match = re.search(r"\bdev\s+(\S+)", cleaned, re.IGNORECASE)
+            dev = dev_match.group(1) if dev_match else ""
+            if not is_virtual_interface_name(dev):
+                return ip
     return None
 
 
@@ -253,16 +272,9 @@ def resolve_active_host_ip():
     return host
 
 
-def ensure_windows_firewall_access(port):
+def provision_windows_firewall_rule(port):
     rule_name = build_firewall_rule_name(port)
-    check = subprocess.run(
-        ["netsh", "advfirewall", "firewall", "show", "rule", f"name={rule_name}"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    if check.returncode == 0 and "No rules match" not in check.stdout.lower():
+    if windows_firewall_rule_exists(rule_name):
         return True
 
     add = subprocess.run(
@@ -287,8 +299,32 @@ def ensure_windows_firewall_access(port):
 
     if add.returncode != 0:
         raise RuntimeError(
-            "The Jenkins process does not have permission to create the Schema Editor firewall rule. "
-            "Run Jenkins as an administrator or grant the service permission to update Windows Firewall."
+            "Windows Firewall setup is not available in the current session. "
+            "The Schema Editor firewall rule must be created by the one-time elevated Windows setup phase."
+        )
+
+    return True
+
+
+def ensure_windows_firewall_access(port):
+    rule_name = build_firewall_rule_name(port)
+    check = subprocess.run(
+        ["netsh", "advfirewall", "firewall", "show", "rule", f"name={rule_name}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if check.returncode != 0:
+        raise RuntimeError(
+            f"The Windows firewall rule for Schema Editor port {port} could not be inspected. "
+            "Run the one-time elevated Windows setup step to provision the required firewall rule."
+        )
+
+    if "No rules match" in check.stdout.lower():
+        raise RuntimeError(
+            f"The required Windows firewall rule for Schema Editor port {port} is missing. "
+            "The one-time elevated Windows setup phase has not provisioned it yet."
         )
 
     return True

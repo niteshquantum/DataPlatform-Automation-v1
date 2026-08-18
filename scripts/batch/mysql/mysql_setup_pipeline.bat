@@ -39,6 +39,14 @@ echo Administrator Status: %ADMIN_STATUS%
 if /I "%ADMIN_STATUS%"=="true" (
     echo.
     echo =====================================
+    echo ENSURING SCHEMA EDITOR FIREWALL ACCESS
+    echo =====================================
+    echo.
+    call "%PROJECT_ROOT%\scripts\batch\common\ensure_schema_editor_firewall.bat"
+    if errorlevel 1 exit /b 1
+
+    echo.
+    echo =====================================
     echo CONFIGURING MYSQL WINDOWS SERVICE
     echo =====================================
     echo.

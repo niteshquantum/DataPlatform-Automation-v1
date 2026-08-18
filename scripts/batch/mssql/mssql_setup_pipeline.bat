@@ -74,6 +74,14 @@ if /I "%INST_INSTANCE_STATE%"=="NO_INSTANCE" (
     if /I "%ADMIN_STATUS%"=="true" (
         echo.
         echo =====================================
+        echo ENSURING SCHEMA EDITOR FIREWALL ACCESS
+        echo =====================================
+        echo.
+        call "%PROJECT_ROOT%\scripts\batch\common\ensure_schema_editor_firewall.bat"
+        if errorlevel 1 exit /b 1
+
+        echo.
+        echo =====================================
         echo CONFIGURING SQL SERVER
         echo =====================================
         echo.

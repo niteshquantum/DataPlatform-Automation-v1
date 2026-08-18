@@ -103,6 +103,19 @@ class TestSchemaEditorNetwork(unittest.TestCase):
             mock_run.return_value.stdout = "Rule Name: Schema Editor Port 5000 (LAN)"
             self.assertTrue(schema_editor_app.ensure_windows_firewall_access(5000))
 
+    def test_windows_firewall_rule_is_idempotent_before_readd(self):
+        with patch.object(schema_editor_app, "windows_firewall_rule_exists", return_value=True):
+            with patch.object(schema_editor_app.subprocess, "run") as mock_run:
+                self.assertTrue(schema_editor_app.provision_windows_firewall_rule(5000))
+                mock_run.assert_not_called()
+
+    def test_missing_windows_firewall_rule_raises_runtime_error(self):
+        with patch.object(schema_editor_app.subprocess, "run") as mock_run:
+            mock_run.return_value.returncode = 1
+            mock_run.return_value.stdout = "No rules match."
+            with self.assertRaises(RuntimeError):
+                schema_editor_app.ensure_windows_firewall_access(5000)
+
 
 if __name__ == "__main__":
     unittest.main()
