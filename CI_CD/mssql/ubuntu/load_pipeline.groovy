@@ -59,11 +59,17 @@ pipeline {
 
     parameters {
 
+        booleanParam(
+            name: 'RUN_ASSESSMENT',
+            defaultValue: true,
+            description: 'Run database assessment after successful load.'
+        )
+
         choice(
             name: 'SOURCE_TYPE',
             choices: [
                 'google_drive',
-                'local',
+                'local'
             ],
             description: 'Select dataset source.'
         )
@@ -75,9 +81,9 @@ pipeline {
         )
 
         booleanParam(
-            name: 'RUN_ASSESSMENT',
-            defaultValue: true,
-            description: 'Run database assessment after successful load.'
+            name: 'FORCE_DOWNLOAD',
+            defaultValue: false,
+            description: 'Force dataset download instead of reusing an existing archive.'
         )
     }
 
@@ -218,7 +224,8 @@ pipeline {
                         withEnv([
                             "SOURCE_TYPE=${params.SOURCE_TYPE}",
                             "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "DATABASE=mssql"
+                            "DATABASE=mssql",
+                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
                         ]) {
 
                             sh './scripts/bash/common/download_dataset.sh'
@@ -237,9 +244,7 @@ pipeline {
 
                     runTrackedStage('Verify Download') {
 
-                        withEnv(["DATABASE=mssql"]) {
-                            sh 'python3 scripts/python/common/verify_download.py'
-                        }
+                        sh 'python3 scripts/python/common/verify_download.py'
                     }
                 }
             }

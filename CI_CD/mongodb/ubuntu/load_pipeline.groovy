@@ -55,6 +55,37 @@ pipeline {
     }
 
 
+    parameters {
+
+        booleanParam(
+            name: 'RUN_ASSESSMENT',
+            defaultValue: true,
+            description: 'Run database assessment after successful load.'
+        )
+
+        choice(
+            name: 'SOURCE_TYPE',
+            choices: [
+                'google_drive',
+                'local'
+            ],
+            description: 'Select dataset source.'
+        )
+
+        string(
+            name: 'SOURCE_PATH',
+            defaultValue: '',
+            description: 'Dataset location (URL, local path, folder path, etc.)'
+        )
+
+        booleanParam(
+            name: 'FORCE_DOWNLOAD',
+            defaultValue: false,
+            description: 'Force dataset download instead of reusing an existing archive.'
+        )
+    }
+
+
     stages {
 
         stage('Initialize Logging') {
@@ -146,12 +177,50 @@ pipeline {
 
                     runTrackedStage('Download Dataset') {
 
-                        sh './scripts/bash/common/download_dataset.sh'
+                        withEnv([
+                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
+                            "SOURCE_PATH=${params.SOURCE_PATH}",
+                            "DATABASE=mongodb",
+                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
+                        ]) {
+
+                            sh './scripts/bash/common/download_dataset.sh'
+                        }
                     }
                 }
             }
         }
 
+
+        stage('Verify Download') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Verify Download') {
+
+                        sh 'python3 scripts/python/common/verify_download.py'
+                    }
+                }
+            }
+        }
+
+        stage('Verify Incoming Folder') {
+
+            steps {
+
+                script {
+
+                    runTrackedStage('Verify Incoming Folder') {
+
+                        withEnv(["DATABASE=mongodb"]) {
+                            sh 'python3 scripts/python/common/verify_incoming.py'
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Profile Source Data') {
 

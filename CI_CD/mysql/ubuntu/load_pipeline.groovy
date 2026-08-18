@@ -59,6 +59,12 @@ pipeline {
 
     parameters {
 
+        booleanParam(
+            name: 'RUN_ASSESSMENT',
+            defaultValue: true,
+            description: 'Run database assessment after successful load.'
+        )
+
         choice(
             name: 'SOURCE_TYPE',
             choices: [
@@ -72,22 +78,6 @@ pipeline {
             name: 'SOURCE_PATH',
             defaultValue: '',
             description: 'Dataset location (URL, local path, folder path, etc.)'
-        )
-
-        choice(
-            name: 'SCHEMA_SOURCE',
-            choices: [
-                'CSV',
-                'DATABASE'
-            ],
-            defaultValue: 'CSV',
-            description: 'Schema detection source'
-        )
-
-        booleanParam(
-            name: 'RUN_ASSESSMENT',
-            defaultValue: true,
-            description: 'Run database assessment after successful load.'
         )
 
         booleanParam(
@@ -116,7 +106,6 @@ pipeline {
 
                 script {
                     env.MYSQL_LOAD_LOGGING_INITIALIZED = 'true'
-                    env.SCHEMA_SOURCE = params.SCHEMA_SOURCE
                 }
             }
         }
@@ -230,9 +219,7 @@ pipeline {
 
                     runTrackedStage('Verify Download') {
 
-                        withEnv(["DATABASE=mysql"]) {
-                            sh 'python3 scripts/python/common/verify_download.py'
-                        }
+                        sh 'python3 scripts/python/common/verify_download.py'
                     }
                 }
             }
@@ -277,11 +264,7 @@ pipeline {
 
                     runTrackedStage('Schema Detection') {
 
-                        if (params.SCHEMA_SOURCE == 'DATABASE') {
-                            sh 'python3 scripts/schema_extractor.py mysql'
-                        } else {
-                            sh 'python3 scripts/schema_detector.py mysql'
-                        }
+                        sh 'python3 scripts/schema_detector.py mysql'
 
                     }
 
