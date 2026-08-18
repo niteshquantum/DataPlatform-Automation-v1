@@ -247,12 +247,15 @@ pipeline {
 
         stage('Configure MongoDB Service') {
 
+            when {
+                expression {
+                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
+                }
+            }
+
             steps {
-
                 script {
-
                     runTrackedStage('Configure MongoDB Service') {
-
                         sh './scripts/bash/mongodb/setup/configure_mongodb_service.sh'
                     }
                 }
