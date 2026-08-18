@@ -32,14 +32,14 @@ sudo rm -f "$GLOBAL_MONGOSH"
 sudo tee "$GLOBAL_MONGOSH" > /dev/null <<EOF
 #!/bin/bash
 
-exec "$REAL_MONGOSH" --host "$MONGODB_HOST" --port "$MONGODB_PORT" "\$@"
+exec "$REAL_MONGOSH" "\$@"
 EOF
 
 sudo chmod +x "$GLOBAL_MONGOSH"
 
 echo "Validating global mongosh command..."
 
-mongosh --version
+"$REAL_MONGOSH" --version
 
 echo
 echo "====================================="
