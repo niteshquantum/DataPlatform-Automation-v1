@@ -84,17 +84,7 @@ pipeline {
 
     parameters {
 
-        choice(
-            name: 'SCHEMA_SOURCE',
-            choices: [
-                'CSV',
-                'DATABASE'
-            ],
-            defaultValue: 'CSV',
-            description: 'Schema detection source'
-        )
-
-        booleanParam(
+               booleanParam(
             name: 'RUN_ASSESSMENT',
             defaultValue: true,
             description: 'Run database assessment after successful load.'
