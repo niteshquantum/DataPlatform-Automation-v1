@@ -61,25 +61,50 @@ if (!(Test-Path $MySQLExe)) {
 
     if ($ServiceImagePath -and $ServiceImagePath.PathName) {
 
-        $MySQLMatch = [regex]::Match(
+        Write-Host "Service PathName:"
+        Write-Host $ServiceImagePath.PathName
+
+        # The Windows service contains mysqld.exe.
+        # mysql.exe is located in the same bin directory.
+        $MysqldMatch = [regex]::Match(
             $ServiceImagePath.PathName.Trim(),
-            '"?(?<path>[A-Za-z]:\\[^"\r\n]*?\\mysql\.exe)"?',
+            '"(?<path>[^"]*\\mysqld\.exe)"|(?<path2>[A-Za-z]:\\.*?\\mysqld\.exe)',
             [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
         )
 
-        if ($MySQLMatch.Success) {
+        if ($MysqldMatch.Success) {
 
-            $ServiceMySQL = $MySQLMatch.Groups['path'].Value.Trim('"')
+            if ($MysqldMatch.Groups['path'].Success) {
+                $ServiceMysqld = $MysqldMatch.Groups['path'].Value
+            }
+            else {
+                $ServiceMysqld = $MysqldMatch.Groups['path2'].Value
+            }
+
+            Write-Host "Resolved mysqld.exe from service: $ServiceMysqld"
+
+            $MySQLBinDir = Split-Path `
+                -Path $ServiceMysqld `
+                -Parent
+
+            $ServiceMySQL = Join-Path `
+                -Path $MySQLBinDir `
+                -ChildPath "mysql.exe"
+
+            Write-Host "Looking for mysql.exe:"
+            Write-Host $ServiceMySQL
 
             if (Test-Path -LiteralPath $ServiceMySQL -PathType Leaf) {
-                Write-Host "Resolved mysql.exe from service: $ServiceMySQL"
+
+                Write-Host "Resolved mysql.exe from existing MySQL service installation."
+
                 $MySQLExe = $ServiceMySQL
             }
         }
     }
 
     if (!(Test-Path $MySQLExe)) {
-        throw "mysql.exe not found in workspace: $ROOT\databases\mysql\server\bin. Unable to resolve it from the MySQLAutomation service."
+        throw "mysql.exe could not be resolved from the current workspace or the MySQLAutomation service installation."
     }
 }
 
