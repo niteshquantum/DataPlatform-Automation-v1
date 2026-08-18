@@ -47,7 +47,6 @@ def _folder_has_supported_files(folder_path: Path) -> bool:
 
 
 def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
-    print("EXTRACTION START")
     print()
     print("Extracting and merging dataset...")
     print()
@@ -81,7 +80,6 @@ def extract_and_merge_zip(archive_file: Path, incoming_path: Path):
         print("[INFO] Falling back to 7-Zip extraction...")
         extract_archive(archive_file, incoming_path)
 
-    print("EXTRACTION SUCCESS")
     print("[SUCCESS] Dataset extracted and merged successfully.")
 
 
