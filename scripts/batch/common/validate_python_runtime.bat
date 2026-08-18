@@ -22,12 +22,9 @@ REM AUTO DETECT PYTHON
 REM =====================================
 
 if "%PYTHON_EXE%"=="" (
-
-    for /f "delims=" %%i in ('where python 2^>nul') do (
-        set PYTHON_EXE=%%i
-        goto :python_found
+    for /f "delims=" %%i in ('python -c "import sys; print(sys.executable)" 2^>nul') do (
+        set "PYTHON_EXE=%%i"
     )
-
 )
 
 :python_found
