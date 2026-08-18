@@ -89,6 +89,12 @@ pipeline {
             defaultValue: true,
             description: 'Run database assessment after successful load.'
         )
+
+        booleanParam(
+            name: 'FORCE_DOWNLOAD',
+            defaultValue: false,
+            description: 'Force dataset download instead of reusing an existing archive.'
+        )
     }
 
 
@@ -204,7 +210,8 @@ pipeline {
                         withEnv([
                             "SOURCE_TYPE=${params.SOURCE_TYPE}",
                             "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "DATABASE=mysql"
+                            "DATABASE=mysql",
+                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
                         ]) {
 
                             sh './scripts/bash/common/download_dataset.sh'
