@@ -1,8 +1,9 @@
+import json
 import os
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -125,6 +126,166 @@ class TestSchemaEditorNetwork(unittest.TestCase):
         self.assertIn('Schema Editor started successfully', content)
         self.assertNotIn('START_CMD=\\"', content)
         self.assertIn('exit /b 1', content)
+
+    def test_app_runtime_does_not_call_firewall_check(self):
+        app_source = Path(schema_editor_app.__file__).read_text(encoding='utf-8')
+        main_block = app_source[app_source.index('if __name__ == "__main__":'):]
+        self.assertNotIn('ensure_schema_editor_network_access', main_block)
+        self.assertNotIn('ensure_windows_firewall_access', main_block)
+
+    def test_app_startup_message_contains_scoped_ready_status(self):
+        app_source = Path(schema_editor_app.__file__).read_text(encoding='utf-8')
+        main_block = app_source[app_source.index('if __name__ == "__main__":'):]
+        self.assertIn('SCHEMA EDITOR READY', main_block)
+        self.assertIn('WAITING FOR USER SAVE', main_block)
+        self.assertIn('build_schema_editor_url', main_block)
+
+    def test_app_save_handler_writes_scoped_marker_file(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_root = Path(tmpdir)
+            data_file = project_root / "metadata" / "postgresql" / "datatype_registry.json"
+            data_file.parent.mkdir(parents=True, exist_ok=True)
+            data_file.write_text(
+                json.dumps({"tbl": {"col": {"sample_value": "a", "detected_type": "TEXT", "selected_type": "TEXT"}}}),
+                encoding="utf-8",
+            )
+
+            with patch.object(schema_editor_app, "PROJECT_ROOT", project_root):
+                with patch.object(schema_editor_app, "DATABASE", "postgresql"):
+                    with patch.object(schema_editor_app, "DATA_FILE", data_file):
+                        with patch.dict(os.environ, {"BUILD_NUMBER": "42"}, clear=False):
+                            mock_request = MagicMock()
+                            mock_request.form = {"tbl__col": "VARCHAR"}
+                            with patch.object(schema_editor_app, "request", mock_request):
+                                status = schema_editor_app.save()
+                                self.assertEqual(status[1], 200)
+                                marker_dir = project_root / "outputs" / "schema_editor_markers"
+                                self.assertTrue(marker_dir.exists())
+                                markers = list(marker_dir.glob("save_marker.postgresql.42.*"))
+                                self.assertEqual(len(markers), 1)
+                                content = json.loads(markers[0].read_text(encoding="utf-8"))
+                                self.assertEqual(content["database"], "postgresql")
+                                self.assertEqual(content["build_number"], "42")
+                                self.assertIn("marker_id", content)
+                                self.assertIn("timestamp", content)
+
+    def test_app_save_handler_marker_scoped_to_database_and_build(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_root = Path(tmpdir)
+            data_file = project_root / "metadata" / "mysql" / "datatype_registry.json"
+            data_file.parent.mkdir(parents=True, exist_ok=True)
+            data_file.write_text(
+                json.dumps({"tbl": {"col": {"sample_value": "a", "detected_type": "TEXT", "selected_type": "TEXT"}}}),
+                encoding="utf-8",
+            )
+
+            with patch.object(schema_editor_app, "PROJECT_ROOT", project_root):
+                with patch.object(schema_editor_app, "DATABASE", "mysql"):
+                    with patch.object(schema_editor_app, "DATA_FILE", data_file):
+                        with patch.dict(os.environ, {"BUILD_NUMBER": "99"}, clear=False):
+                            mock_request = MagicMock()
+                            mock_request.form = {"tbl__col": "INTEGER"}
+                            with patch.object(schema_editor_app, "request", mock_request):
+                                schema_editor_app.save()
+                                marker_dir = project_root / "outputs" / "schema_editor_markers"
+                                mysql_markers = list(marker_dir.glob("save_marker.mysql.99.*"))
+                                self.assertEqual(len(mysql_markers), 1)
+                                postgresql_markers = list(marker_dir.glob("save_marker.postgresql.99.*"))
+                                self.assertEqual(len(postgresql_markers), 0)
+
+    def test_old_save_marker_cannot_release_new_build(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project_root = Path(tmpdir)
+            data_file = project_root / "metadata" / "postgresql" / "datatype_registry.json"
+            data_file.parent.mkdir(parents=True, exist_ok=True)
+            data_file.write_text(
+                json.dumps({"tbl": {"col": {"sample_value": "a", "detected_type": "TEXT", "selected_type": "TEXT"}}}),
+                encoding="utf-8",
+            )
+
+            with patch.object(schema_editor_app, "PROJECT_ROOT", project_root):
+                with patch.object(schema_editor_app, "DATABASE", "postgresql"):
+                    with patch.object(schema_editor_app, "DATA_FILE", data_file):
+                        with patch.dict(os.environ, {"BUILD_NUMBER": "100"}, clear=False):
+                            old_marker_dir = project_root / "outputs" / "schema_editor_markers"
+                            old_marker_dir.mkdir(parents=True, exist_ok=True)
+                            (old_marker_dir / "save_marker.postgresql.50.oldmarker").write_text(
+                                json.dumps({"database": "postgresql", "build_number": "50"}),
+                                encoding="utf-8",
+                            )
+
+                            mock_request = MagicMock()
+                            mock_request.form = {"tbl__col": "VARCHAR"}
+                            with patch.object(schema_editor_app, "request", mock_request):
+                                schema_editor_app.save()
+                                markers = list(old_marker_dir.glob("save_marker.postgresql.100.*"))
+                                self.assertEqual(len(markers), 1)
+                                old_markers = list(old_marker_dir.glob("save_marker.postgresql.50.*"))
+                                self.assertEqual(len(old_markers), 1)
+
+    def test_load_steps_groovy_uses_blocking_app_py(self):
+        load_steps = open('jenkins/common/postgresql/load_steps.groovy', 'r', encoding='utf-8').read()
+        start = load_steps.index("stage('Schema Editor')")
+        end = load_steps.index("stage('Create Database')")
+        schema_editor_block = load_steps[start:end]
+        self.assertIn('runTrackedStage', schema_editor_block)
+        self.assertIn('scripts\\\\schema_editor\\\\app.py', schema_editor_block)
+        self.assertNotIn('start_schema_editor.bat', schema_editor_block)
+        self.assertNotIn('SKIPPED', schema_editor_block)
+        self.assertNotIn('returnStatus', schema_editor_block)
+
+    def test_load_steps_groovy_has_all_stages_after_schema_editor(self):
+        load_steps = open('jenkins/common/postgresql/load_steps.groovy', 'r', encoding='utf-8').read()
+        schema_editor_block = load_steps[load_steps.index("stage('Schema Editor')"):]
+        required_stages = [
+            'Create Database',
+            'Run CDC',
+            'Load Data',
+            'Validate Loaded Data',
+            'Deploy Database Objects',
+            'Validate Database Objects',
+            'Assessment & Reconciliation',
+            'Discovery & Migration Reporting',
+        ]
+        for stage in required_stages:
+            self.assertIn(stage, schema_editor_block,
+                          f"Stage '{stage}' must still exist after Schema Editor in the pipeline.")
+
+    def test_ci_cd_load_pipeline_uses_blocking_app_py(self):
+        content = open('CI_CD/postgresql/windows/load_pipeline.groovy', 'r', encoding='utf-8').read()
+        schema_editor_start = content.index("stage('Schema Editor')")
+        next_stage = content.find("\n        stage('", schema_editor_start + 1)
+        if next_stage == -1:
+            next_stage = len(content)
+        schema_editor_block = content[schema_editor_start:next_stage]
+        self.assertIn('runTrackedStage', schema_editor_block)
+        self.assertIn('scripts\\\\schema_editor\\\\app.py', schema_editor_block)
+        self.assertNotIn('start_schema_editor.bat', schema_editor_block)
+        self.assertNotIn('SKIPPED', schema_editor_block)
+        self.assertNotIn('returnStatus', schema_editor_block)
+        self.assertNotIn("currentBuild.result", schema_editor_block)
+
+    def test_ensure_schema_editor_firewall_bat_is_idempotent(self):
+        content = open('scripts/batch/common/ensure_schema_editor_firewall.bat', 'r', encoding='utf-8').read()
+        self.assertIn('show rule', content)
+        self.assertIn('if not errorlevel 1', content)
+        self.assertIn('add rule', content)
+        self.assertIn('Private,Domain', content)
+        self.assertIn('LocalSubnet', content)
+        self.assertIn('check_admin_privileges.bat', content)
+
+    def test_ensure_schema_editor_firewall_bat_fails_without_admin(self):
+        content = open('scripts/batch/common/ensure_schema_editor_firewall.bat', 'r', encoding='utf-8').read()
+        self.assertIn('Administrator privileges not available', content)
+        self.assertIn('exit /b 1', content)
+
+    def test_ensure_schema_editor_firewall_bat_reads_port_from_network_conf(self):
+        content = open('scripts/batch/common/ensure_schema_editor_firewall.bat', 'r', encoding='utf-8').read()
+        self.assertIn('config\\common\\network.conf', content)
+        self.assertIn('SCHEMA_EDITOR_PORT', content)
 
 
 if __name__ == "__main__":

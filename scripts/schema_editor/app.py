@@ -483,6 +483,8 @@ def save():
             ensure_ascii=False
         )
 
+    _write_save_marker()
+
     # IMPORTANT:
     # Do not redirect or refresh /save.
     # Jenkins needs this Python process to terminate after
@@ -510,6 +512,23 @@ def save():
     """, 200
 
 
+def _write_save_marker():
+    build_number = os.environ.get("BUILD_NUMBER", f"local_{int(time.time())}")
+    marker_id = f"{int(time.time())}_{os.getpid()}"
+    marker_dir = PROJECT_ROOT / "outputs" / "schema_editor_markers"
+    marker_dir.mkdir(parents=True, exist_ok=True)
+    marker_file = marker_dir / f"save_marker.{DATABASE}.{build_number}.{marker_id}"
+    marker_file.write_text(
+        json.dumps({
+            "database": DATABASE,
+            "build_number": build_number,
+            "marker_id": marker_id,
+            "timestamp": time.time(),
+        }),
+        encoding="utf-8",
+    )
+
+
 def get_schema_editor_url():
     port = get_schema_editor_port()
     host = resolve_active_host_ip()
@@ -520,20 +539,12 @@ if __name__ == "__main__":
     configured_port = get_schema_editor_port()
     host = resolve_active_host_ip()
 
-    try:
-        ensure_schema_editor_network_access(configured_port)
-    except RuntimeError as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        raise
-
     print("\n" + "=" * 60)
-    print("Schema Editor started successfully.")
-    print("")
-    print(f"Host IP: {host}")
-    print(f"Port: {configured_port}")
-    print("")
-    print("Open the following URL:")
-    print(build_schema_editor_url(host, configured_port))
+    print("SCHEMA EDITOR READY")
+    print("=" * 60)
+    print(f"Database: {DATABASE.capitalize()}")
+    print(f"URL: {build_schema_editor_url(host, configured_port)}")
+    print("Status: WAITING FOR USER SAVE")
     print("=" * 60 + "\n")
 
     from werkzeug.serving import make_server
