@@ -267,7 +267,7 @@ stage('Schema Editor') {
 
             runTrackedStage('Schema Editor') {
 
-                bat 'python scripts\\schema_editor\\app.py postgresql'
+                bat 'scripts\\batch\\common\\start_schema_editor.bat postgresql'
 
             }
 
