@@ -65,6 +65,25 @@ def is_virtual_interface_name(name):
     return any(marker in lowered for marker in virtual_markers)
 
 
+def is_apipa(ip):
+    if not ip or not is_valid_ipv4(ip):
+        return False
+    parts = ip.split(".")
+    return len(parts) == 4 and int(parts[0]) == 169 and int(parts[1]) == 254
+
+
+def is_valid_lan_ip(ip):
+    if not ip or not is_valid_ipv4(ip):
+        return False
+    if ip.startswith("127."):
+        return False
+    if is_apipa(ip):
+        return False
+    if ip == "0.0.0.0":
+        return False
+    return True
+
+
 def build_schema_editor_url(host, port):
     return f"http://{host}:{port}"
 
@@ -130,9 +149,10 @@ def parse_linux_default_route_ip(route_output):
         if not dev_match:
             continue
         dev = dev_match.group(1)
-        if not is_virtual_interface_name(dev):
-            default_dev = dev
-            break
+        if is_virtual_interface_name(dev):
+            continue
+        default_dev = dev
+        break
 
     if default_dev:
         for line in route_output.splitlines():
@@ -146,7 +166,7 @@ def parse_linux_default_route_ip(route_output):
             if not src_match:
                 continue
             ip = src_match.group(1)
-            if is_valid_ipv4(ip) and not ip.startswith("127."):
+            if is_valid_lan_ip(ip):
                 return ip
         return None
 
@@ -158,7 +178,7 @@ def parse_linux_default_route_ip(route_output):
         if not src_match:
             continue
         ip = src_match.group(1)
-        if is_valid_ipv4(ip) and not ip.startswith("127."):
+        if is_valid_lan_ip(ip):
             dev_match = re.search(r"\bdev\s+(\S+)", cleaned, re.IGNORECASE)
             dev = dev_match.group(1) if dev_match else ""
             if not is_virtual_interface_name(dev):
@@ -171,26 +191,30 @@ def select_preferred_ip_from_windows_output(output):
         return None
 
     iface_ip_map = {}
+    iface_alias_map = {}
     current_index = None
-    default_route_index = None
+    current_alias = None
+    default_route_indices = []
 
     route_block = ""
     for raw_line in output.splitlines():
         line = raw_line.strip()
         if not line:
             continue
-        if line.lower().startswith("destinationprefix") and "0.0.0.0/0" in line.lower():
+        lower = line.lower()
+        if lower.startswith("destinationprefix") and "0.0.0.0/0" in lower:
             route_block = line
             continue
-        if route_block and line.lower().startswith("destinationprefix"):
+        if route_block and lower.startswith("destinationprefix"):
             route_block = ""
         if route_block:
             route_block += "\n" + line
-            if line.lower().startswith("interfaceindex"):
+            if lower.startswith("interfaceindex"):
                 try:
-                    default_route_index = int(line.split(":", 1)[1].strip())
+                    idx = int(line.split(":", 1)[1].strip())
+                    default_route_indices.append(idx)
                 except ValueError:
-                    default_route_index = None
+                    pass
                 route_block = ""
                 continue
 
@@ -198,26 +222,42 @@ def select_preferred_ip_from_windows_output(output):
         line = raw_line.strip()
         if not line:
             continue
-        if line.lower().startswith("interfaceindex"):
+        lower = line.lower()
+        if lower.startswith("interfaceindex"):
             try:
                 current_index = int(line.split(":", 1)[1].strip())
             except ValueError:
                 current_index = None
             continue
-        if line.lower().startswith("ipaddress"):
+        if lower.startswith("interfacealias"):
+            current_alias = line.split(":", 1)[1].strip()
+            if current_index is not None:
+                iface_alias_map[current_index] = current_alias
+            continue
+        if lower.startswith("ipaddress"):
             ip_value = line.split(":", 1)[1].strip()
             if current_index is not None and is_valid_ipv4(ip_value):
                 iface_ip_map[current_index] = ip_value
 
-    if default_route_index is not None and default_route_index in iface_ip_map:
-        return iface_ip_map[default_route_index]
+    def _is_acceptable(index):
+        ip = iface_ip_map.get(index)
+        if not ip or not is_valid_lan_ip(ip):
+            return False
+        alias = iface_alias_map.get(index, "")
+        if is_virtual_interface_name(alias):
+            return False
+        return True
 
-    for _, ip_value in sorted(iface_ip_map.items()):
-        if not ip_value.startswith("127."):
-            return ip_value
+    for idx in default_route_indices:
+        if idx in iface_ip_map and _is_acceptable(idx):
+            return iface_ip_map[idx]
+
+    for idx, _ in sorted(iface_ip_map.items()):
+        if _is_acceptable(idx):
+            return iface_ip_map[idx]
 
     for ip in re.findall(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", output):
-        if is_valid_ipv4(ip) and not ip.startswith("127."):
+        if is_valid_lan_ip(ip):
             return ip
     return None
 
@@ -555,10 +595,6 @@ if __name__ == "__main__":
 
     if not wait_for_local_http("127.0.0.1", configured_port):
         raise RuntimeError(f"Schema Editor did not successfully bind to port {configured_port}.")
-
-    if host and host != "127.0.0.1":
-        if not wait_for_local_http(host, configured_port):
-            raise RuntimeError(f"Schema Editor is not reachable at {build_schema_editor_url(host, configured_port)}.")
 
     try:
         thread.join()

@@ -56,6 +56,78 @@ class TestSchemaEditorNetwork(unittest.TestCase):
         selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
         self.assertEqual(selected, "192.168.1.25")
 
+    def test_windows_rejects_apipa_on_default_route_interface(self):
+        output = """
+        InterfaceIndex : 5
+        InterfaceAlias : Ethernet
+        IPAddress : 169.254.34.56
+
+        InterfaceIndex : 12
+        InterfaceAlias : Wi-Fi
+        IPAddress : 192.168.1.25
+
+        DestinationPrefix : 0.0.0.0/0
+        InterfaceIndex : 5
+        """
+        selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
+        self.assertEqual(selected, "192.168.1.25")
+
+    def test_windows_rejects_virtual_interface_with_apipa(self):
+        output = """
+        InterfaceIndex : 11
+        InterfaceAlias : vEthernet (WSL)
+        IPAddress : 169.254.100.1
+
+        InterfaceIndex : 12
+        InterfaceAlias : Wi-Fi
+        IPAddress : 192.168.1.25
+
+        DestinationPrefix : 0.0.0.0/0
+        InterfaceIndex : 11
+        """
+        selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
+        self.assertEqual(selected, "192.168.1.25")
+
+    def test_windows_all_interfaces_apipa_returns_none(self):
+        output = """
+        InterfaceIndex : 5
+        InterfaceAlias : Ethernet
+        IPAddress : 169.254.34.56
+
+        InterfaceIndex : 11
+        InterfaceAlias : vEthernet (WSL)
+        IPAddress : 169.254.100.1
+
+        DestinationPrefix : 0.0.0.0/0
+        InterfaceIndex : 5
+        """
+        selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
+        self.assertIsNone(selected)
+
+    def test_apipa_is_rejected_by_helper(self):
+        self.assertTrue(schema_editor_app.is_apipa("169.254.34.56"))
+        self.assertTrue(schema_editor_app.is_apipa("169.254.1.1"))
+        self.assertFalse(schema_editor_app.is_apipa("192.168.1.1"))
+        self.assertFalse(schema_editor_app.is_apipa("10.0.0.1"))
+        self.assertFalse(schema_editor_app.is_apipa("127.0.0.1"))
+
+    def test_valid_lan_ip_rejects_apipa_and_loopback(self):
+        self.assertTrue(schema_editor_app.is_valid_lan_ip("192.168.1.1"))
+        self.assertTrue(schema_editor_app.is_valid_lan_ip("10.0.0.1"))
+        self.assertFalse(schema_editor_app.is_valid_lan_ip("169.254.34.56"))
+        self.assertFalse(schema_editor_app.is_valid_lan_ip("127.0.0.1"))
+        self.assertFalse(schema_editor_app.is_valid_lan_ip("169.254.0.0"))
+
+    def test_linux_default_route_rejects_apipa_source(self):
+        output = "default via 192.168.1.1 dev wlan0 src 169.254.34.56 uid 1000\n"
+        self.assertIsNone(schema_editor_app.parse_linux_default_route_ip(output))
+
+    def test_main_does_not_fail_on_lan_self_connect(self):
+        app_source = Path(schema_editor_app.__file__).read_text(encoding='utf-8')
+        main_block = app_source[app_source.index('if __name__ == "__main__":'):]
+        self.assertNotIn('wait_for_local_http(host', main_block)
+        self.assertNotIn('not reachable at', main_block)
+
     def test_no_hardcoded_machine_specific_address_is_required(self):
         self.assertNotIn("192.168.1.12", schema_editor_app.__file__)
         self.assertNotIn("10.10.10.105", schema_editor_app.__file__)
