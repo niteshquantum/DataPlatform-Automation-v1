@@ -20,7 +20,9 @@ python3 scripts/python/common/objects/bootstrap_generator.py mysql
 # deployment must not continue if the generated changeset lacks its targeted
 # existing-index reconciliation precondition.
 INDEX_XML="$PROJECT_ROOT/liquibase/mysql/objects/generated/indexes/001_idx_products_product_id.xml"
-INDEX_SQL="$PROJECT_ROOT/liquibase/mysql/objects/generated/indexes/001_idx_products_product_id.sql"
+
+INDEX_SQL="$PROJECT_ROOT/objects/mysql/generated/indexes/001_idx_products_product_id.sql"
+
 MASTER_OBJECTS_XML="$PROJECT_ROOT/liquibase/mysql/master_objects.xml"
 
 echo "=== MYSQL OBJECT DEPLOYMENT GIT STATE ==="
@@ -59,7 +61,7 @@ for EXPECTED_TEXT in \
     'TABLE_SCHEMA = DATABASE()' \
     "TABLE_NAME = 'products'" \
     "INDEX_NAME = 'idx_products_product_id'" \
-    'liquibase/mysql/objects/generated/indexes/001_idx_products_product_id.sql'
+    'objects/mysql/generated/indexes/001_idx_products_product_id.sql'
 do
     if ! grep -Fq "$EXPECTED_TEXT" "$INDEX_XML"; then
         echo "ERROR: Generated index changelog is missing: $EXPECTED_TEXT"
