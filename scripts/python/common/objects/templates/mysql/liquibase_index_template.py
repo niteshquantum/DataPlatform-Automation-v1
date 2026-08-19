@@ -20,35 +20,8 @@ LIQUIBASE_INDEX_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
         </preConditions>
 
         <sql>
-            SET @automation_index_sql = (
-                SELECT CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM information_schema.STATISTICS
-                        WHERE TABLE_SCHEMA = DATABASE()
-                          AND TABLE_NAME = '{table_name_sql}'
-                          AND INDEX_NAME = '{index_name_sql}'
-                    )
-                    THEN 'SELECT 1'
-
-                    ELSE CONCAT(
-                        'CREATE INDEX `',
-                        '{index_name_sql_identifier}',
-                        '` ON `',
-                        '{table_name_sql_identifier}',
-                        '` (',
-                        '{column_names_sql}',
-                        ')'
-                    )
-                END
-            );
-
-            PREPARE automation_index_stmt
-                FROM @automation_index_sql;
-
-            EXECUTE automation_index_stmt;
-
-            DEALLOCATE PREPARE automation_index_stmt;
+            CREATE INDEX `{index_name_sql_identifier}`
+            ON `{table_name_sql_identifier}` ({column_names_sql});
         </sql>
 
     </changeSet>

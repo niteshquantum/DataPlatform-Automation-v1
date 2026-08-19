@@ -9,11 +9,6 @@ def _mysql_sql_literal(value):
     return escape(value.replace("'", "''"))
 
 
-def _mysql_identifier(value):
-    """Return a MySQL identifier safe for use inside backticks."""
-    return escape(value.replace("`", "``"))
-
-
 def _parse_mysql_index(sql_text, sql_file):
     """
     Extract MySQL index identity and indexed columns from CREATE INDEX SQL.
@@ -21,14 +16,17 @@ def _parse_mysql_index(sql_text, sql_file):
     Supports:
         CREATE INDEX idx ON table (column)
         CREATE INDEX idx ON table (column1, column2)
+
+    The generated SQL is handled dynamically in the Liquibase template
+    so TEXT/BLOB columns can receive an appropriate index prefix.
     """
 
     match = re.search(
         r"""
         CREATE\s+INDEX\s+
-        (?P<index>`[^`]+`|"[^"]+"|[^\s(]+)
+        (?P<index>[`"]?[^\s`"]+[`"]?)
         \s+ON\s+
-        (?P<table>`[^`]+`|"[^"]+"|[^\s(]+)
+        (?P<table>[`"]?[^\s(`"]+[`"]?)
         \s*\(
         (?P<columns>.*?)
         \)
@@ -51,25 +49,10 @@ def _parse_mysql_index(sql_text, sql_file):
     columns = []
 
     for column in raw_columns.split(","):
-
         column = column.strip()
 
-        if not column:
-            continue
-
         # Remove optional backticks/quotes.
-        column = column.strip("`\"").strip()
-
-        # Remove optional index prefix, e.g. column(255).
-        prefix_match = re.match(
-            r"^(.*?)(?:\(\d+\))?$",
-            column
-        )
-
-        if prefix_match:
-            column = prefix_match.group(1).strip()
-
-        column = column.strip("`\"").strip()
+        column = column.strip("`\"")
 
         if not column:
             continue
@@ -99,29 +82,19 @@ def generate_index_xml(database):
         generator.sql_folder.glob("*.sql")
     )
 
-    for change_id, sql_file in enumerate(
-        sql_files,
-        start=1
-    ):
+    for change_id, sql_file in enumerate(sql_files, start=1):
 
         template_values = {
             "id": f"index-{change_id}",
-
             "sql_path": (
                 sql_file
-                .relative_to(
-                    generator.project_root
-                )
+                .relative_to(generator.project_root)
                 .as_posix()
             ),
         }
 
-        # -------------------------------------------------
-        # MySQL ONLY
-        # -------------------------------------------------
-        #
-        # MSSQL / PostgreSQL / MongoDB are untouched.
-        #
+        # MySQL-specific handling only.
+        # MSSQL/PostgreSQL/MongoDB remain unchanged.
         if database == "mysql":
 
             sql_text = sql_file.read_text(
@@ -134,34 +107,24 @@ def generate_index_xml(database):
             )
 
             template_values.update(
-
                 index_name_sql=_mysql_sql_literal(
                     index_details["index_name"]
                 ),
-
                 table_name_sql=_mysql_sql_literal(
                     index_details["table_name"]
                 ),
-
-                index_name_sql_identifier=_mysql_identifier(
+                index_name_sql_identifier=escape(
                     index_details["index_name"]
                 ),
-
-                table_name_sql_identifier=_mysql_identifier(
+                table_name_sql_identifier=escape(
                     index_details["table_name"]
                 ),
-
-                # IMPORTANT:
-                # Columns come directly from the generated
-                # CREATE INDEX SQL.
-                #
-                # We do NOT query information_schema to
-                # determine the columns because the index
-                # may not exist yet.
                 column_names_sql=", ".join(
-                    f"`{_mysql_identifier(column)}`"
-                    for column
-                    in index_details["columns"]
+                    _mysql_sql_literal(column)
+                    for column in index_details["columns"]
+                ),
+                column_count=len(
+                    index_details["columns"]
                 ),
             )
 
