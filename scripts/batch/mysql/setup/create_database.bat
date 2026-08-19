@@ -71,6 +71,11 @@ REM =====================================
 set "MYSQL_EXE=%ROOT%\databases\mysql\server\bin\mysql.exe"
 
 if not exist "%MYSQL_EXE%" (
+    echo Resolving mysql.exe from existing MySQL service...
+    for /f "delims=" %%i in ('powershell -NoProfile -Command "$svc=Get-CimInstance Win32_Service -Filter \"Name='MySQLAutomation'\" -ErrorAction SilentlyContinue; if($svc -and $svc.PathName){ $p=$svc.PathName -split 'mysqld.exe'; if($p.Count -gt 1){ Join-Path $p[0].Trim().Trim('\"') 'mysql.exe' } }"') do set "MYSQL_EXE=%%i"
+)
+
+if not exist "%MYSQL_EXE%" (
     echo ERROR: MYSQL CLIENT NOT FOUND
     echo Expected: %MYSQL_EXE%
     exit /b 1
