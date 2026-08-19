@@ -88,6 +88,54 @@ class TestSchemaEditorNetwork(unittest.TestCase):
         selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
         self.assertEqual(selected, "192.168.1.25")
 
+    def test_windows_rejects_tailscale_when_wifi_is_default_route(self):
+        output = """
+        InterfaceIndex : 5
+        InterfaceAlias : Wi-Fi
+        IPAddress : 192.168.1.3
+
+        InterfaceIndex : 31
+        InterfaceAlias : Tailscale
+        IPAddress : 100.92.255.80
+
+        DestinationPrefix : 0.0.0.0/0
+        InterfaceIndex : 5
+        """
+        selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
+        self.assertEqual(selected, "192.168.1.3")
+
+    def test_windows_rejects_wintun_virtual_interface(self):
+        output = """
+        InterfaceIndex : 31
+        InterfaceAlias : Wintun Tailscale
+        IPAddress : 100.92.255.80
+
+        InterfaceIndex : 5
+        InterfaceAlias : Wi-Fi
+        IPAddress : 192.168.1.3
+
+        DestinationPrefix : 0.0.0.0/0
+        InterfaceIndex : 5
+        """
+        selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
+        self.assertEqual(selected, "192.168.1.3")
+
+    def test_windows_tailscale_as_default_route_falls_back_to_wifi(self):
+        output = """
+        InterfaceIndex : 31
+        InterfaceAlias : Tailscale
+        IPAddress : 100.92.255.80
+
+        InterfaceIndex : 5
+        InterfaceAlias : Wi-Fi
+        IPAddress : 192.168.1.3
+
+        DestinationPrefix : 0.0.0.0/0
+        InterfaceIndex : 31
+        """
+        selected = schema_editor_app.select_preferred_ip_from_windows_output(output)
+        self.assertEqual(selected, "192.168.1.3")
+
     def test_windows_all_interfaces_apipa_returns_none(self):
         output = """
         InterfaceIndex : 5
@@ -358,6 +406,17 @@ class TestSchemaEditorNetwork(unittest.TestCase):
         content = open('scripts/batch/common/ensure_schema_editor_firewall.bat', 'r', encoding='utf-8').read()
         self.assertIn('config\\common\\network.conf', content)
         self.assertIn('SCHEMA_EDITOR_PORT', content)
+
+    def test_tailscale_is_recognized_as_virtual_interface(self):
+        self.assertTrue(schema_editor_app.is_virtual_interface_name("Tailscale"))
+        self.assertTrue(schema_editor_app.is_virtual_interface_name("Wintun Tailscale"))
+        self.assertTrue(schema_editor_app.is_virtual_interface_name("wintun0"))
+
+    def test_setup_steps_groovy_includes_firewall_stage(self):
+        content = open('jenkins/common/postgresql/setup_steps.groovy', 'r', encoding='utf-8').read()
+        self.assertIn("stage('Configure Schema Editor Network Access')", content)
+        self.assertIn('ensure_schema_editor_firewall.bat', content)
+        self.assertIn('Schema Editor firewall rule could not be provisioned', content)
 
 
 if __name__ == "__main__":

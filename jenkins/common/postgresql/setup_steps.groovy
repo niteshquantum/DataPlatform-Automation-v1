@@ -86,6 +86,43 @@ def execute(Map context) {
         }
 
 
+        stage('Configure Schema Editor Network Access') {
+
+            when {
+
+                expression {
+
+                    return readFile(
+                        'admin_status.txt'
+                    ).trim() == 'true'
+                }
+            }
+
+            steps {
+
+                script {
+
+                    runTrackedStage(
+                        'Configure Schema Editor Network Access'
+                    ) {
+
+                        def firewallStatus = bat(
+                            script: 'scripts\\batch\\common\\ensure_schema_editor_firewall.bat',
+                            returnStatus: true
+                        )
+
+                        if (firewallStatus != 0) {
+
+                            error 'Schema Editor firewall rule could not be provisioned in the elevated setup phase.'
+                        }
+
+                        echo 'Schema Editor firewall rule configured successfully during setup.'
+                    }
+                }
+            }
+        }
+
+
         stage('Validate Python Runtime') {
 
 

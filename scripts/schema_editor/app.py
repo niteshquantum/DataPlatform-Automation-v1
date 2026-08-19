@@ -60,7 +60,7 @@ def is_virtual_interface_name(name):
         "docker", "veth", "br-", "bridge", "vboxnet", "virbr",
         "hyper-v", "wsl", "loopback", "lo", "default switch",
         "virtual", "vmnet", "container", "podman", "cni", "flannel",
-        "tun", "tap", "kube", "kind"
+        "tun", "tap", "kube", "kind", "tailscale", "wintun"
     )
     return any(marker in lowered for marker in virtual_markers)
 

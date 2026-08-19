@@ -26,6 +26,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
+powershell.exe -NoProfile -NonInteractive -Command "$p = Get-NetConnectionProfile | Where-Object { $_.IPv4Connectivity -in @('Internet','LocalNetwork') } | Select-Object -First 1; if ($p -and $p.NetworkCategory -eq 'Public') { exit 1 } else { exit 0 }"
+if errorlevel 1 (
+    echo ERROR: The active network profile is Public.
+    echo The Schema Editor firewall rule requires a Private or Domain network profile.
+    echo Please change the network profile to Private in Windows Settings and re-run setup.
+    exit /b 1
+)
+
 netsh advfirewall firewall show rule name="%RULE_NAME%" >nul 2>&1
 if not errorlevel 1 (
     echo Schema Editor firewall rule already exists: %RULE_NAME%
