@@ -211,6 +211,12 @@ pipeline {
 
         stage('Configure Global Mongosh') {
 
+            when {
+                expression {
+                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
+                }
+            }
+
             steps {
 
                 script {
