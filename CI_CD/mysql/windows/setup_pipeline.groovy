@@ -309,7 +309,7 @@ pipeline {
                         }
                     }
 
-                    return instanceState == 'NO_INSTANCE' || !artifactsExist
+                    return instanceState == 'NO_INSTANCE'
                 }
             }
 
