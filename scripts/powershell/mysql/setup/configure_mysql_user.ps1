@@ -61,19 +61,24 @@ if (!(Test-Path $MySQLExe)) {
 
     if ($ServiceImagePath -and $ServiceImagePath.PathName) {
 
-        $MySQLMatch = [regex]::Match(
+        $MysqldMatch = [regex]::Match(
             $ServiceImagePath.PathName.Trim(),
-            '"?(?<path>[A-Za-z]:\\[^"\r\n]*?\\mysql\.exe)"?',
+            '"?(?<path>[A-Za-z]:\\[^"\r\n]*?\\mysqld\.exe)"?',
             [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
         )
 
-        if ($MySQLMatch.Success) {
+        if ($MysqldMatch.Success) {
 
-            $ServiceMySQL = $MySQLMatch.Groups['path'].Value.Trim('"')
+            $MysqldPath = $MysqldMatch.Groups['path'].Value.Trim('"')
 
-            if (Test-Path -LiteralPath $ServiceMySQL -PathType Leaf) {
-                Write-Host "Resolved mysql.exe from service: $ServiceMySQL"
-                $MySQLExe = $ServiceMySQL
+            if (Test-Path -LiteralPath $MysqldPath -PathType Leaf) {
+
+                $ResolvedMySQLExe = Join-Path (Split-Path -Parent $MysqldPath) "mysql.exe"
+
+                if (Test-Path -LiteralPath $ResolvedMySQLExe -PathType Leaf) {
+                    Write-Host "Resolved mysql.exe from service: $ResolvedMySQLExe"
+                    $MySQLExe = $ResolvedMySQLExe
+                }
             }
         }
     }
