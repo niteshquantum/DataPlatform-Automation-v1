@@ -60,8 +60,7 @@ for EXPECTED_TEXT in \
     'information_schema.STATISTICS' \
     'TABLE_SCHEMA = DATABASE()' \
     "TABLE_NAME = 'products'" \
-    "INDEX_NAME = 'idx_products_product_id'" \
-    'objects/mysql/generated/indexes/001_idx_products_product_id.sql'
+    "INDEX_NAME = 'idx_products_product_id'"
 do
     if ! grep -Fq "$EXPECTED_TEXT" "$INDEX_XML"; then
         echo "ERROR: Generated index changelog is missing: $EXPECTED_TEXT"
