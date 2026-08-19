@@ -64,7 +64,38 @@ if (-not $MySQLPort) {
 # =====================================
 
 if (!(Test-Path $Mysqld)) {
-    throw "mysqld.exe not found: $Mysqld"
+
+    Write-Host "Resolving mysqld.exe from existing MySQL service..."
+
+    $ServiceImagePath = Get-CimInstance `
+        Win32_Service `
+        -Filter "Name='MySQLAutomation'" `
+        -ErrorAction SilentlyContinue
+
+    if ($ServiceImagePath -and $ServiceImagePath.PathName) {
+
+        $MySQLMatch = [regex]::Match(
+            $ServiceImagePath.PathName.Trim(),
+            '"?(?<path>[A-Za-z]:\\[^"\r\n]*?\\mysqld\.exe)"?',
+            [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+        )
+
+        if ($MySQLMatch.Success) {
+
+            $ServiceMySQL = $MySQLMatch.Groups['path'].Value.Trim('"')
+
+            if (Test-Path -LiteralPath $ServiceMySQL -PathType Leaf) {
+                Write-Host "Resolved mysqld.exe from service: $ServiceMySQL"
+                $Mysqld = $ServiceMySQL
+                $BaseDir = Split-Path $Mysqld -Parent
+                $BaseDir = Split-Path $BaseDir -Parent
+            }
+        }
+    }
+
+    if (!(Test-Path $Mysqld)) {
+        throw "mysqld.exe not found in workspace: $ROOT\databases\mysql\server\bin. Unable to resolve it from the MySQLAutomation service."
+    }
 }
 
 if (!(Test-Path $DataDir)) {
