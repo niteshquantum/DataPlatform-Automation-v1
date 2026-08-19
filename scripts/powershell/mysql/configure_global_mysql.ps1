@@ -31,20 +31,46 @@ $database = $config["MYSQL_DB"]
 $user     = $config["MYSQL_USER"]
 $password = $config["MYSQL_PASSWORD"]
 
-$mysqlExe = "$ROOT\databases\mysql\server\bin\mysql.exe"
+$WorkspaceMySQLExe = Join-Path $ROOT "databases\mysql\server\bin\mysql.exe"
+$mysqlExe = $null
 
-Write-Host ""
-Write-Host "====================================="
-Write-Host "CONFIGURING GLOBAL MYSQL COMMAND"
-Write-Host "====================================="
-Write-Host ""
+if (Test-Path -LiteralPath $WorkspaceMySQLExe -PathType Leaf) {
+    $mysqlExe = (Resolve-Path -LiteralPath $WorkspaceMySQLExe).Path
+}
+else {
+    $ServiceName = "MySQLAutomation"
+    $ServiceImagePath = Get-CimInstance `
+        Win32_Service `
+        -Filter "Name='$ServiceName'" `
+        -ErrorAction SilentlyContinue
 
-# =====================================
-# VALIDATE MYSQL CLIENT
-# =====================================
+    if ($ServiceImagePath -and $ServiceImagePath.PathName) {
 
-if (!(Test-Path $mysqlExe)) {
-    throw "mysql.exe not found: $mysqlExe"
+        $MysqldMatch = [regex]::Match(
+            $ServiceImagePath.PathName.Trim(),
+            '"?(?<path>[A-Za-z]:\\[^"\r\n]*?\\mysqld\.exe)"?',
+            [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+        )
+
+        if ($MysqldMatch.Success) {
+
+            $MysqldPath = $MysqldMatch.Groups['path'].Value.Trim('"')
+
+            if (Test-Path -LiteralPath $MysqldPath -PathType Leaf) {
+
+                $ResolvedMySQLExe = Join-Path (Split-Path -Parent $MysqldPath) "mysql.exe"
+
+                if (Test-Path -LiteralPath $ResolvedMySQLExe -PathType Leaf) {
+                    $mysqlExe = (Resolve-Path -LiteralPath $ResolvedMySQLExe).Path
+                    Write-Host "Resolved mysql.exe from existing MySQL service: $mysqlExe"
+                }
+            }
+        }
+    }
+}
+
+if (-not $mysqlExe) {
+    throw "mysql.exe not found in workspace: $WorkspaceMySQLExe. Unable to resolve it from the MySQLAutomation service."
 }
 
 Write-Host "MySQL Client : $mysqlExe"
