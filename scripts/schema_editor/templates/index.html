@@ -7,41 +7,45 @@
 
     <style>
 
-        body{
+        body {
             font-family: Arial, Helvetica, sans-serif;
-            margin:30px;
+            margin: 30px;
         }
 
-        table{
+        table {
             border-collapse: collapse;
-            width:100%;
-            margin-bottom:20px;
+            width: 100%;
+            margin-bottom: 20px;
         }
 
-        th,td{
-            border:1px solid #ccc;
-            padding:10px;
-            text-align:left;
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
         }
 
-        th{
-            background:#f5f5f5;
+        th {
+            background: #f5f5f5;
         }
 
-        select{
-            width:180px;
-            padding:5px;
+        input,
+        select {
+            width: 220px;
+            padding: 7px;
+            box-sizing: border-box;
         }
 
-        button{
-            padding:10px 20px;
-            font-size:15px;
-            cursor:pointer;
+        button {
+            padding: 10px 20px;
+            font-size: 15px;
+            cursor: pointer;
         }
 
     </style>
 
 </head>
+
 <body>
 
 <h2>Schema Editor</h2>
@@ -74,38 +78,54 @@
     <td>
 
         {% if database == "mssql" %}
-        <input name="{{ table }}__{{ column }}"
-               value="{{ info.selected_type }}"
-               list="mssql-datatypes"
-               required>
+
+        <input
+            type="text"
+            name="{{ table }}__{{ column }}"
+            value="{{ info.selected_type }}"
+            list="mssql-datatypes"
+            required
+        >
+
+        {% elif database == "mysql" %}
+
+        <input
+            type="text"
+            name="{{ table }}__{{ column }}"
+            value="{{ info.selected_type }}"
+            list="mysql-datatypes"
+            required
+        >
+
+        {% elif database == "postgresql" %}
+
+        <input
+            type="text"
+            name="{{ table }}__{{ column }}"
+            value="{{ info.selected_type }}"
+            list="postgresql-datatypes"
+            required
+        >
+
+        {% elif database == "mongodb" %}
+
+        <input
+            type="text"
+            name="{{ table }}__{{ column }}"
+            value="{{ info.selected_type }}"
+            list="mongodb-datatypes"
+            required
+        >
+
         {% else %}
-        <select name="{{ table }}__{{ column }}">
 
-            <option value="INTEGER"
-            {% if info.selected_type=="INTEGER" %}selected{% endif %}>INTEGER</option>
+        <input
+            type="text"
+            name="{{ table }}__{{ column }}"
+            value="{{ info.selected_type }}"
+            required
+        >
 
-            <option value="BIGINT"
-            {% if info.selected_type=="BIGINT" %}selected{% endif %}>BIGINT</option>
-
-            <option value="NUMERIC"
-            {% if info.selected_type=="NUMERIC" %}selected{% endif %}>NUMERIC</option>
-
-            <option value="TEXT"
-            {% if info.selected_type=="TEXT" %}selected{% endif %}>TEXT</option>
-
-            <option value="VARCHAR"
-            {% if info.selected_type=="VARCHAR" %}selected{% endif %}>VARCHAR</option>
-
-            <option value="DATE"
-            {% if info.selected_type=="DATE" %}selected{% endif %}>DATE</option>
-
-            <option value="TIMESTAMP"
-            {% if info.selected_type=="TIMESTAMP" %}selected{% endif %}>TIMESTAMP</option>
-
-            <option value="BOOLEAN"
-            {% if info.selected_type=="BOOLEAN" %}selected{% endif %}>BOOLEAN</option>
-
-        </select>
         {% endif %}
 
     </td>
@@ -126,24 +146,137 @@
 
 </form>
 
+
+<!-- ========================= -->
+<!-- MSSQL DATATYPES -->
+<!-- ========================= -->
+
 {% if database == "mssql" %}
+
 <datalist id="mssql-datatypes">
+
     <option value="INT">
     <option value="BIGINT">
+
     <option value="VARCHAR(50)">
     <option value="VARCHAR(255)">
     <option value="VARCHAR(MAX)">
+
     <option value="NVARCHAR(255)">
     <option value="NVARCHAR(MAX)">
+
     <option value="CHAR(1)">
     <option value="NCHAR(1)">
+
     <option value="VARBINARY(MAX)">
+
     <option value="DECIMAL(12,2)">
     <option value="DECIMAL(18,0)">
+
     <option value="BIT">
+
     <option value="DATE">
     <option value="DATETIME2(7)">
+
 </datalist>
+
+
+<!-- ========================= -->
+<!-- MYSQL DATATYPES -->
+<!-- ========================= -->
+
+{% elif database == "mysql" %}
+
+<datalist id="mysql-datatypes">
+
+    <option value="TINYINT">
+    <option value="SMALLINT">
+    <option value="INT">
+    <option value="BIGINT">
+
+    <option value="DECIMAL(12,2)">
+    <option value="DECIMAL(18,0)">
+
+    <option value="CHAR(1)">
+    <option value="CHAR(10)">
+    <option value="CHAR(50)">
+
+    <option value="VARCHAR(50)">
+    <option value="VARCHAR(100)">
+    <option value="VARCHAR(255)">
+    <option value="VARCHAR(500)">
+    <option value="VARCHAR(1000)">
+
+    <option value="TEXT">
+    <option value="MEDIUMTEXT">
+    <option value="LONGTEXT">
+
+    <option value="DATE">
+    <option value="DATETIME">
+    <option value="TIMESTAMP">
+
+    <option value="BOOLEAN">
+
+    <option value="JSON">
+
+</datalist>
+
+
+<!-- ========================= -->
+<!-- POSTGRESQL DATATYPES -->
+<!-- ========================= -->
+
+{% elif database == "postgresql" %}
+
+<datalist id="postgresql-datatypes">
+
+    <option value="SMALLINT">
+    <option value="INTEGER">
+    <option value="BIGINT">
+
+    <option value="NUMERIC(12,2)">
+    <option value="NUMERIC(18,0)">
+
+    <option value="CHAR(1)">
+    <option value="VARCHAR(50)">
+    <option value="VARCHAR(255)">
+    <option value="VARCHAR(500)">
+    <option value="TEXT">
+
+    <option value="DATE">
+    <option value="TIMESTAMP">
+    <option value="TIMESTAMPTZ">
+
+    <option value="BOOLEAN">
+
+    <option value="JSON">
+    <option value="JSONB">
+
+</datalist>
+
+
+<!-- ========================= -->
+<!-- MONGODB DATATYPES -->
+<!-- ========================= -->
+
+{% elif database == "mongodb" %}
+
+<datalist id="mongodb-datatypes">
+
+    <option value="String">
+    <option value="Int32">
+    <option value="Int64">
+    <option value="Double">
+    <option value="Decimal128">
+    <option value="Boolean">
+    <option value="Date">
+    <option value="ObjectId">
+    <option value="Array">
+    <option value="Object">
+    <option value="Null">
+
+</datalist>
+
 {% endif %}
 
 </body>

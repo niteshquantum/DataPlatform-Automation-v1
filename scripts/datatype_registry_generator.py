@@ -8,26 +8,37 @@ import re
 from datetime import datetime
 
 
-def detect_datatype(values):
+def detect_datatype(values, db_type):
 
     values = [str(v).strip() for v in values if str(v).strip()]
 
     if not values:
-        return "TEXT"
+        if db_type == "mongodb":
+            return "String"
+        return "VARCHAR(255)"
 
     # INTEGER
     if all(re.fullmatch(r"-?\d+", v) for v in values):
-        return "INTEGER"
+        if db_type == "mongodb":
+            return "Int64"
+        return "BIGINT"
 
     # NUMERIC
     if all(re.fullmatch(r"-?\d+(\.\d+)?", v) for v in values):
+        if db_type == "mongodb":
+            return "Double"
         return "NUMERIC"
 
     # DATE
     try:
         for v in values:
             datetime.strptime(v, "%Y-%m-%d")
+
+        if db_type == "mongodb":
+            return "Date"
+
         return "DATE"
+
     except Exception:
         pass
 
@@ -35,11 +46,22 @@ def detect_datatype(values):
     try:
         for v in values:
             datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+
+        if db_type == "mongodb":
+            return "Date"
+
         return "TIMESTAMP"
+
     except Exception:
         pass
 
-    return "TEXT"
+    # STRING
+    if db_type == "mongodb":
+        return "String"
+
+    # SQL databases:
+    # Use a bounded string type so normal indexes can be created.
+    return "VARCHAR(255)"
 
 
 def main():
@@ -154,7 +176,8 @@ def main():
         for column in columns:
 
             detected = detect_datatype(
-                sample_data.get(column, [])
+                sample_data.get(column, []),
+                db_type
             )
 
             datatype_registry[table][column] = {
@@ -185,7 +208,6 @@ def main():
             f,
             indent=4
         )
-
 
     print(
         f"Datatype Registry Generated : {datatype_path}"
