@@ -20,6 +20,7 @@ python3 scripts/python/common/objects/bootstrap_generator.py mysql
 # deployment must not continue if the generated changeset lacks its targeted
 # existing-index reconciliation precondition.
 INDEX_XML="$PROJECT_ROOT/liquibase/mysql/objects/generated/indexes/001_idx_products_product_id.xml"
+INDEX_SQL="$PROJECT_ROOT/objects/mysql/generated/indexes/001_idx_products_product_id.sql"
 MASTER_OBJECTS_XML="$PROJECT_ROOT/liquibase/mysql/master_objects.xml"
 
 echo "=== MYSQL OBJECT DEPLOYMENT GIT STATE ==="
@@ -29,6 +30,10 @@ git branch --show-current
 echo "=== GENERATED MYSQL INDEX XML ==="
 if [ ! -f "$INDEX_XML" ]; then
     echo "ERROR: Expected generated index changelog is missing: $INDEX_XML"
+    exit 1
+fi
+if [ ! -f "$INDEX_SQL" ]; then
+    echo "ERROR: Expected generated index SQL is missing: $INDEX_SQL"
     exit 1
 fi
 sed -n '1,120p' "$INDEX_XML"
@@ -49,8 +54,12 @@ sed -n '1,160p' "$MASTER_OBJECTS_XML"
 for EXPECTED_TEXT in \
     'onFail="MARK_RAN"' \
     'onError="HALT"' \
-    'indexName="idx_products_product_id"' \
-    'tableName="products"'
+    '<sqlCheck expectedResult="0">' \
+    'information_schema.STATISTICS' \
+    'TABLE_SCHEMA = DATABASE()' \
+    "TABLE_NAME = 'products'" \
+    "INDEX_NAME = 'idx_products_product_id'" \
+    'objects/mysql/generated/indexes/001_idx_products_product_id.sql'
 do
     if ! grep -Fq "$EXPECTED_TEXT" "$INDEX_XML"; then
         echo "ERROR: Generated index changelog is missing: $EXPECTED_TEXT"
