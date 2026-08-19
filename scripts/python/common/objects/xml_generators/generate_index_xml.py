@@ -1,6 +1,12 @@
 import re
+from xml.sax.saxutils import escape
 
 from xml_generators.xml_generator_base import XMLGeneratorBase
+
+
+def _mysql_sql_literal(value):
+    """Return a value safe for a single-quoted SQL literal inside XML."""
+    return escape(value.replace("'", "''"))
 
 
 def generate_index_xml(database):
@@ -43,8 +49,12 @@ def generate_index_xml(database):
                 )
 
             template_values.update(
-                index_name=index_match.group(1).strip("`\""),
-                table_name=index_match.group(2).strip("`\""),
+                index_name_sql=_mysql_sql_literal(
+                    index_match.group(1).strip("`\"")
+                ),
+                table_name_sql=_mysql_sql_literal(
+                    index_match.group(2).strip("`\"")
+                ),
             )
 
         xml = generator.template.format(**template_values)

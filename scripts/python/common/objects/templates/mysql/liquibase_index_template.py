@@ -9,18 +9,14 @@ LIQUIBASE_INDEX_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 
     <changeSet id="{id}" author="automation">
 
-        <!--
-            Generated index files are rebuilt for every LOAD run.  When the
-            exact index was created outside this generated changeset (or by
-            an earlier generated-file cleanup), mark only this changeset as
-            ran.  Failures while checking or creating the index still halt.
-        -->
         <preConditions onFail="MARK_RAN" onError="HALT">
-            <not>
-                <indexExists
-                    indexName="{index_name}"
-                    tableName="{table_name}"/>
-            </not>
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*)
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = '{table_name_sql}'
+                  AND INDEX_NAME = '{index_name_sql}'
+            </sqlCheck>
         </preConditions>
 
         <sqlFile
