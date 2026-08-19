@@ -212,6 +212,15 @@ def add_missing_columns(conn, db_type, table_name, missing_columns):
                 for col in missing_columns
             )
         )
+    elif db_type == "mysql":
+        # MySQL requires ADD COLUMN for each comma-separated definition.
+        sql = (
+            f"ALTER TABLE {quoted_table} "
+            + ", ".join(
+                f"ADD COLUMN {quote_name(col, db_type)} VARCHAR(255)"
+                for col in missing_columns
+            )
+        )
     else:
         definitions = ", ".join(
             f"{quote_name(col, db_type)} VARCHAR(255)"
@@ -476,7 +485,21 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
         create_table(conn, db_type, table_name, file_columns)
         existing_columns = file_columns
     else:
-        new_columns = [col for col in file_columns if col not in existing_columns]
+        # MySQL column identifiers are case-insensitive.  Preserve the CSV
+        # spelling for INSERT values, but compare schema names case-insensitively
+        # so Product_ID and product_id are not treated as separate columns.
+        if db_type == "mysql":
+            existing_column_keys = {
+                column.casefold()
+                for column in existing_columns
+            }
+            new_columns = [
+                column
+                for column in file_columns
+                if column.casefold() not in existing_column_keys
+            ]
+        else:
+            new_columns = [col for col in file_columns if col not in existing_columns]
         if new_columns:
             if strict_schema:
                 raise Exception(
@@ -486,8 +509,21 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
             add_missing_columns(conn, db_type, table_name, new_columns)
             existing_columns.extend(new_columns)
 
-    actual_columns = [col for col in existing_columns if col in file_columns] + \
-                     [col for col in existing_columns if col not in file_columns]
+    if db_type == "mysql":
+        file_column_keys = {
+            column.casefold()
+            for column in file_columns
+        }
+        # Use file spellings for matching columns so row lookups retain their
+        # values; MySQL resolves them to the existing target column names.
+        actual_columns = list(file_columns) + [
+            column
+            for column in existing_columns
+            if column.casefold() not in file_column_keys
+        ]
+    else:
+        actual_columns = [col for col in existing_columns if col in file_columns] + \
+                         [col for col in existing_columns if col not in file_columns]
     rows_prepared = prepare_rows(rows, actual_columns, file_columns)
     inserted = insert_rows(conn, db_type, table_name, actual_columns, rows_prepared)
     return inserted
@@ -524,19 +560,19 @@ def main():
 
     if not incoming_dir.exists():
         logger.error("incoming/ directory does not exist")
-        return
+        return 1 if db_type == "mysql" else 0
 
     config = get_config_for_db(db_type)
 
     if not config:
         logger.error(f"No configuration found for database type {db_type}")
-        return
+        return 1 if db_type == "mysql" else 0
 
     try:
         conn = get_database_connection(db_type, config)
     except Exception as exc:
         logger.error(f"Unable to connect to database: {exc}")
-        return
+        return 1 if db_type == "mysql" else 0
 
     data_files = (
         list(incoming_dir.glob("*.csv"))
@@ -544,6 +580,8 @@ def main():
     )
 
     logger.info(f"Found {len(data_files)} data file(s) in incoming/")
+
+    failed_file_count = 0
 
     for path in data_files:
 
@@ -592,6 +630,7 @@ def main():
             logger.info(f"Loaded {rows_inserted} rows from {path.name}")
 
         except Exception as exc:
+            failed_file_count += 1
             conn.rollback()
             logger.error(f"Error loading file {path.name}: {exc}")
 
@@ -624,10 +663,18 @@ def main():
 
     conn.close()
 
+    if db_type == "mysql" and failed_file_count:
+        logger.error(
+            "Data loader completed with %s failed file(s)",
+            failed_file_count,
+        )
+        return 1
+
     logger.info("Data loader completed")
+    return 0
     
 
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
