@@ -26,12 +26,20 @@ if errorlevel 1 (
     exit /b 1
 )
 
-powershell.exe -NoProfile -NonInteractive -Command "$p = Get-NetConnectionProfile | Where-Object { $_.IPv4Connectivity -in @('Internet','LocalNetwork') } | Select-Object -First 1; if ($p -and $p.NetworkCategory -eq 'Public') { exit 1 } else { exit 0 }"
-if errorlevel 1 (
-    echo ERROR: The active network profile is Public.
-    echo The Schema Editor firewall rule requires a Private or Domain network profile.
-    echo Please change the network profile to Private in Windows Settings and re-run setup.
-    exit /b 1
+for /f "delims=" %%P in ('powershell.exe -NoProfile -NonInteractive -Command "$p = Get-NetConnectionProfile | Where-Object { $_.IPv4Connectivity -in @('Internet','LocalNetwork') } | Select-Object -First 1; if ($p) { $p.NetworkCategory } else { 'Unknown' }" 2^>nul') do set "NETWORK_CATEGORY=%%P"
+
+if /I not "%NETWORK_CATEGORY%"=="Private" if /I not "%NETWORK_CATEGORY%"=="Domain" (
+    echo WARNING: Active network profile is %NETWORK_CATEGORY%.
+    echo The Schema Editor firewall rule will be created for this profile with LocalSubnet scope.
+    echo For better security, consider changing the network profile to Private or Domain in Windows Settings.
+)
+
+if /I "%NETWORK_CATEGORY%"=="Private" (
+    set "RULE_PROFILES=Private"
+) else if /I "%NETWORK_CATEGORY%"=="Domain" (
+    set "RULE_PROFILES=Domain"
+) else (
+    set "RULE_PROFILES=Public"
 )
 
 netsh advfirewall firewall show rule name="%RULE_NAME%" >nul 2>&1
@@ -40,11 +48,11 @@ if not errorlevel 1 (
     exit /b 0
 )
 
-netsh advfirewall firewall add rule name="%RULE_NAME%" dir=in action=allow localport=%SCHEMA_EDITOR_PORT% protocol=TCP profile=Private,Domain remoteip=LocalSubnet >nul
+netsh advfirewall firewall add rule name="%RULE_NAME%" dir=in action=allow localport=%SCHEMA_EDITOR_PORT% protocol=TCP profile=%RULE_PROFILES% remoteip=LocalSubnet >nul
 if errorlevel 1 (
     echo ERROR: Failed to create the Schema Editor firewall rule for port %SCHEMA_EDITOR_PORT%.
     exit /b 1
 )
 
-echo Schema Editor firewall rule enabled: %RULE_NAME%
+echo Schema Editor firewall rule enabled: %RULE_NAME% (profile=%RULE_PROFILES%, scope=LocalSubnet)
 exit /b 0

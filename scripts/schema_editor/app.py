@@ -484,7 +484,7 @@ def home():
     if not DATA_FILE.exists():
         return f"Datatype registry not found: {DATA_FILE}", 404
 
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
+    with open(DATA_FILE, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
     return render_template("index.html", data=data, database=DATABASE)
@@ -496,7 +496,7 @@ def save():
     if not DATA_FILE.exists():
         return f"Datatype registry not found: {DATA_FILE}", 404
 
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
+    with open(DATA_FILE, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
     # Save user-selected datatypes

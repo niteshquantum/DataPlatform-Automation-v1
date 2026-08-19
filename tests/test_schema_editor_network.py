@@ -393,9 +393,10 @@ class TestSchemaEditorNetwork(unittest.TestCase):
         self.assertIn('show rule', content)
         self.assertIn('if not errorlevel 1', content)
         self.assertIn('add rule', content)
-        self.assertIn('Private,Domain', content)
         self.assertIn('LocalSubnet', content)
         self.assertIn('check_admin_privileges.bat', content)
+        self.assertIn('NETWORK_CATEGORY', content)
+        self.assertIn('RULE_PROFILES', content)
 
     def test_ensure_schema_editor_firewall_bat_fails_without_admin(self):
         content = open('scripts/batch/common/ensure_schema_editor_firewall.bat', 'r', encoding='utf-8').read()
