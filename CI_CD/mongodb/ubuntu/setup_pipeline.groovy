@@ -83,6 +83,9 @@ pipeline {
 
                         sh '''
                             chmod -R +x scripts/bash
+                            if [ -f databases/mongodb/mongosh/bin/mongosh ]; then
+                                chmod +x databases/mongodb/mongosh/bin/mongosh
+                            fi
                         '''
                     }
                 }
@@ -190,23 +193,20 @@ pipeline {
 
         stage('Install Mongosh') {
 
-            when {
-                expression {
-                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
-                }
-            }
-
             steps {
 
                 script {
 
-                    runTrackedStage('Install Mongosh') {
+                    runLoggedStage(
+                        'Install Mongosh',
+                        './scripts/bash/mongodb/setup/install_mongosh.sh'
+                    )
 
-                        sh './scripts/bash/mongodb/setup/install_mongosh.sh'
-                    }
                 }
+
             }
-        }
+
+}
 
 
         stage('Configure Global Mongosh') {

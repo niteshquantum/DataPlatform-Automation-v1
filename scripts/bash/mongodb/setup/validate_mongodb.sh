@@ -12,8 +12,10 @@ MONGODB_HOST=$(grep "^MONGODB_HOST=" "$CONFIG_FILE" | cut -d'=' -f2)
 
 MONGOSH="$PROJECT_ROOT/databases/mongodb/mongosh/bin/mongosh"
 
-if [ ! -x "$MONGOSH" ]; then
-    MONGOSH=$(command -v mongosh)
+if [ ! -f "$MONGOSH" ]; then
+    echo "ERROR: Workspace mongosh binary not found."
+    echo "Expected: $MONGOSH"
+    exit 1
 fi
 
 if [ -z "$MONGOSH" ]; then
