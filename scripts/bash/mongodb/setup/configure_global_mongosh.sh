@@ -5,11 +5,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../common/set_project_root.sh"
 
-CONFIG_FILE="$PROJECT_ROOT/config/ubuntu/mongodb.conf"
-
-MONGODB_HOST=$(grep "^MONGODB_HOST=" "$CONFIG_FILE" | cut -d'=' -f2)
-MONGODB_PORT=$(grep "^MONGODB_PORT=" "$CONFIG_FILE" | cut -d'=' -f2)
-
 REAL_MONGOSH="$PROJECT_ROOT/databases/mongodb/mongosh/bin/mongosh"
 GLOBAL_MONGOSH="/usr/local/bin/mongosh"
 
@@ -24,6 +19,8 @@ if [ ! -f "$REAL_MONGOSH" ]; then
     echo "Expected: $REAL_MONGOSH"
     exit 1
 fi
+
+chmod +x "$REAL_MONGOSH"
 
 echo "Creating global mongosh wrapper..."
 

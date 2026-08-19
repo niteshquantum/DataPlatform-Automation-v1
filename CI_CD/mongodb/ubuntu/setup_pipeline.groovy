@@ -83,9 +83,6 @@ pipeline {
 
                         sh '''
                             chmod -R +x scripts/bash
-                            if [ -f databases/mongodb/mongosh/bin/mongosh ]; then
-                                chmod +x databases/mongodb/mongosh/bin/mongosh
-                            fi
                         '''
                     }
                 }
@@ -137,46 +134,8 @@ pipeline {
             }
         }
 
-        stage('Check MongoDB Instance') {
-
-    steps {
-
-        script {
-
-            runTrackedStage('Check MongoDB Instance') {
-
-                def output = sh(
-                    script: './scripts/bash/mongodb/setup/check_instance.sh 2>&1 || true',
-                    returnStdout: true
-                ).trim()
-
-                echo output
-
-                def stateLine = output.readLines().find {
-                    it.startsWith('INSTANCE_STATE=')
-                }
-
-                if (!stateLine) {
-                    error "INSTANCE_STATE not found"
-                }
-
-                env.MONGODB_INITIAL_INSTANCE_STATE =
-                    stateLine.replace('INSTANCE_STATE=', '').trim()
-
-                echo "MongoDB Instance State: ${env.MONGODB_INITIAL_INSTANCE_STATE}"
-            }
-        }
-    }
-}
-
 
         stage('Install MongoDB') {
-
-            when {
-                expression {
-                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
-                }
-            }
 
             steps {
 
@@ -197,16 +156,13 @@ pipeline {
 
                 script {
 
-                    runLoggedStage(
-                        'Install Mongosh',
-                        './scripts/bash/mongodb/setup/install_mongosh.sh'
-                    )
+                    runTrackedStage('Install Mongosh') {
 
+                        sh './scripts/bash/mongodb/setup/install_mongosh.sh'
+                    }
                 }
-
             }
-
-}
+        }
 
 
         stage('Configure Global Mongosh') {
@@ -241,15 +197,12 @@ pipeline {
 
         stage('Configure MongoDB Service') {
 
-            when {
-                expression {
-                    return env.MONGODB_INITIAL_INSTANCE_STATE == 'NO_INSTANCE'
-                }
-            }
-
             steps {
+
                 script {
+
                     runTrackedStage('Configure MongoDB Service') {
+
                         sh './scripts/bash/mongodb/setup/configure_mongodb_service.sh'
                     }
                 }
