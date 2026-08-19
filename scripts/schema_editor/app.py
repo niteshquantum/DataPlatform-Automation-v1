@@ -579,13 +579,13 @@ if __name__ == "__main__":
     configured_port = get_schema_editor_port()
     host = resolve_active_host_ip()
 
-    print("\n" + "=" * 60)
-    print("SCHEMA EDITOR READY")
-    print("=" * 60)
-    print(f"Database: {DATABASE.capitalize()}")
-    print(f"URL: {build_schema_editor_url(host, configured_port)}")
-    print("Status: WAITING FOR USER SAVE")
-    print("=" * 60 + "\n")
+    print("\n" + "=" * 60, flush=True)
+    print("SCHEMA EDITOR READY", flush=True)
+    print("=" * 60, flush=True)
+    print(f"Database: {DATABASE.capitalize()}", flush=True)
+    print(f"URL: {build_schema_editor_url(host, configured_port)}", flush=True)
+    print("Status: WAITING FOR USER SAVE", flush=True)
+    print("=" * 60 + "\n", flush=True)
 
     from werkzeug.serving import make_server
 
