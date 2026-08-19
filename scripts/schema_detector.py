@@ -12,6 +12,12 @@ import logging
 from pathlib import Path
 import csv
 
+from scripts.python.common.column_mapper import (
+    load_mapping_config,
+    map_columns,
+    resolve_table_mapping,
+)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -176,6 +182,28 @@ def update_schema_registry(table_name, columns, registry_path):
     except Exception as e:
         logger.error(f"Error updating schema registry: {e}")
 
+def update_table_source_mapping(target_table, source_file_stem, mapping_path):
+    """
+    Update table_source_mapping.json with source-to-target table mapping.
+    """
+    try:
+        if mapping_path.exists():
+            with open(mapping_path, 'r', encoding='utf-8') as f:
+                mapping = json.load(f)
+        else:
+            mapping = {}
+
+        mapping[target_table] = source_file_stem
+
+        with open(mapping_path, 'w', encoding='utf-8') as f:
+            json.dump(mapping, f, indent=2)
+
+        logger.info(
+            f"Mapped table '{target_table}' -> source '{source_file_stem}'"
+        )
+    except Exception as e:
+        logger.error(f"Error updating table source mapping: {e}")
+
 def main():
     """
     Main function to scan incoming folder and update schema registry.
@@ -196,6 +224,15 @@ def main():
         / "metadata"
         / db_type
         / "schema_registry.json"
+    )
+
+    mapping_config = load_mapping_config()
+
+    table_source_mapping_path = (
+        project_root
+        / "metadata"
+        / db_type
+        / "table_source_mapping.json"
     )
 
     logger.info(f"Database type: {db_type}")
@@ -224,18 +261,17 @@ def main():
     logger.info(f"Found {len(csv_files)} CSV file(s)")
     
     for csv_file in csv_files:
-        table_name = (
-            csv_file.stem
-            .strip()
-            .lower()
-            .replace(' ', '_')
+        source_table_name = csv_file.stem.strip()
+        target_table_name = resolve_table_mapping(
+            source_table_name, mapping_config
         )
 
         headers = get_csv_headers(csv_file)
 
-        
-
         if headers:
+            target_headers = map_columns(
+                headers, mapping_config, source_table_name
+            )
 
             existing_columns = []
 
@@ -243,33 +279,43 @@ def main():
                 with open(registry_path, "r", encoding="utf-8") as f:
                     registry = json.load(f)
 
-                existing_columns = registry.get(table_name, [])
+                existing_columns = registry.get(target_table_name, [])
 
-                result = detect_schema_changes(existing_columns, headers)
-
-                logger.info(
-                    f"CDC Status [{table_name}] : {result['status']}"
+                result = detect_schema_changes(
+                    existing_columns, target_headers
                 )
 
-                cdc_status["tables"][table_name] = result
+                logger.info(
+                    f"CDC Status [{target_table_name}] : {result['status']}"
+                )
 
-            update_schema_registry(table_name, headers, registry_path)
+                cdc_status["tables"][target_table_name] = result
+
+            update_schema_registry(
+                target_table_name, target_headers, registry_path
+            )
+            update_table_source_mapping(
+                target_table_name,
+                source_table_name,
+                table_source_mapping_path,
+            )
     
     # Process JSON files
     json_files = list(incoming_dir.glob("*.json"))
     logger.info(f"Found {len(json_files)} JSON file(s)")
     
     for json_file in json_files:
-        table_name = (
-            json_file.stem
-            .strip()
-            .lower()
-            .replace(' ', '_')
+        source_table_name = json_file.stem.strip()
+        target_table_name = resolve_table_mapping(
+            source_table_name, mapping_config
         )
 
         keys = get_json_keys(json_file)
+        target_keys = map_columns(
+            keys, mapping_config, source_table_name
+        )
 
-        if keys:
+        if target_keys:
 
             existing_columns = []
 
@@ -277,15 +323,25 @@ def main():
                 with open(registry_path, "r", encoding="utf-8") as f:
                     registry = json.load(f)
 
-                existing_columns = registry.get(table_name, [])
+                existing_columns = registry.get(target_table_name, [])
 
-            result = detect_schema_changes(existing_columns, keys)
+            result = detect_schema_changes(
+                existing_columns, target_keys
+            )
 
             logger.info(
-                f"CDC Status [{table_name}] : {result['status']}"
+                f"CDC Status [{target_table_name}] : {result['status']}"
             )
-            cdc_status["tables"][table_name] = result
-        update_schema_registry(table_name, keys, registry_path)
+            cdc_status["tables"][target_table_name] = result
+
+        update_schema_registry(
+            target_table_name, target_keys, registry_path
+        )
+        update_table_source_mapping(
+            target_table_name,
+            source_table_name,
+            table_source_mapping_path,
+        )
     cdc_path = (
         project_root
         / "metadata"
