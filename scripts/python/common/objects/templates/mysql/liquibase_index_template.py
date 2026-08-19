@@ -7,7 +7,7 @@ LIQUIBASE_INDEX_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
         http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <changeSet id="{id}" author="automation">
+    <changeSet id="mysql-{id}-v2" author="automation">
 
         <preConditions onFail="MARK_RAN" onError="HALT">
             <sqlCheck expectedResult="0">
