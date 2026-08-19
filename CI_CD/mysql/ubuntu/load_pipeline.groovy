@@ -74,15 +74,7 @@ pipeline {
             description: 'Dataset location (URL, local path, folder path, etc.)'
         )
 
-        choice(
-            name: 'SCHEMA_SOURCE',
-            choices: [
-                'CSV',
-                'DATABASE'
-            ],
-            defaultValue: 'CSV',
-            description: 'Schema detection source'
-        )
+        
 
         booleanParam(
             name: 'RUN_ASSESSMENT',
@@ -270,11 +262,9 @@ pipeline {
 
                     runTrackedStage('Schema Detection') {
 
-                        if (params.SCHEMA_SOURCE == 'DATABASE') {
-                            sh 'python3 scripts/schema_extractor.py mysql'
-                        } else {
+                       
                             sh 'python3 scripts/schema_detector.py mysql'
-                        }
+                        
 
                     }
 
