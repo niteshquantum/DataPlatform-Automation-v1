@@ -128,6 +128,8 @@ class MySQLObjectValidator:
             SELECT DISTINCT INDEX_NAME
             FROM information_schema.STATISTICS
             WHERE TABLE_SCHEMA = DATABASE()
-              AND INDEX_NAME <> 'PRIMARY'
+            AND INDEX_NAME IS NOT NULL
+            AND INDEX_NAME <> ''
+            AND INDEX_NAME <> 'PRIMARY'
             """
         )
