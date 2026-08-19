@@ -23,8 +23,6 @@ LIQUIBASE_INDEX_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
             SET @automation_index_sql = (
                 SELECT CASE
                     WHEN COUNT(*) = 0 THEN
-                        'SELECT 1'
-                    ELSE
                         CONCAT(
                             'CREATE INDEX `',
                             '{index_name_sql_identifier}',
@@ -59,6 +57,8 @@ LIQUIBASE_INDEX_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
                             ),
                             ')'
                         )
+                    ELSE
+                        'SELECT 1'
                 END
                 FROM information_schema.STATISTICS s
                 INNER JOIN information_schema.COLUMNS c
