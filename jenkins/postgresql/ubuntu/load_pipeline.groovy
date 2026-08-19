@@ -216,6 +216,15 @@ pipeline {
         }
 
 
+        stage('Schema Editor') {
+
+            runTrackedStage('Schema Editor') {
+
+                sh 'python3 scripts/schema_editor/app.py postgresql'
+
+            }
+        }
+
         stage('Create Database') {
 
             steps {
