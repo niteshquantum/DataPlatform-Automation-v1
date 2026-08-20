@@ -300,29 +300,36 @@ def get_schema_editor_url():
 
 if __name__ == "__main__":
 
-    print("\n" + "=" * 60)
-    print("ACTION REQUIRED")
-    print("=" * 60)
-    print("Schema Editor is ready.")
-    print("Open the following URL:\n")
+    # Get configured port
+    _, display_port = get_schema_editor_url()
 
-    host, display_port = get_schema_editor_url()
+    # Automatically detect current machine's LAN IP
+    network_ip = get_active_lan_ip()
 
-    print(f"http://{host}:{display_port}")
+    print("\n" + "=" * 70)
+    print("ACTION REQUIRED - SCHEMA EDITOR")
+    print("=" * 70)
 
-    print("")
-    print("After clicking 'Save & Continue',")
+    print("\nSchema Editor is ready.\n")
+
+    print("1. SAME UBUNTU / JENKINS MACHINE:")
+    print(f"   http://127.0.0.1:{display_port}")
+
+    print("\n2. ANOTHER WINDOWS / LAPTOP MACHINE:")
+    print(f"   http://{network_ip}:{display_port}")
+
+    print("\nNOTE:")
+    print("Use the second link from another machine on the same network.")
+
+    print("\nAfter clicking 'Save & Continue',")
     print("the schema will be saved and the Jenkins pipeline")
     print("will continue automatically.")
-    print("=" * 60 + "\n")
 
-    # The actual Flask binding port is controlled by the
-    # environment variable. Default is 5000.
-    configured_port = display_port
+    print("=" * 70 + "\n")
 
     app.run(
         host="0.0.0.0",
-        port=configured_port,
+        port=display_port,
         debug=False,
         use_reloader=False
     )
