@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request
 import json
 from pathlib import Path
@@ -8,6 +7,7 @@ import os
 import sys
 import socket
 import configparser
+import subprocess
 
 app = Flask(__name__)
 
@@ -99,72 +99,133 @@ def save():
 
 def get_active_lan_ip():
     """
-    Detect the preferred active LAN IPv4 address.
+    Detect the active physical LAN/Wi-Fi IPv4 address.
 
-    Priority:
-    1. Active 192.168.x.x address
-    2. Active 172.16.x.x - 172.31.x.x address
-    3. Active 10.x.x.x address
-
-    Loopback addresses are ignored.
+    Ignores loopback, Docker, virtual bridges,
+    Tailscale and other virtual interfaces.
     """
 
-    candidates = []
-
     try:
-        hostname = socket.gethostname()
 
-        for info in socket.getaddrinfo(
-            hostname,
-            None,
-            socket.AF_INET
-        ):
-            ip = info[4][0]
+        # WINDOWS
+        if sys.platform.startswith("win"):
 
-            if ip.startswith("127."):
-                continue
+            command = (
+                "Get-NetIPAddress -AddressFamily IPv4 | "
+                "Where-Object { "
+                "$_.IPAddress -notlike '127.*' -and "
+                "$_.InterfaceAlias -notmatch "
+                "'Loopback|Docker|vEthernet|Virtual|Tailscale|Bluetooth' "
+                "} | "
+                "ForEach-Object { "
+                "$adapter = Get-NetAdapter "
+                "-InterfaceIndex $_.InterfaceIndex "
+                "-ErrorAction SilentlyContinue; "
+                "if ($adapter.Status -eq 'Up') { "
+                "$_.IPAddress "
+                "} "
+                "}"
+            )
 
-            if ip not in candidates:
-                candidates.append(ip)
+            result = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    command
+                ],
+                capture_output=True,
+                text=True,
+                check=False
+            )
 
-    except socket.gaierror:
-        pass
+            candidates = [
+                ip.strip()
+                for ip in result.stdout.splitlines()
+                if ip.strip()
+            ]
 
-    # Preferred priority for normal LAN networks
-    for ip in candidates:
-        if ip.startswith("192.168."):
-            return ip
+            if candidates:
+                return candidates[0]
 
-    for ip in candidates:
-        parts = ip.split(".")
+        # LINUX / UBUNTU
+        elif sys.platform.startswith("linux"):
 
-        if (
-            len(parts) == 4
-            and parts[0] == "172"
-            and 16 <= int(parts[1]) <= 31
-        ):
-            return ip
+            result = subprocess.run(
+                [
+                    "ip",
+                    "-o",
+                    "-4",
+                    "addr",
+                    "show",
+                    "up"
+                ],
+                capture_output=True,
+                text=True,
+                check=False
+            )
 
-    for ip in candidates:
-        if ip.startswith("10."):
-            return ip
+            ignored_prefixes = (
+                "lo",
+                "docker",
+                "br-",
+                "virbr",
+                "veth",
+                "tailscale",
+            )
 
-    # Fallback: detect the IP used for the default route
-    s = socket.socket(
-        socket.AF_INET,
-        socket.SOCK_DGRAM
-    )
+            for line in result.stdout.splitlines():
 
+                parts = line.split()
+
+                if len(parts) < 4:
+                    continue
+
+                interface = parts[1]
+
+                if interface.startswith(ignored_prefixes):
+                    continue
+
+                if parts[2] != "inet":
+                    continue
+
+                ip = parts[3].split("/")[0]
+
+                if not ip.startswith("127."):
+                    return ip
+
+    except Exception as exc:
+
+        print(
+            f"WARNING: Failed to detect active LAN IP: {exc}",
+            file=sys.stderr
+        )
+
+    # Final fallback
     try:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
-    finally:
-        s.close()
 
+        s = socket.socket(
+            socket.AF_INET,
+            socket.SOCK_DGRAM
+        )
+
+        try:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+
+        finally:
+            s.close()
+
+    except Exception:
+        return "127.0.0.1"
 def get_schema_editor_url():
     """
-    Determine the URL that should be displayed to the user.
-    The actual Flask port is controlled by SCHEMA_EDITOR_PORT.
+    Determine the URL displayed to the user.
+
+    Priority:
+    1. SCHEMA_EDITOR_HOST from environment variable
+    2. SCHEMA_EDITOR_HOST from network.conf
+    3. Automatically detected active LAN/Wi-Fi IPv4
     """
 
     network_conf = (
@@ -181,42 +242,61 @@ def get_schema_editor_url():
         )
     )
 
+    configured_host = os.environ.get(
+        "SCHEMA_EDITOR_HOST",
+        ""
+    ).strip()
+
     if network_conf.exists():
+
         try:
+
             config = configparser.ConfigParser()
-            config.read(network_conf, encoding="utf-8")
+
+            config.read(
+                network_conf,
+                encoding="utf-8"
+            )
 
             port = int(
-                config["DEFAULT"].get(
+                os.environ.get(
                     "SCHEMA_EDITOR_PORT",
-                    port
+                    config["DEFAULT"].get(
+                        "SCHEMA_EDITOR_PORT",
+                        port
+                    )
                 )
             )
 
-            host = config["DEFAULT"].get(
-                "JENKINS_HOST",
-                ""
-            ).strip()
+            if not configured_host:
+                configured_host = (
+                    config["DEFAULT"].get(
+                        "SCHEMA_EDITOR_HOST",
+                        ""
+                    ).strip()
+                )
 
-            if host and host != "127.0.0.1":
-                return host, port
         except configparser.Error as exc:
+
             print(
                 f"ERROR: Failed to parse {network_conf}: {exc}",
                 file=sys.stderr
             )
             sys.exit(1)
+
         except Exception as exc:
+
             print(
                 f"ERROR: Failed to load {network_conf}: {exc}",
                 file=sys.stderr
             )
             sys.exit(1)
 
-    host = get_active_lan_ip()
+    if configured_host:
 
-    return host, port
+        return configured_host, port
 
+    return get_active_lan_ip(), port
 
 if __name__ == "__main__":
 
