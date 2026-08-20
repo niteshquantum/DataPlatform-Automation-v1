@@ -18,6 +18,11 @@ import platform
 from scripts.cdc.metadata_manager import update_file_metadata
 from scripts.python.common.config_loader import load_database_config
 from scripts.python.mysql.setup.db_connection import get_connection
+from scripts.python.common.column_mapper import (
+    load_mapping_config,
+    resolve_table_mapping,
+    get_source_to_target_mapping,
+)
 
 
 
@@ -436,13 +441,11 @@ def truncate_table(conn, db_type, table_name):
     finally:
 
         cursor.close()
-def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=False):
-    table_name = (
-    path.stem
-    .strip()
-    .lower()
-    .replace(' ', '_')
-    )
+def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=False, mapping_config=None):
+    if mapping_config is None:
+        mapping_config = load_mapping_config()
+
+    table_name = resolve_table_mapping(path.stem, mapping_config)
     logger.info(f"Processing file: {path.name} -> table: {table_name}")
 
     if path.suffix.lower() == '.csv':
@@ -460,6 +463,22 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
         for key in row.keys():
             if key is not None and key not in file_columns:
                 file_columns.append(key)
+
+    source_to_target = get_source_to_target_mapping(file_columns, mapping_config)
+
+    mapped_rows = []
+    for row in rows:
+        mapped_row = {}
+        for src_col, val in row.items():
+            if src_col in source_to_target:
+                mapped_row[source_to_target[src_col]] = val
+        mapped_rows.append(mapped_row)
+    rows = mapped_rows
+
+    file_columns = [
+        source_to_target[col] for col in file_columns if col in source_to_target
+    ]
+
     if not file_columns:
         logger.warning(f"No columns detected in file {path.name}")
         return 0
@@ -514,6 +533,8 @@ def main():
         / db_type
         / 'data_load_history.jsonl'
     )
+
+    mapping_config = load_mapping_config()
 
     incoming_dir = project_root / "incoming" / db_type
     archive_dir = project_root / "archive" / db_type
@@ -574,7 +595,8 @@ def main():
                 db_type,
                 path,
                 load_mode,
-                strict_schema
+                strict_schema,
+                mapping_config
             )
 
             status = "SUCCESS"
@@ -610,12 +632,7 @@ def main():
                 "timestamp": timestamp,
                 "file": path.name,
                 "sha256": file_hash,
-                "table": (
-                    path.stem
-                    .strip()
-                    .lower()
-                    .replace(" ", "_")
-                ),
+                "table": resolve_table_mapping(path.stem, mapping_config),
                 "rows_inserted": rows_inserted,
                 "status": status
             }

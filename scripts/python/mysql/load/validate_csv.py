@@ -7,6 +7,14 @@ ROOT = Path(__file__).resolve().parents[4]
 
 schema_file = ROOT / "metadata" / "mysql" / "schema_registry.json"
 incoming_dir = ROOT / "incoming" / "mysql"
+archive_dir = ROOT / "archive" / "mysql"
+failed_dir = ROOT / "failed" / "mysql"
+
+from scripts.python.common.column_mapper import (
+    load_mapping_config,
+    resolve_source_file_stem,
+    get_source_to_target_mapping,
+)
 
 try:
     with open(schema_file, "r", encoding="utf-8") as f:
@@ -17,13 +25,16 @@ try:
     print("CSV VALIDATION")
     print("=" * 50)
 
+    mapping_config = load_mapping_config()
+
     for table_name, required_columns in schema_registry.items():
 
-        csv_file = incoming_dir / f"{table_name}.csv"
+        source_stem = resolve_source_file_stem(table_name, mapping_config, "mysql")
+        csv_file = incoming_dir / f"{source_stem}.csv"
 
         if not csv_file.exists():
-            archive_file = ROOT / "archive" / "mysql" / f"{table_name}.csv"
-            failed_file = ROOT / "failed" / "mysql" / f"{table_name}.csv"
+            archive_file = archive_dir / f"{source_stem}.csv"
+            failed_file = failed_dir / f"{source_stem}.csv"
 
             if archive_file.exists() or failed_file.exists():
                 print(f"[SKIPPED] {csv_file.name} already processed")
@@ -46,11 +57,15 @@ try:
                 f"CSV file is empty: {csv_file.name}"
             )
 
-        missing_columns = [
-            column
-            for column in required_columns
-            if column not in df.columns
-        ]
+        source_headers = list(df.columns)
+        source_to_target = get_source_to_target_mapping(source_headers, mapping_config)
+        target_to_source = {v: k for k, v in source_to_target.items()}
+
+        missing_columns = []
+        for target_col in required_columns:
+            source_col = target_to_source.get(target_col)
+            if source_col is None or source_col not in source_headers:
+                missing_columns.append(target_col)
 
         if missing_columns:
             raise Exception(

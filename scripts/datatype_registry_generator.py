@@ -7,6 +7,12 @@ import csv
 import re
 from datetime import datetime
 
+from scripts.python.common.column_mapper import (
+    load_mapping_config,
+    get_source_to_target_mapping,
+    resolve_source_file_stem,
+)
+
 
 def detect_datatype(values):
 
@@ -75,6 +81,12 @@ def main():
 
     datatype_registry = {}
 
+    mapping_config = load_mapping_config()
+
+    mapping_enabled = mapping_config.get("settings", {}).get(
+        "enable_mapping", False
+    )
+
     incoming_dir = project_root / "incoming" / db_type
 
     for table, columns in schema.items():
@@ -86,7 +98,11 @@ def main():
             for col in columns
         }
 
-        csv_file = incoming_dir / f"{table}.csv"
+        source_stem = resolve_source_file_stem(
+            table, mapping_config, db_type
+        )
+
+        csv_file = incoming_dir / f"{source_stem}.csv"
 
         if csv_file.exists():
 
@@ -116,12 +132,29 @@ def main():
 
                         reader = csv.DictReader(f)
 
+                        target_to_source = (
+                            {
+                                tgt: src
+                                for src, tgt in get_source_to_target_mapping(
+                                    reader.fieldnames, mapping_config
+                                ).items()
+                            }
+                            if mapping_enabled
+                            else None
+                        )
+
                         for row in reader:
 
                             for col in columns:
 
+                                src_col = (
+                                    target_to_source.get(col, col)
+                                    if mapping_enabled
+                                    else col
+                                )
+
                                 sample_data[col].append(
-                                    row.get(col, "")
+                                    row.get(src_col, "")
                                 )
 
                     print(

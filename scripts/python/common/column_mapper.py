@@ -226,3 +226,42 @@ def resolve_table_mapping(source_name, config):
     Resolve the target table name for a given source table name.
     """
     return map_table_name(source_name, config)
+
+
+def resolve_source_file_stem(target_table_name, config, db_type):
+    """
+    Resolve the original source CSV file stem for a given target table name.
+
+    Uses metadata/<db_type>/table_source_mapping.json when mapping is enabled.
+    Falls back to the target table name when mapping is disabled or when no
+    mapping metadata is available.
+    """
+    settings = config.get("settings", {})
+
+    if not settings.get("enable_mapping", False):
+        return target_table_name
+
+    project_root = Path(__file__).resolve().parents[3]
+
+    mapping_path = (
+        project_root
+        / "metadata"
+        / db_type
+        / "table_source_mapping.json"
+    )
+
+    if not mapping_path.exists():
+        return target_table_name
+
+    try:
+        with open(mapping_path, "r", encoding="utf-8") as f:
+            mapping = json.load(f)
+    except (json.JSONDecodeError, OSError):
+
+        logger.warning(
+            f"Could not read table source mapping: {mapping_path}"
+        )
+
+        return target_table_name
+
+    return mapping.get(target_table_name, target_table_name)
