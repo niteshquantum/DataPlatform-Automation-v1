@@ -293,41 +293,37 @@ def get_schema_editor_config():
 
 if __name__ == "__main__":
 
-    # Fixed IP from network.conf
-    ubuntu_ip, display_port = (
-        get_schema_editor_config()
-    )
+    # Read configured Ubuntu server IP and port
+    ubuntu_ip, display_port = get_schema_editor_config()
 
-    # Automatically detected current machine IP
+    # Automatically detect the active LAN/Wi-Fi IP
+    # of the machine currently running this application
     active_ip = get_active_lan_ip()
 
     print("\n" + "=" * 70)
     print("ACTION REQUIRED - SCHEMA EDITOR")
     print("=" * 70)
 
-    print("\nSchema Editor is ready.\n")
+    print("\nSchema Editor is ready.")
+    print("Use the appropriate URL based on where you are accessing it.\n")
 
-    # URL 1
-    print("1. UBUNTU / JENKINS MACHINE:")
-    print(
-        f"   http://{ubuntu_ip}:{display_port}"
-    )
+    print("1. CURRENT MACHINE - NETWORK ACCESS")
+    print(f"   http://{active_ip}:{display_port}")
+    print("   Use this URL from another device connected to the same network.\n")
 
-    # URL 2
-    print("\n2. SAME MACHINE / LOCAL:")
-    print(
-        f"   http://127.0.0.1:{display_port}"
-    )
+    print("2. SAME MACHINE - LOCAL ACCESS")
+    print(f"   http://127.0.0.1:{display_port}")
+    print("   Use this URL when accessing the Schema Editor from the machine")
+    print("   where the application is currently running.\n")
 
-    # URL 3
-    print("\n3. CURRENT MACHINE / WINDOWS OR OTHER LAPTOP:")
-    print(
-        f"   http://{active_ip}:{display_port}"
-    )
+    if ubuntu_ip:
+        print("3. CONFIGURED UBUNTU SERVER - NETWORK ACCESS")
+        print(f"   http://{ubuntu_ip}:{display_port}")
+        print("   Use this URL to access the configured Ubuntu server.")
+        print("   The server address is defined in config/common/network.conf.\n")
 
-    print("\nAfter clicking 'Save & Continue',")
-    print("the schema will be saved and the Jenkins pipeline")
-    print("will continue automatically.")
+    print("After selecting datatypes, click 'Save & Continue'.")
+    print("The selections will be saved and the pipeline will continue automatically.")
 
     print("=" * 70 + "\n")
 
