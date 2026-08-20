@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 import json
 from pathlib import Path
-import webbrowser
 import threading
 import os
 import sys
@@ -29,28 +28,34 @@ DATA_FILE = (
 
 @app.route("/")
 def home():
+
     if not DATA_FILE.exists():
         return f"Datatype registry not found: {DATA_FILE}", 404
 
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    return render_template("index.html", data=data, database=DATABASE)
+    return render_template(
+        "index.html",
+        data=data,
+        database=DATABASE
+    )
 
 
 @app.route("/save", methods=["POST"])
 def save():
-    # Read current datatype registry
+
     if not DATA_FILE.exists():
         return f"Datatype registry not found: {DATA_FILE}", 404
 
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Save user-selected datatypes
     for key, value in request.form.items():
+
         try:
             table, column = key.split("__", 1)
+
         except ValueError:
             return f"Invalid field name: {key}", 400
 
@@ -62,7 +67,6 @@ def save():
 
         data[table][column]["selected_type"] = value
 
-    # Persist the updated registry
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(
             data,
@@ -71,10 +75,6 @@ def save():
             ensure_ascii=False
         )
 
-    # IMPORTANT:
-    # Do not redirect or refresh /save.
-    # Jenkins needs this Python process to terminate after
-    # the browser has had enough time to display the success page.
     def exit_after_success_page():
         os._exit(0)
 
@@ -97,17 +97,19 @@ def save():
     </html>
     """, 200
 
+
 def get_active_lan_ip():
     """
-    Detect the active physical LAN/Wi-Fi IPv4 address.
+    Automatically detect the active physical
+    LAN / Wi-Fi IPv4 address.
 
-    Ignores loopback, Docker, virtual bridges,
-    Tailscale and other virtual interfaces.
+    Ignores Docker, virtual bridges,
+    Tailscale, loopback, etc.
     """
 
     try:
 
-        # WINDOWS
+        # ---------------- WINDOWS ----------------
         if sys.platform.startswith("win"):
 
             command = (
@@ -115,7 +117,8 @@ def get_active_lan_ip():
                 "Where-Object { "
                 "$_.IPAddress -notlike '127.*' -and "
                 "$_.InterfaceAlias -notmatch "
-                "'Loopback|Docker|vEthernet|Virtual|Tailscale|Bluetooth' "
+                "'Loopback|Docker|vEthernet|Virtual|"
+                "Tailscale|Bluetooth' "
                 "} | "
                 "ForEach-Object { "
                 "$adapter = Get-NetAdapter "
@@ -148,7 +151,7 @@ def get_active_lan_ip():
             if candidates:
                 return candidates[0]
 
-        # LINUX / UBUNTU
+        # ---------------- LINUX / UBUNTU ----------------
         elif sys.platform.startswith("linux"):
 
             result = subprocess.run(
@@ -218,14 +221,12 @@ def get_active_lan_ip():
 
     except Exception:
         return "127.0.0.1"
-def get_schema_editor_url():
-    """
-    Determine the URL displayed to the user.
 
-    Priority:
-    1. SCHEMA_EDITOR_HOST from environment variable
-    2. SCHEMA_EDITOR_HOST from network.conf
-    3. Automatically detected active LAN/Wi-Fi IPv4
+
+def get_schema_editor_config():
+    """
+    Read fixed Ubuntu/Jenkins machine IP
+    and port from network.conf.
     """
 
     network_conf = (
@@ -269,6 +270,7 @@ def get_schema_editor_url():
             )
 
             if not configured_host:
+
                 configured_host = (
                     config["DEFAULT"].get(
                         "SCHEMA_EDITOR_HOST",
@@ -276,35 +278,28 @@ def get_schema_editor_url():
                     ).strip()
                 )
 
-        except configparser.Error as exc:
-
-            print(
-                f"ERROR: Failed to parse {network_conf}: {exc}",
-                file=sys.stderr
-            )
-            sys.exit(1)
-
         except Exception as exc:
 
             print(
-                f"ERROR: Failed to load {network_conf}: {exc}",
+                f"ERROR: Failed to load "
+                f"{network_conf}: {exc}",
                 file=sys.stderr
             )
+
             sys.exit(1)
 
-    if configured_host:
+    return configured_host, port
 
-        return configured_host, port
-
-    return get_active_lan_ip(), port
 
 if __name__ == "__main__":
 
-    # Get configured port
-    _, display_port = get_schema_editor_url()
+    # Fixed IP from network.conf
+    ubuntu_ip, display_port = (
+        get_schema_editor_config()
+    )
 
-    # Automatically detect current machine's LAN IP
-    network_ip = get_active_lan_ip()
+    # Automatically detected current machine IP
+    active_ip = get_active_lan_ip()
 
     print("\n" + "=" * 70)
     print("ACTION REQUIRED - SCHEMA EDITOR")
@@ -312,14 +307,23 @@ if __name__ == "__main__":
 
     print("\nSchema Editor is ready.\n")
 
-    print("1. SAME UBUNTU / JENKINS MACHINE:")
-    print(f"   http://127.0.0.1:{display_port}")
+    # URL 1
+    print("1. UBUNTU / JENKINS MACHINE:")
+    print(
+        f"   http://{ubuntu_ip}:{display_port}"
+    )
 
-    print("\n2. ANOTHER WINDOWS / LAPTOP MACHINE:")
-    print(f"   http://{network_ip}:{display_port}")
+    # URL 2
+    print("\n2. SAME MACHINE / LOCAL:")
+    print(
+        f"   http://127.0.0.1:{display_port}"
+    )
 
-    print("\nNOTE:")
-    print("Use the second link from another machine on the same network.")
+    # URL 3
+    print("\n3. CURRENT MACHINE / WINDOWS OR OTHER LAPTOP:")
+    print(
+        f"   http://{active_ip}:{display_port}"
+    )
 
     print("\nAfter clicking 'Save & Continue',")
     print("the schema will be saved and the Jenkins pipeline")
