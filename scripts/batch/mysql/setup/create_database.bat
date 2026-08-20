@@ -70,11 +70,35 @@ REM =====================================
 
 set "MYSQL_EXE=%ROOT%\databases\mysql\server\bin\mysql.exe"
 
+if exist "%MYSQL_EXE%" goto mysql_ready
+
+echo Resolving mysql.exe from existing MySQL service...
+
+set "RESOLVE_SCRIPT=%TEMP%\mysql_resolve_%RANDOM%.ps1"
+set "RESOLVE_OUTPUT=%TEMP%\mysql_resolve_output_%RANDOM%.txt"
+
+> "%RESOLVE_SCRIPT%" echo $svc = Get-CimInstance Win32_Service -Filter "Name='MySQLAutomation'" -ErrorAction SilentlyContinue
+>> "%RESOLVE_SCRIPT%" echo if($svc -and $svc.PathName){
+>> "%RESOLVE_SCRIPT%" echo     $p = $svc.PathName -split 'mysqld.exe'
+>> "%RESOLVE_SCRIPT%" echo     if($p.Count -gt 1){
+>> "%RESOLVE_SCRIPT%" echo         Join-Path $p[0].Trim() 'mysql.exe'
+>> "%RESOLVE_SCRIPT%" echo     }
+>> "%RESOLVE_SCRIPT%" echo }
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "%RESOLVE_SCRIPT%" > "%RESOLVE_OUTPUT%" 2>&1
+
+set /p MYSQL_EXE=<"%RESOLVE_OUTPUT%"
+
+del /f "%RESOLVE_SCRIPT%" >nul 2>&1
+del /f "%RESOLVE_OUTPUT%" >nul 2>&1
+
 if not exist "%MYSQL_EXE%" (
     echo ERROR: MYSQL CLIENT NOT FOUND
     echo Expected: %MYSQL_EXE%
     exit /b 1
 )
+
+:mysql_ready
 
 echo Host     : %MYSQL_HOST%
 echo Port     : %MYSQL_PORT%
