@@ -1,50 +1,9 @@
 {
   "settings": {
-    "enable_mapping": false,
-    "normalize_columns": true,
-    "normalize_table_names": true,
-    "trim_whitespace": true,
-    "convert_to_lowercase": true,
-    "convert_camelcase": true,
-    "remove_duplicate_underscores": true,
-    "remove_leading_trailing_underscores": true
+    "enable_mapping": false
   },
-  "replace": {
-    " ": "_",
-    "-": "_",
-    "/": "_",
-    "\\": "_",
-    ".": "_",
-    ",": "_",
-    ":": "_",
-    "#": "",
-    "@": "",
-    "%": "",
-    "*": "",
-    "!": "",
-    "?": "",
-    "$": "",
-    "^": "",
-    "~": "",
-    "(": "",
-    ")": "",
-    "[": "",
-    "]": "",
-    "{": "",
-    "}": "",
-    "'": "",
-    "\"": "",
-    "&": "and",
-    "+": "plus"
-  },
+  "table_mapping": {},
   "manual": {},
   "dictionary": {},
-  "ignore_columns": [
-    "unnamed",
-    "unnamed:_0",
-    "serial_no",
-    "sr_no",
-    "s_no"
-  ],
-  "table_mapping": {}
+  "ignore_columns": []
 }

@@ -15,6 +15,9 @@ from datetime import datetime
 from pathlib import Path
 import platform
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
 from scripts.cdc.metadata_manager import update_file_metadata
 from scripts.python.common.config_loader import load_database_config
 from scripts.python.mysql.setup.db_connection import get_connection

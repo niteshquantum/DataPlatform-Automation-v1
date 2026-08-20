@@ -12,6 +12,9 @@ import logging
 from pathlib import Path
 import csv
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
 from scripts.python.common.column_mapper import (
     load_mapping_config,
     map_columns,

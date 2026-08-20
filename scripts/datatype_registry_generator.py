@@ -7,6 +7,9 @@ import csv
 import re
 from datetime import datetime
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
 from scripts.python.common.column_mapper import (
     load_mapping_config,
     get_source_to_target_mapping,
