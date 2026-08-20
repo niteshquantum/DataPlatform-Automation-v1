@@ -1,9 +1,23 @@
 {
   "settings": {
-    "enable_mapping": false
+    "enable_mapping": true
   },
-  "table_mapping": {},
-  "manual": {},
+  "table_mapping": {
+    "Customer Records": "customers",
+    "Supplier Master": "suppliers"
+  },
+  "manual": {
+    "CustomerID": "customer_id",
+    "FirstName": "first_name",
+    "LastName": "last_name",
+    "EmailAddr": "email",
+    "Phone": "phone",
+    "SupplierCode": "supplier_id",
+    "SupplierName": "supplier_name",
+    "ContactEmail": "email",
+    "ContactPhone": "phone",
+    "City": "city"
+  },
   "dictionary": {},
   "ignore_columns": []
 }
