@@ -97,6 +97,69 @@ def save():
     </html>
     """, 200
 
+def get_active_lan_ip():
+    """
+    Detect the preferred active LAN IPv4 address.
+
+    Priority:
+    1. Active 192.168.x.x address
+    2. Active 172.16.x.x - 172.31.x.x address
+    3. Active 10.x.x.x address
+
+    Loopback addresses are ignored.
+    """
+
+    candidates = []
+
+    try:
+        hostname = socket.gethostname()
+
+        for info in socket.getaddrinfo(
+            hostname,
+            None,
+            socket.AF_INET
+        ):
+            ip = info[4][0]
+
+            if ip.startswith("127."):
+                continue
+
+            if ip not in candidates:
+                candidates.append(ip)
+
+    except socket.gaierror:
+        pass
+
+    # Preferred priority for normal LAN networks
+    for ip in candidates:
+        if ip.startswith("192.168."):
+            return ip
+
+    for ip in candidates:
+        parts = ip.split(".")
+
+        if (
+            len(parts) == 4
+            and parts[0] == "172"
+            and 16 <= int(parts[1]) <= 31
+        ):
+            return ip
+
+    for ip in candidates:
+        if ip.startswith("10."):
+            return ip
+
+    # Fallback: detect the IP used for the default route
+    s = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_DGRAM
+    )
+
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    finally:
+        s.close()
 
 def get_schema_editor_url():
     """
@@ -150,14 +213,7 @@ def get_schema_editor_url():
             )
             sys.exit(1)
 
-    # Fallback: determine the local machine IP for display purposes.
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    try:
-        s.connect(("8.8.8.8", 80))
-        host = s.getsockname()[0]
-    finally:
-        s.close()
+    host = get_active_lan_ip()
 
     return host, port
 
@@ -182,12 +238,7 @@ if __name__ == "__main__":
 
     # The actual Flask binding port is controlled by the
     # environment variable. Default is 5000.
-    configured_port = int(
-        os.environ.get(
-            "SCHEMA_EDITOR_PORT",
-            "5000"
-        )
-    )
+    configured_port = display_port
 
     app.run(
         host="0.0.0.0",
