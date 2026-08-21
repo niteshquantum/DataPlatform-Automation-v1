@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "description": "Generic naming rules for tables and columns",
+  "settings": {
+    "enable_naming_engine": false
+  },
+  "table": {
+    "style": "snake_case",
+    "character_replacements": {
+      " ": "_",
+      "-": "_",
+      ".": "_",
+      "@": "_",
+      "#": "_",
+      "*": ""
+    },
+    "overrides": {
+      "Customer Records": "customers",
+      "Supplier Master": "suppliers"
+    }
+  },
+  "column": {
+    "style": "snake_case",
+    "character_replacements": {
+      " ": "_",
+      "-": "_",
+      ".": "_",
+      "@": "_",
+      "#": "_",
+      "*": ""
+    },
+    "overrides": {
+      "CustomerID": "customer_id",
+      "FirstName": "first_name",
+      "LastName": "last_name",
+      "EmailAddr": "email",
+      "Phone": "phone",
+      "SupplierCode": "supplier_id",
+      "SupplierName": "supplier_name",
+      "ContactEmail": "email",
+      "ContactPhone": "phone",
+      "City": "city"
+    }
+  },
+  "collision": {
+    "strategy": "suffix",
+    "separator": "_",
+    "start_index": 2
+  }
+}

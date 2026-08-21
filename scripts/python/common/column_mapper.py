@@ -4,17 +4,32 @@
 Column Mapper
 
 Reusable utilities for table name and column name mapping.
+Backward compatible with existing column_mapping.json.
+Optionally uses the generic naming engine from naming_rules.json.
 """
 
 import json
 import logging
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from naming_engine import (
+    resolve_name,
+    resolve_names,
+    CollisionError,
+)
 
 logger = logging.getLogger(__name__)
 
 CONFIG_PATH = (
     Path(__file__).resolve().parents[3] / "config" / "column_mapping.json"
+)
+
+NAMING_CONFIG_PATH = (
+    Path(__file__).resolve().parents[3] / "config" / "common" / "naming_rules.json"
 )
 
 
@@ -24,6 +39,14 @@ def load_mapping_config():
         logger.warning(f"Mapping config not found: {CONFIG_PATH}")
         return {"settings": {"enable_mapping": False}}
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_naming_config():
+    """Load naming_rules.json configuration."""
+    if not NAMING_CONFIG_PATH.exists():
+        return {"settings": {"enable_naming_engine": False}}
+    with open(NAMING_CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -62,12 +85,79 @@ def normalize_name(name, settings):
     return result
 
 
+def _map_table_name_with_engine(source_name, naming_config):
+    table_config = naming_config.get("table", {})
+    style = table_config.get("style", "snake_case")
+    replacements = table_config.get("character_replacements", {})
+    overrides = table_config.get("overrides", {})
+    return resolve_name(source_name, style, replacements, overrides)
+
+
+def _map_columns_with_engine(source_headers, naming_config):
+    column_config = naming_config.get("column", {})
+    collision_config = naming_config.get("collision", {})
+    style = column_config.get("style", "snake_case")
+    replacements = column_config.get("character_replacements", {})
+    overrides = column_config.get("overrides", {})
+    strategy = collision_config.get("strategy", "suffix")
+    separator = collision_config.get("separator", "_")
+    start_index = collision_config.get("start_index", 2)
+
+    names = [h.strip() for h in source_headers if isinstance(h, str)]
+
+    if not names:
+        return []
+
+    result = resolve_names(
+        names,
+        style=style,
+        replacements=replacements,
+        overrides=overrides,
+        collision_strategy=strategy,
+        collision_separator=separator,
+        collision_start_index=start_index,
+    )
+    return [target for _, target in result]
+
+
+def _get_source_to_target_with_engine(source_headers, naming_config):
+    column_config = naming_config.get("column", {})
+    collision_config = naming_config.get("collision", {})
+    style = column_config.get("style", "snake_case")
+    replacements = column_config.get("character_replacements", {})
+    overrides = column_config.get("overrides", {})
+    strategy = collision_config.get("strategy", "suffix")
+    separator = collision_config.get("separator", "_")
+    start_index = collision_config.get("start_index", 2)
+
+    names = [h.strip() for h in source_headers if isinstance(h, str)]
+
+    if not names:
+        return {}
+
+    result = resolve_names(
+        names,
+        style=style,
+        replacements=replacements,
+        overrides=overrides,
+        collision_strategy=strategy,
+        collision_separator=separator,
+        collision_start_index=start_index,
+    )
+
+    return {source: target for source, target in result}
+
+
 def map_table_name(source_name, config):
     """
     Map a source table name to a target table name.
 
     Does NOT depend on map_columns().
     """
+    naming_config = load_naming_config()
+    if naming_config.get("settings", {}).get("enable_naming_engine", False):
+        return _map_table_name_with_engine(source_name, naming_config)
+
     settings = config.get("settings", {})
     table_mapping = config.get("table_mapping", {})
 
@@ -110,6 +200,10 @@ def map_columns(source_headers, config, source_table_name=None):
     Returns list of target column names.
     Raises ValueError on mapping collision.
     """
+    naming_config = load_naming_config()
+    if naming_config.get("settings", {}).get("enable_naming_engine", False):
+        return _map_columns_with_engine(source_headers, naming_config)
+
     settings = config.get("settings", {})
 
     if not settings.get("enable_mapping", False):
@@ -169,6 +263,10 @@ def get_source_to_target_mapping(source_headers, config, source_table_name=None)
 
     Ignored columns are omitted from the returned mapping.
     """
+    naming_config = load_naming_config()
+    if naming_config.get("settings", {}).get("enable_naming_engine", False):
+        return _get_source_to_target_with_engine(source_headers, naming_config)
+
     settings = config.get("settings", {})
 
     if not settings.get("enable_mapping", False):
