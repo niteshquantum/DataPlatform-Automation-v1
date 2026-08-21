@@ -30,8 +30,31 @@ Write-Host ""
 # VALIDATE CLEANUP MODE
 # =====================================
 
-if ($cleanupMode -notin @("PRESERVE_DATA", "DELETE_DATA")) {
-    throw "Invalid CLEANUP_MODE: $cleanupMode. Allowed values: PRESERVE_DATA or DELETE_DATA"
+if ($cleanupMode -notin @(
+    "PRESERVE_DATA",
+    "DELETE_DATA",
+    "RESET_SCHEMA_CONTEXT"
+)) {
+
+    throw "Invalid CLEANUP_MODE: $cleanupMode. Allowed values: PRESERVE_DATA, DELETE_DATA or RESET_SCHEMA_CONTEXT"
+}
+
+# =====================================
+# RESET SCHEMA CONTEXT MODE
+# =====================================
+
+if ($cleanupMode -eq "RESET_SCHEMA_CONTEXT") {
+
+    Write-Host "Schema context reset mode detected."
+    Write-Host "MySQL data directory will NOT be modified."
+
+    Write-Host ""
+    Write-Host "====================================="
+    Write-Host "MYSQL DATA PRESERVED"
+    Write-Host "====================================="
+    Write-Host ""
+
+    exit 0
 }
 
 # =====================================
@@ -76,7 +99,10 @@ if (!(Test-Path $dataDir)) {
 
 Write-Host "Deleting automation-managed MySQL data directory..."
 
-Remove-Item $dataDir -Recurse -Force
+Remove-Item `
+    -Path $dataDir `
+    -Recurse `
+    -Force
 
 # =====================================
 # VALIDATE DATA REMOVAL
