@@ -10,15 +10,15 @@ def pipelineRoutes = [
     ],
 
     POSTGRESQL: [
-        SETUP  : [node: 'windows-node1', os: 'windows', path: 'jenkins/common/postgresql/setup_steps.groovy'],
-        LOAD   : [node: 'windows-node1', os: 'windows', path: 'jenkins/common/postgresql/load_steps.groovy'],
-        CLEANUP: [node: 'windows-node1', os: 'windows', path: 'jenkins/common/postgresql/cleanup_steps.groovy']
+    SETUP  : [node: 'windows-node-2', os: 'windows', path: 'jenkins/common/postgresql/setup_steps.groovy'],
+    LOAD   : [node: 'windows-node-2', os: 'windows', path: 'jenkins/common/postgresql/load_steps.groovy'],
+    CLEANUP: [node: 'windows-node-2', os: 'windows', path: 'jenkins/common/postgresql/cleanup_steps.groovy']
     ],
 
-    MONGODB: [
-        SETUP  : [node: 'windows-node1', os: 'windows', path: 'jenkins/common/mongodb/setup_steps.groovy'],
-        LOAD   : [node: 'windows-node1', os: 'windows', path: 'jenkins/common/mongodb/load_steps.groovy'],
-        CLEANUP: [node: 'windows-node1', os: 'windows', path: 'jenkins/common/mongodb/cleanup_steps.groovy']
+MONGODB: [
+    SETUP  : [node: 'windows-node-2', os: 'windows', path: 'jenkins/common/mongodb/setup_steps.groovy'],
+    LOAD   : [node: 'windows-node-2', os: 'windows', path: 'jenkins/common/mongodb/load_steps.groovy'],
+    CLEANUP: [node: 'windows-node-2', os: 'windows', path: 'jenkins/common/mongodb/cleanup_steps.groovy']
     ],
 
     MSSQL: [
