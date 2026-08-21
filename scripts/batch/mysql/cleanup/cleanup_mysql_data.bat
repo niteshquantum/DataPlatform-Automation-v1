@@ -14,6 +14,22 @@ echo Cleanup Mode : %CLEANUP_MODE%
 echo Project Root : %PROJECT_ROOT%
 echo.
 
+REM =====================================
+REM VALIDATE CLEANUP MODE
+REM =====================================
+
+if /I "%CLEANUP_MODE%"=="PRESERVE_DATA" goto RUN_PIPELINE
+if /I "%CLEANUP_MODE%"=="DELETE_DATA" goto RUN_PIPELINE
+if /I "%CLEANUP_MODE%"=="RESET_SCHEMA_CONTEXT" goto RUN_PIPELINE
+
+echo ERROR: Invalid cleanup mode: %CLEANUP_MODE%
+echo Valid modes: PRESERVE_DATA, DELETE_DATA or RESET_SCHEMA_CONTEXT
+
+exit /b 1
+
+
+:RUN_PIPELINE
+
 powershell -NoProfile -ExecutionPolicy Bypass ^
     -File "%PROJECT_ROOT%\scripts\powershell\common\Run-CleanupPipeline.ps1" ^
     -Database mysql ^
