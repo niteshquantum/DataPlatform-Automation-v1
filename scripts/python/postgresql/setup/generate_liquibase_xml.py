@@ -1,14 +1,23 @@
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
 
 schema_file = (
     ROOT
     / "metadata"
     / "postgresql"
     / "schema_registry.json"
+)
+
+datatype_file = (
+    ROOT
+    / "metadata"
+    / "postgresql"
+    / "datatype_registry.json"
 )
 
 liquibase_dir = (
@@ -21,6 +30,11 @@ liquibase_dir.mkdir(parents=True, exist_ok=True)
 
 with open(schema_file, "r", encoding="utf-8") as f:
     schema_registry = json.load(f)
+
+datatype_registry = {}
+if datatype_file.exists():
+    with open(datatype_file, "r", encoding="utf-8") as f:
+        datatype_registry = json.load(f)
 
 
 existing_files = sorted(
@@ -96,9 +110,19 @@ next_number = len([
 generated_any = False
 
 
-for table_name, columns in schema_registry.items():
+def _get_column_type(table_name, column_name, registry):
+    if not registry:
+        return "VARCHAR(255)"
+    try:
+        from scripts.python.common.datatype_resolver import resolve_column_type
+        return resolve_column_type(table_name, column_name, "postgresql", registry)
+    except Exception:
+        return "VARCHAR(255)"
 
-    table_name = table_name.lower()
+
+for original_table_name, columns in schema_registry.items():
+
+    table_name = original_table_name.lower()
 
     clean_columns = [
         c.replace("\ufeff", "").strip()
@@ -145,7 +169,7 @@ for table_name, columns in schema_registry.items():
         for col in new_columns:
 
             column_xml += f'''
-        <column name="{col}" type="VARCHAR(255)"/>
+        <column name="{col}" type="{_get_column_type(original_table_name, col, datatype_registry)}"/>
 '''
 
 
@@ -206,7 +230,7 @@ for table_name, columns in schema_registry.items():
         for col in new_columns:
 
             add_column_xml += f'''
-        <column name="{col}" type="VARCHAR(255)"/>
+        <column name="{col}" type="{_get_column_type(original_table_name, col, datatype_registry)}"/>
 '''
 
             precondition_checks += f'''

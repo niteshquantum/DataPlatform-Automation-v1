@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "description": "Logical-to-physical datatype mappings per database",
+  "settings": {
+    "default_logical_type": "TEXT",
+    "default_varchar_length": 255
+  },
+  "types": {
+    "MYSQL": {
+      "INTEGER": "INT",
+      "BIGINT": "BIGINT",
+      "NUMERIC": "DECIMAL(18,4)",
+      "TEXT": "TEXT",
+      "VARCHAR": "VARCHAR(255)",
+      "DATE": "DATE",
+      "TIMESTAMP": "TIMESTAMP",
+      "BOOLEAN": "BOOLEAN"
+    },
+    "POSTGRESQL": {
+      "INTEGER": "INTEGER",
+      "BIGINT": "BIGINT",
+      "NUMERIC": "NUMERIC",
+      "TEXT": "TEXT",
+      "VARCHAR": "VARCHAR(255)",
+      "DATE": "DATE",
+      "TIMESTAMP": "TIMESTAMP",
+      "BOOLEAN": "BOOLEAN"
+    },
+    "MSSQL": {
+      "INTEGER": "INT",
+      "BIGINT": "BIGINT",
+      "NUMERIC": "DECIMAL(18,4)",
+      "TEXT": "NVARCHAR(MAX)",
+      "VARCHAR": "NVARCHAR(255)",
+      "DATE": "DATE",
+      "TIMESTAMP": "DATETIME2",
+      "BOOLEAN": "BIT"
+    }
+  }
+}

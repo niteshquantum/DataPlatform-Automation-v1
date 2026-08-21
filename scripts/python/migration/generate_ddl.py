@@ -102,6 +102,7 @@ def update_migration_master_xml(liquibase_migration_dir):
 
 def generate_migration_ddl(dest_db_type):
     schema_file = ROOT / "metadata" / dest_db_type.lower() / "schema_registry.json"
+    datatype_file = ROOT / "metadata" / dest_db_type.lower() / "datatype_registry.json"
     liquibase_migration_dir = ROOT / "liquibase" / "migration" / dest_db_type.lower()
     status_file = ROOT / "metadata" / dest_db_type.lower() / "schema_status.json"
 
@@ -111,6 +112,11 @@ def generate_migration_ddl(dest_db_type):
 
     with open(schema_file, "r", encoding="utf-8") as f:
         schema_registry = json.load(f)
+
+    datatype_registry = {}
+    if datatype_file.exists():
+        with open(datatype_file, "r", encoding="utf-8") as f:
+            datatype_registry = json.load(f)
 
     existing_files = sorted([
         f for f in liquibase_migration_dir.glob("*.xml")
@@ -137,8 +143,20 @@ def generate_migration_ddl(dest_db_type):
     next_number = len(existing_files) + 1
     generated_any = False
 
-    for table_name, columns in sorted(schema_registry.items()):
-        table_name = table_name.lower()
+
+    def _get_column_type(table_name, column_name, registry):
+        if not registry:
+            return "VARCHAR(255)"
+        try:
+            from scripts.python.common.datatype_resolver import resolve_column_type
+            return resolve_column_type(table_name, column_name, dest_db_type.lower(), registry)
+        except Exception:
+            return "VARCHAR(255)"
+
+
+    for original_table_name, columns in sorted(schema_registry.items()):
+
+        table_name = original_table_name.lower()
         clean_columns = [c.replace("\ufeff", "").strip() for c in columns]
 
         already_covered = covered_columns.get(table_name, set())
@@ -156,7 +174,7 @@ def generate_migration_ddl(dest_db_type):
             column_xml = ""
             for col in new_columns:
                 column_xml += f'''
-        <column name="{col}" type="VARCHAR(255)"/>
+        <column name="{col}" type="{_get_column_type(original_table_name, col, datatype_registry)}"/>
 '''
 
             xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -192,7 +210,7 @@ def generate_migration_ddl(dest_db_type):
             precondition_checks = ""
             for col in new_columns:
                 add_column_xml += f'''
-        <column name="{col}" type="VARCHAR(255)"/>
+        <column name="{col}" type="{_get_column_type(original_table_name, col, datatype_registry)}"/>
 '''
                 precondition_checks += f'''
             <not>

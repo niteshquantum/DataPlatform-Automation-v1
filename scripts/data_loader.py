@@ -26,6 +26,32 @@ from scripts.python.common.column_mapper import (
     resolve_table_mapping,
     get_source_to_target_mapping,
 )
+from scripts.python.common.datatype_resolver import (
+    resolve_column_type,
+)
+
+
+def _load_datatype_registry(db_type):
+    datatype_file = ROOT / "metadata" / db_type / "datatype_registry.json"
+    if not datatype_file.exists():
+        return {}
+    try:
+        with open(datatype_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _build_column_types(table_name, column_names, db_type, registry):
+    if not registry:
+        return {}
+    types = {}
+    for col in column_names:
+        try:
+            types[col] = resolve_column_type(table_name, col, db_type, registry)
+        except Exception:
+            types[col] = "VARCHAR(255)"
+    return types
 
 
 
@@ -191,10 +217,13 @@ def table_exists(conn, db_type, table_name):
     return bool(get_table_columns(conn, db_type, table_name))
 
 
-def create_table(conn, db_type, table_name, column_names):
+def create_table(conn, db_type, table_name, column_names, column_types=None):
     quoted_table = quote_name(table_name, db_type)
+    if column_types is None:
+        column_types = {}
     columns_sql = ', '.join(
-        f"{quote_name(name, db_type)} VARCHAR(255)" for name in column_names
+        f"{quote_name(name, db_type)} {column_types.get(name, 'VARCHAR(255)')}"
+        for name in column_names
     )
     sql = f"CREATE TABLE {quoted_table} ({columns_sql})"
     cursor = conn.cursor()
@@ -206,9 +235,12 @@ def create_table(conn, db_type, table_name, column_names):
         cursor.close()
 
 
-def add_missing_columns(conn, db_type, table_name, missing_columns):
+def add_missing_columns(conn, db_type, table_name, missing_columns, column_types=None):
     if not missing_columns:
         return
+
+    if column_types is None:
+        column_types = {}
 
     quoted_table = quote_name(table_name, db_type)
 
@@ -216,13 +248,13 @@ def add_missing_columns(conn, db_type, table_name, missing_columns):
         sql = (
             f"ALTER TABLE {quoted_table} "
             + ", ".join(
-                f"ADD COLUMN {quote_name(col, db_type)} VARCHAR(255)"
+                f"ADD COLUMN {quote_name(col, db_type)} {column_types.get(col, 'VARCHAR(255)')}"
                 for col in missing_columns
             )
         )
     else:
         definitions = ", ".join(
-            f"{quote_name(col, db_type)} VARCHAR(255)"
+            f"{quote_name(col, db_type)} {column_types.get(col, 'VARCHAR(255)')}"
             for col in missing_columns
         )
 
@@ -486,6 +518,9 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
         logger.warning(f"No columns detected in file {path.name}")
         return 0
 
+    datatype_registry = _load_datatype_registry(db_type)
+    column_types = _build_column_types(table_name, file_columns, db_type, datatype_registry)
+
     existing_columns = get_table_columns(conn, db_type, table_name)
     if existing_columns and load_mode == "reload":
         truncate_table(conn, db_type, table_name)
@@ -495,7 +530,7 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
                 f"Strict schema mode: table '{table_name}' does not exist. "
                 f"Refusing to create it."
             )
-        create_table(conn, db_type, table_name, file_columns)
+        create_table(conn, db_type, table_name, file_columns, column_types)
         existing_columns = file_columns
     else:
         new_columns = [col for col in file_columns if col not in existing_columns]
@@ -505,7 +540,11 @@ def load_and_insert_file(conn, db_type, path, load_mode="skip", strict_schema=Fa
                     f"Strict schema mode: table '{table_name}' has missing columns "
                     f"not present in target schema: {new_columns}"
                 )
-            add_missing_columns(conn, db_type, table_name, new_columns)
+            new_column_types = {
+                col: column_types.get(col, "VARCHAR(255)")
+                for col in new_columns
+            }
+            add_missing_columns(conn, db_type, table_name, new_columns, new_column_types)
             existing_columns.extend(new_columns)
 
     actual_columns = [col for col in existing_columns if col in file_columns] + \
