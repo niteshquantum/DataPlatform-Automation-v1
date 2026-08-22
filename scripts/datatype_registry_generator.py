@@ -82,6 +82,14 @@ def main():
     with open(schema_path, "r", encoding="utf-8") as f:
         schema = json.load(f)
 
+    existing_registry = {}
+    if datatype_path.exists():
+        try:
+            with open(datatype_path, "r", encoding="utf-8") as f:
+                existing_registry = json.load(f)
+        except Exception:
+            existing_registry = {}
+
     datatype_registry = {}
 
     mapping_config = load_mapping_config()
@@ -193,11 +201,27 @@ def main():
                 sample_data.get(column, [])
             )
 
+            existing_selected = (
+                existing_registry
+                .get(table, {})
+                .get(column, {})
+                .get("selected_type")
+            )
+
+            if (
+                isinstance(existing_selected, str)
+                and existing_selected.strip()
+                and existing_selected.strip().lower() != "null"
+            ):
+                selected = existing_selected.strip()
+            else:
+                selected = detected
+
             datatype_registry[table][column] = {
 
                 "detected_type": detected,
 
-                "selected_type": detected,
+                "selected_type": selected,
 
                 "sample_value":
                     sample_data.get(column, [""])[0]
