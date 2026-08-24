@@ -289,7 +289,7 @@ $DatabaseNameKey = switch ($DbLower) {
 
     "mysql"      { "MYSQL_DB" }
     "mongodb"    { "MONGODB_DB" }
-    "postgresql" { "POSTGRES_DB" }
+    "postgresql" { "POSTGRESQL_DB" }
     "mssql"      { "MSSQL_DB" }
 }
 
