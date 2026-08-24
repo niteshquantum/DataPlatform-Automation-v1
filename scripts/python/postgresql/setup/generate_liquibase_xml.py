@@ -149,7 +149,7 @@ for table_name, columns in schema_registry.items():
 '''
 
 
-        xml_content = f'''<?xml version="1.0" encoding="UTF-8-sig"?>
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
 
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
@@ -219,7 +219,7 @@ for table_name, columns in schema_registry.items():
 '''
 
 
-        xml_content = f'''<?xml version="1.0" encoding="UTF-8-sig"?>
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
 
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
