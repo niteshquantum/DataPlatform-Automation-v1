@@ -66,7 +66,7 @@ def get_json_keys(file_path):
         List of keys
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
             
             # Handle both single objects and arrays
@@ -129,7 +129,7 @@ def update_schema_registry(table_name, columns, registry_path):
     """
     try:
         if registry_path.exists():
-            with open(registry_path, 'r', encoding='utf-8') as f:
+            with open(registry_path, 'r', encoding='utf-8-sig') as f:
                 registry = json.load(f)
         else:
             registry = {}
@@ -179,7 +179,7 @@ def update_schema_registry(table_name, columns, registry_path):
                 f"with columns: {columns}"
             )
 
-        with open(registry_path, 'w', encoding='utf-8') as f:
+        with open(registry_path, 'w', encoding='utf-8-sig') as f:
             json.dump(registry, f, indent=2)
 
     except Exception as e:
@@ -191,14 +191,14 @@ def update_table_source_mapping(target_table, source_file_stem, mapping_path):
     """
     try:
         if mapping_path.exists():
-            with open(mapping_path, 'r', encoding='utf-8') as f:
+            with open(mapping_path, 'r', encoding='utf-8-sig') as f:
                 mapping = json.load(f)
         else:
             mapping = {}
 
         mapping[target_table] = source_file_stem
 
-        with open(mapping_path, 'w', encoding='utf-8') as f:
+        with open(mapping_path, 'w', encoding='utf-8-sig') as f:
             json.dump(mapping, f, indent=2)
 
         logger.info(
@@ -244,12 +244,12 @@ def main():
     if not incoming_dir.exists():
         logger.warning(f"Incoming directory not found: {incoming_dir}")
         registry_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(registry_path, "w", encoding="utf-8") as f:
+        with open(registry_path, "w", encoding="utf-8-sig") as f:
             json.dump({}, f, indent=2)
         cdc_status = {"tables": {}}
         cdc_path = project_root / "metadata" / db_type / "cdc_status.json"
         cdc_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(cdc_path, "w", encoding="utf-8") as f:
+        with open(cdc_path, "w", encoding="utf-8-sig") as f:
             json.dump(cdc_status, f, indent=4)
         logger.info(f"Initialized empty schema registry at {registry_path}")
         logger.info(f"CDC metadata written to {cdc_path}")
@@ -279,7 +279,7 @@ def main():
             existing_columns = []
 
             if registry_path.exists():
-                with open(registry_path, "r", encoding="utf-8") as f:
+                with open(registry_path, "r", encoding="utf-8-sig") as f:
                     registry = json.load(f)
 
                 existing_columns = registry.get(target_table_name, [])
@@ -323,7 +323,7 @@ def main():
             existing_columns = []
 
             if registry_path.exists():
-                with open(registry_path, "r", encoding="utf-8") as f:
+                with open(registry_path, "r", encoding="utf-8-sig") as f:
                     registry = json.load(f)
 
                 existing_columns = registry.get(target_table_name, [])
@@ -352,7 +352,7 @@ def main():
         / "cdc_status.json"
     )
 
-    with open(cdc_path, "w", encoding="utf-8") as f:
+    with open(cdc_path, "w", encoding="utf-8-sig") as f:
         json.dump(cdc_status, f, indent=4)
 
     logger.info(f"CDC metadata written to {cdc_path}")
