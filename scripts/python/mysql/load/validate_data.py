@@ -48,7 +48,7 @@ try:
         / "schema_registry.json"
     )
 
-    with open(schema_file, "r", encoding="utf-8") as f:
+    with open(schema_file, "r", encoding="utf-8-sig") as f:
         schema_registry = json.load(f)
 
     validated_tables = set(schema_registry.keys())
