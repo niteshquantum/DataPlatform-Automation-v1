@@ -9,7 +9,7 @@ liquibase_dir = ROOT / "liquibase" / "mysql"
  
 liquibase_dir.mkdir(parents=True, exist_ok=True)
  
-with open(schema_file, "r", encoding="utf-8") as f:
+with open(schema_file, "r", encoding="utf-8-sig") as f:
     schema_registry = json.load(f)
  
 existing_files = sorted(
@@ -24,7 +24,7 @@ table_pattern = re.compile(r'tableName="([^"]+)"')
  
 for file in existing_files:
     try:
-        content = file.read_text(encoding="utf-8")
+        content = file.read_text(encoding="utf-8-sig")
         table_match = table_pattern.search(content)
         if not table_match:
             continue
