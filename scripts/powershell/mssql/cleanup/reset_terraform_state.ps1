@@ -1,5 +1,15 @@
 $ErrorActionPreference = "Stop"
 
+# Terraform is optional for cleanup.  A missing local executable or state
+# means no project-managed Terraform resources exist to remove.
+$ProjectRootForTerraform = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
+$TerraformExeForCleanup = Join-Path $ProjectRootForTerraform "tools\terraform\terraform.exe"
+$TerraformStateForCleanup = Join-Path $ProjectRootForTerraform "terraform\mssql\terraform.tfstate"
+if (!(Test-Path -LiteralPath $TerraformExeForCleanup) -or !(Test-Path -LiteralPath $TerraformStateForCleanup)) {
+    Write-Host "No local MSSQL Terraform state is available. Nothing to reset."
+    exit 0
+}
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "RESETTING MSSQL TERRAFORM STATE"

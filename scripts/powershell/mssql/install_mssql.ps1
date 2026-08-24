@@ -212,6 +212,15 @@ if (!$Service) {
 
 }
 
+$OwnershipMarker = Join-Path $PROJECT_ROOT "databases\mssql\.project-managed-mssql"
+@(
+    "instance=$Instance"
+    "install_dir=$($Config['MSSQL_INSTALL_DIR'])"
+    "data_dir=$($Config['MSSQL_DATA_DIR'])"
+) | Set-Content -LiteralPath $OwnershipMarker -Encoding UTF8
+
+Write-Host "Project ownership marker created: $OwnershipMarker"
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "INSTALLATION SUCCESSFUL"

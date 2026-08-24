@@ -2,17 +2,25 @@
 setlocal
 call "%~dp0..\..\common\set_project_root.bat"
 
+if errorlevel 1 (
+    echo ERROR: Unable to determine a valid project root.
+    exit /b 1
+)
+
 if "%CLEANUP_MODE%"=="" (
     set "CLEANUP_MODE=PRESERVE_DATA"
 )
 
 if /I not "%CLEANUP_MODE%"=="PRESERVE_DATA" (
     if /I not "%CLEANUP_MODE%"=="DELETE_DATA" (
-        echo ERROR: Invalid cleanup mode: %CLEANUP_MODE%
-        echo Valid cleanup modes:
-        echo   PRESERVE_DATA
-        echo   DELETE_DATA
-        exit /b 1
+        if /I not "%CLEANUP_MODE%"=="RESET_SCHEMA_CONTEXT" (
+            echo ERROR: Invalid cleanup mode: %CLEANUP_MODE%
+            echo Valid cleanup modes:
+            echo   RESET_SCHEMA_CONTEXT
+            echo   PRESERVE_DATA
+            echo   DELETE_DATA
+            exit /b 1
+        )
     )
 )
 
