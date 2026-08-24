@@ -6,6 +6,7 @@ Schema Detector Script
 Scans the incoming/ folder for CSV and JSON files, extracts column names,
 and maintains metadata in metadata/schema_registry.json
 """
+
 import sys
 import json
 import logging
@@ -21,83 +22,209 @@ from scripts.python.common.column_mapper import (
     resolve_table_mapping,
 )
 
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
 logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# SAFE JSON LOADER
+# ============================================================
+
+def load_json_safely(json_path, default=None):
+    """
+    Safely load JSON metadata.
+
+    Handles:
+    - Missing file
+    - Empty file
+    - Invalid JSON
+    - UTF-8 BOM
+
+    Returns the provided default value when the JSON file
+    cannot be safely loaded.
+    """
+
+    if default is None:
+        default = {}
+
+    try:
+
+        if not json_path.exists():
+            logger.info(
+                f"JSON file not found: {json_path}. "
+                f"Using fresh context."
+            )
+            return default
+
+        if json_path.stat().st_size == 0:
+            logger.warning(
+                f"JSON file is empty: {json_path}. "
+                f"Using fresh context."
+            )
+            return default
+
+        with open(
+            json_path,
+            "r",
+            encoding="utf-8-sig"
+        ) as f:
+
+            data = json.load(f)
+
+        return data
+
+    except json.JSONDecodeError as e:
+
+        logger.warning(
+            f"Invalid JSON in {json_path}: {e}. "
+            f"Using fresh context."
+        )
+
+        return default
+
+    except OSError as e:
+
+        logger.warning(
+            f"Unable to read JSON file {json_path}: {e}. "
+            f"Using fresh context."
+        )
+
+        return default
 
 
 def get_csv_headers(file_path):
     """
     Read CSV file and extract header row.
-    
+
     Args:
         file_path: Path to CSV file
-        
+
     Returns:
         List of column names
     """
+
     try:
-        with open(file_path, "r", encoding="utf-8-sig") as f:
-            
+
+        with open(
+            file_path,
+            "r",
+            encoding="utf-8-sig"
+        ) as f:
+
             reader = csv.reader(f)
-        
+
             headers = [
                 h.replace('\ufeff', '').strip()
                 for h in next(reader)
             ]
-            logger.info(f"Extracted headers from {file_path.name}: {headers}")
+
+            logger.info(
+                f"Extracted headers from {file_path.name}: {headers}"
+            )
+
             return headers
+
     except Exception as e:
-        logger.error(f"Error reading CSV file {file_path}: {e}")
+
+        logger.error(
+            f"Error reading CSV file {file_path}: {e}"
+        )
+
         return []
 
 
 def get_json_keys(file_path):
     """
     Read JSON file and extract keys from first object.
-    
+
     Args:
         file_path: Path to JSON file
-        
+
     Returns:
         List of keys
     """
+
     try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
+
+        with open(
+            file_path,
+            'r',
+            encoding='utf-8-sig'
+        ) as f:
+
             data = json.load(f)
-            
+
             # Handle both single objects and arrays
+
             if isinstance(data, list):
+
                 if data:
-                    keys = list(data[0].keys()) if isinstance(data[0], dict) else []
+
+                    keys = (
+                        list(data[0].keys())
+                        if isinstance(data[0], dict)
+                        else []
+                    )
+
                 else:
+
                     keys = []
+
             elif isinstance(data, dict):
+
                 keys = list(data.keys())
+
             else:
+
                 keys = []
-                
-            logger.info(f"Extracted keys from {file_path.name}: {keys}")
+
+            logger.info(
+                f"Extracted keys from {file_path.name}: {keys}"
+            )
+
             return keys
+
     except Exception as e:
-        logger.error(f"Error reading JSON file {file_path}: {e}")
+
+        logger.error(
+            f"Error reading JSON file {file_path}: {e}"
+        )
+
         return []
-def detect_schema_changes(existing_columns, current_columns):
+
+
+def detect_schema_changes(
+    existing_columns,
+    current_columns
+):
     """
     Compare existing and current schema.
+
     Returns NEW, CHANGED, DELETED or UNCHANGED.
     """
 
-    existing = {c.lower().strip() for c in existing_columns}
-    current = {c.lower().strip() for c in current_columns}
+    existing = {
+        c.lower().strip()
+        for c in existing_columns
+    }
+
+    current = {
+        c.lower().strip()
+        for c in current_columns
+    }
 
     added = list(current - existing)
+
     deleted = list(existing - current)
 
     if not existing_columns:
+
         return {
             "status": "NEW",
             "added_columns": current_columns,
@@ -105,6 +232,7 @@ def detect_schema_changes(existing_columns, current_columns):
         }
 
     if added:
+
         return {
             "status": "CHANGED",
             "added_columns": added,
@@ -112,6 +240,7 @@ def detect_schema_changes(existing_columns, current_columns):
         }
 
     if deleted:
+
         return {
             "status": "DELETED",
             "added_columns": [],
@@ -123,18 +252,35 @@ def detect_schema_changes(existing_columns, current_columns):
         "added_columns": [],
         "deleted_columns": []
     }
-def update_schema_registry(table_name, columns, registry_path):
+
+
+def update_schema_registry(
+    table_name,
+    columns,
+    registry_path
+):
     """
     Update schema_registry.json with new columns.
     """
+
     try:
-        if registry_path.exists():
-            with open(registry_path, 'r', encoding='utf-8-sig') as f:
-                registry = json.load(f)
-        else:
+
+        registry = load_json_safely(
+            registry_path,
+            {}
+        )
+
+        if not isinstance(registry, dict):
+
+            logger.warning(
+                f"Invalid schema registry structure: "
+                f"{registry_path}. Resetting context."
+            )
+
             registry = {}
 
         # Normalize incoming columns
+
         columns = [
             col.replace('\ufeff', '').strip()
             for col in columns
@@ -148,23 +294,26 @@ def update_schema_registry(table_name, columns, registry_path):
             ]
 
             new_columns = []
+
             seen = set()
 
             for col in existing_columns + columns:
+
                 key = col.lower()
 
                 if key not in seen:
+
                     seen.add(key)
+
                     new_columns.append(col)
 
             added_columns = [
-                col for col in new_columns
+                col
+                for col in new_columns
                 if col not in existing_columns
             ]
 
             registry[table_name] = new_columns
-            
-            
 
             logger.info(
                 f"Updated table '{table_name}' "
@@ -172,6 +321,7 @@ def update_schema_registry(table_name, columns, registry_path):
             )
 
         else:
+
             registry[table_name] = columns
 
             logger.info(
@@ -179,48 +329,113 @@ def update_schema_registry(table_name, columns, registry_path):
                 f"with columns: {columns}"
             )
 
-        with open(registry_path, 'w', encoding='utf-8-sig') as f:
-            json.dump(registry, f, indent=2)
+        registry_path.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        with open(
+            registry_path,
+            'w',
+            encoding='utf-8-sig'
+        ) as f:
+
+            json.dump(
+                registry,
+                f,
+                indent=2
+            )
 
     except Exception as e:
-        logger.error(f"Error updating schema registry: {e}")
 
-def update_table_source_mapping(target_table, source_file_stem, mapping_path):
+        logger.error(
+            f"Error updating schema registry: {e}"
+        )
+
+
+def update_table_source_mapping(
+    target_table,
+    source_file_stem,
+    mapping_path
+):
     """
     Update table_source_mapping.json with source-to-target table mapping.
     """
+
     try:
-        if mapping_path.exists():
-            with open(mapping_path, 'r', encoding='utf-8-sig') as f:
-                mapping = json.load(f)
-        else:
+
+        mapping = load_json_safely(
+            mapping_path,
+            {}
+        )
+
+        if not isinstance(mapping, dict):
+
+            logger.warning(
+                f"Invalid table source mapping structure: "
+                f"{mapping_path}. Resetting context."
+            )
+
             mapping = {}
 
         mapping[target_table] = source_file_stem
 
-        with open(mapping_path, 'w', encoding='utf-8-sig') as f:
-            json.dump(mapping, f, indent=2)
+        mapping_path.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        with open(
+            mapping_path,
+            'w',
+            encoding='utf-8-sig'
+        ) as f:
+
+            json.dump(
+                mapping,
+                f,
+                indent=2
+            )
 
         logger.info(
-            f"Mapped table '{target_table}' -> source '{source_file_stem}'"
+            f"Mapped table '{target_table}' "
+            f"-> source '{source_file_stem}'"
         )
+
     except Exception as e:
-        logger.error(f"Error updating table source mapping: {e}")
+
+        logger.error(
+            f"Error updating table source mapping: {e}"
+        )
+
 
 def main():
     """
-    Main function to scan incoming folder and update schema registry.
+    Main function to scan incoming folder
+    and update schema registry.
     """
+
     logger.info("Starting schema detection...")
-    
+
     # Define paths
+
     project_root = Path(__file__).parent.parent
 
     # Database type from command line
-    db_type = sys.argv[1].lower() if len(sys.argv) > 1 else "mongodb"
+
+    db_type = (
+        sys.argv[1].lower()
+        if len(sys.argv) > 1
+        else "mongodb"
+    )
 
     # Database-specific folders
-    incoming_dir = project_root / "incoming" / db_type
+
+    incoming_dir = (
+        project_root
+        / "incoming"
+        / db_type
+    )
 
     registry_path = (
         project_root
@@ -238,113 +453,245 @@ def main():
         / "table_source_mapping.json"
     )
 
-    logger.info(f"Database type: {db_type}")
-    
+    logger.info(
+        f"Database type: {db_type}"
+    )
+
     # Verify incoming directory exists
+
     if not incoming_dir.exists():
-        logger.warning(f"Incoming directory not found: {incoming_dir}")
-        registry_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(registry_path, "w", encoding="utf-8-sig") as f:
-            json.dump({}, f, indent=2)
-        cdc_status = {"tables": {}}
-        cdc_path = project_root / "metadata" / db_type / "cdc_status.json"
-        cdc_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(cdc_path, "w", encoding="utf-8-sig") as f:
-            json.dump(cdc_status, f, indent=4)
-        logger.info(f"Initialized empty schema registry at {registry_path}")
-        logger.info(f"CDC metadata written to {cdc_path}")
-        return
-    
-    logger.info(f"Scanning incoming directory: {incoming_dir}")
-    cdc_status = {
-    "tables": {}
-    }
-    # Process CSV files
-    csv_files = list(incoming_dir.glob("*.csv"))
-    logger.info(f"Found {len(csv_files)} CSV file(s)")
-    
-    for csv_file in csv_files:
-        source_table_name = csv_file.stem.strip()
-        target_table_name = resolve_table_mapping(
-            source_table_name, mapping_config
+
+        logger.warning(
+            f"Incoming directory not found: {incoming_dir}"
         )
 
-        headers = get_csv_headers(csv_file)
+        registry_path.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        with open(
+            registry_path,
+            "w",
+            encoding="utf-8-sig"
+        ) as f:
+
+            json.dump(
+                {},
+                f,
+                indent=2
+            )
+
+        cdc_status = {
+            "tables": {}
+        }
+
+        cdc_path = (
+            project_root
+            / "metadata"
+            / db_type
+            / "cdc_status.json"
+        )
+
+        cdc_path.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        with open(
+            cdc_path,
+            "w",
+            encoding="utf-8-sig"
+        ) as f:
+
+            json.dump(
+                cdc_status,
+                f,
+                indent=4
+            )
+
+        logger.info(
+            f"Initialized empty schema registry at {registry_path}"
+        )
+
+        logger.info(
+            f"CDC metadata written to {cdc_path}"
+        )
+
+        return
+
+    logger.info(
+        f"Scanning incoming directory: {incoming_dir}"
+    )
+
+    cdc_status = {
+        "tables": {}
+    }
+
+    # ========================================================
+    # PROCESS CSV FILES
+    # ========================================================
+
+    csv_files = list(
+        incoming_dir.glob("*.csv")
+    )
+
+    logger.info(
+        f"Found {len(csv_files)} CSV file(s)"
+    )
+
+    for csv_file in csv_files:
+
+        source_table_name = (
+            csv_file.stem.strip()
+        )
+
+        target_table_name = resolve_table_mapping(
+            source_table_name,
+            mapping_config
+        )
+
+        headers = get_csv_headers(
+            csv_file
+        )
 
         if headers:
+
             target_headers = map_columns(
-                headers, mapping_config, source_table_name
+                headers,
+                mapping_config,
+                source_table_name
             )
 
-            existing_columns = []
+            registry = load_json_safely(
+                registry_path,
+                {}
+            )
 
-            if registry_path.exists():
-                with open(registry_path, "r", encoding="utf-8-sig") as f:
-                    registry = json.load(f)
+            if not isinstance(registry, dict):
 
-                existing_columns = registry.get(target_table_name, [])
-
-                result = detect_schema_changes(
-                    existing_columns, target_headers
+                logger.warning(
+                    "Invalid schema registry structure. "
+                    "Using fresh context."
                 )
 
-                logger.info(
-                    f"CDC Status [{target_table_name}] : {result['status']}"
-                )
+                registry = {}
 
-                cdc_status["tables"][target_table_name] = result
+            existing_columns = registry.get(
+                target_table_name,
+                []
+            )
+
+            result = detect_schema_changes(
+                existing_columns,
+                target_headers
+            )
+
+            logger.info(
+                f"CDC Status [{target_table_name}] : "
+                f"{result['status']}"
+            )
+
+            cdc_status["tables"][
+                target_table_name
+            ] = result
 
             update_schema_registry(
-                target_table_name, target_headers, registry_path
+                target_table_name,
+                target_headers,
+                registry_path
             )
+
             update_table_source_mapping(
                 target_table_name,
                 source_table_name,
                 table_source_mapping_path,
             )
-    
-    # Process JSON files
-    json_files = list(incoming_dir.glob("*.json"))
-    logger.info(f"Found {len(json_files)} JSON file(s)")
-    
+
+    # ========================================================
+    # PROCESS JSON FILES
+    # ========================================================
+
+    json_files = list(
+        incoming_dir.glob("*.json")
+    )
+
+    logger.info(
+        f"Found {len(json_files)} JSON file(s)"
+    )
+
     for json_file in json_files:
-        source_table_name = json_file.stem.strip()
-        target_table_name = resolve_table_mapping(
-            source_table_name, mapping_config
+
+        source_table_name = (
+            json_file.stem.strip()
         )
 
-        keys = get_json_keys(json_file)
+        target_table_name = resolve_table_mapping(
+            source_table_name,
+            mapping_config
+        )
+
+        keys = get_json_keys(
+            json_file
+        )
+
         target_keys = map_columns(
-            keys, mapping_config, source_table_name
+            keys,
+            mapping_config,
+            source_table_name
         )
 
         if target_keys:
 
-            existing_columns = []
+            registry = load_json_safely(
+                registry_path,
+                {}
+            )
 
-            if registry_path.exists():
-                with open(registry_path, "r", encoding="utf-8-sig") as f:
-                    registry = json.load(f)
+            if not isinstance(registry, dict):
 
-                existing_columns = registry.get(target_table_name, [])
+                logger.warning(
+                    "Invalid schema registry structure. "
+                    "Using fresh context."
+                )
+
+                registry = {}
+
+            existing_columns = registry.get(
+                target_table_name,
+                []
+            )
 
             result = detect_schema_changes(
-                existing_columns, target_keys
+                existing_columns,
+                target_keys
             )
 
             logger.info(
-                f"CDC Status [{target_table_name}] : {result['status']}"
+                f"CDC Status [{target_table_name}] : "
+                f"{result['status']}"
             )
-            cdc_status["tables"][target_table_name] = result
+
+            cdc_status["tables"][
+                target_table_name
+            ] = result
 
         update_schema_registry(
-            target_table_name, target_keys, registry_path
+            target_table_name,
+            target_keys,
+            registry_path
         )
+
         update_table_source_mapping(
             target_table_name,
             source_table_name,
             table_source_mapping_path,
         )
+
+    # ========================================================
+    # WRITE CDC STATUS
+    # ========================================================
+
     cdc_path = (
         project_root
         / "metadata"
@@ -352,15 +699,38 @@ def main():
         / "cdc_status.json"
     )
 
-    with open(cdc_path, "w", encoding="utf-8-sig") as f:
-        json.dump(cdc_status, f, indent=4)
+    cdc_path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
-    logger.info(f"CDC metadata written to {cdc_path}")
+    with open(
+        cdc_path,
+        "w",
+        encoding="utf-8-sig"
+    ) as f:
+
+        json.dump(
+            cdc_status,
+            f,
+            indent=4
+        )
+
+    logger.info(
+        f"CDC metadata written to {cdc_path}"
+    )
+
 
 if __name__ == "__main__":
+
     try:
+
         main()
+
     except Exception:
+
         import traceback
+
         traceback.print_exc()
+
         raise
