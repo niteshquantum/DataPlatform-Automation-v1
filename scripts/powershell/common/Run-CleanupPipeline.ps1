@@ -229,7 +229,10 @@ $DataScript = $null
 
 
 if (
-    $DbLower -eq "mysql" -and
+    (
+        $DbLower -eq "mysql" -or
+        $DbLower -eq "postgresql"
+    ) -and
     $DataCleanupEnabled
 ) {
 

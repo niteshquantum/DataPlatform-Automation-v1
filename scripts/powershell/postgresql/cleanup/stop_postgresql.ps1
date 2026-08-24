@@ -23,13 +23,16 @@ function Get-ProjectRoot {
 
 $ProjectRoot = Get-ProjectRoot
 
-$PgBin = Join-Path $ProjectRoot "databases\postgresql\bin"
-
-$PgData = Join-Path $ProjectRoot "databases\postgresql\data"
-
-$PgCtl = Join-Path $PgBin "pg_ctl.exe"
-
+$PgBin   = Join-Path $ProjectRoot "databases\postgresql\bin"
+$PgData  = Join-Path $ProjectRoot "databases\postgresql\data"
+$PgCtl   = Join-Path $PgBin "pg_ctl.exe"
 $ConfigFile = Join-Path $ProjectRoot "config\windows\postgresql.conf"
+
+# =====================================================
+# SERVICE CONFIGURATION
+# =====================================================
+
+$ServiceName = "PostgreSQLAutomation"
 
 # =====================================================
 # START REPORT
@@ -130,6 +133,120 @@ if (!(Test-Path (Join-Path $PgData "PG_VERSION"))) {
     Write-Log "======================================="
 
     exit 0
+}
+
+# =====================================================
+# STOP WINDOWS SERVICE
+# =====================================================
+
+Write-Log ""
+Write-Log "Checking Windows service: $ServiceName"
+
+$ServiceObject = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+
+if ($ServiceObject) {
+
+    Write-Log "Windows service found: $ServiceName"
+
+    $ServiceQuery = sc.exe query $ServiceName 2>&1 | Out-String
+
+    if ($ServiceQuery -match "RUNNING") {
+
+        Write-Log "Service is currently running."
+
+        $ServiceConfig = sc.exe qc $ServiceName 2>&1 | Out-String
+
+        $ServiceBinaryPath = ""
+
+        foreach ($Line in $ServiceConfig -split "`r?`n") {
+
+            $Trimmed = $Line.Trim()
+
+            if ($Trimmed -match "^BINARY_PATH_NAME\s*:\s*(.+)$") {
+
+                $ServiceBinaryPath = $Matches[1].Trim()
+
+                if ($ServiceBinaryPath.StartsWith('"') -and $ServiceBinaryPath.EndsWith('"')) {
+                    $ServiceBinaryPath = $ServiceBinaryPath.Substring(1, $ServiceBinaryPath.Length - 2)
+                }
+
+                break
+            }
+        }
+
+        if ($ServiceBinaryPath -eq "") {
+
+            throw "Could not determine binary path for service: $ServiceName"
+        }
+
+        $NormalizedServicePath = (Resolve-Path $ServiceBinaryPath -ErrorAction SilentlyContinue).Path
+
+        if (-not $NormalizedServicePath) {
+            $NormalizedServicePath = $ServiceBinaryPath.ToLower()
+        }
+
+        $NormalizedProjectBin = $PgBin.ToLower()
+
+        if ($NormalizedServicePath -like "$NormalizedProjectBin*") {
+
+            Write-Log "Service binary path is within project deployment."
+            Write-Log "Service Path: $ServiceBinaryPath"
+
+            Write-Log ""
+            Write-Log "Stopping Windows service: $ServiceName"
+
+            Stop-Service -Name $ServiceName -Force
+
+            $ServiceObject.WaitForStatus("Stopped", "00:00:30")
+
+            Write-Log "Windows service stopped successfully."
+        }
+        else {
+
+            Write-Log "WARNING: Service binary path does not belong to this project."
+            Write-Log "Service Path    : $ServiceBinaryPath"
+            Write-Log "Project Bin Dir : $PgBin"
+            Write-Log "Skipping service stop."
+        }
+    }
+    else {
+
+        Write-Log "Service is not running. Nothing to stop."
+    }
+}
+else {
+
+    Write-Log "Windows service not found: $ServiceName"
+    Write-Log "Nothing to stop."
+}
+
+# =====================================================
+# STOP PROJECT POSTGRESQL PROCESSES
+# =====================================================
+
+Write-Log ""
+Write-Log "Checking automation-managed PostgreSQL processes..."
+
+$postgresProcesses = Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" |
+    Where-Object {
+        $_.ExecutablePath -and
+        $_.ExecutablePath -ieq (Join-Path $PgBin "postgres.exe")
+    }
+
+if ($postgresProcesses) {
+
+    Write-Log "Automation-managed PostgreSQL processes found:"
+
+    foreach ($process in $postgresProcesses) {
+        Write-Log "  Stopping PID: $($process.ProcessId) - $($process.ExecutablePath)"
+        Stop-Process -Id $process.ProcessId -Force
+    }
+
+    Start-Sleep -Seconds 3
+}
+else {
+
+    Write-Log "No automation-managed PostgreSQL processes found."
 }
 
 # =====================================================
