@@ -19,7 +19,7 @@ liquibase_dir = (
 
 liquibase_dir.mkdir(parents=True, exist_ok=True)
 
-with open(schema_file, "r", encoding="utf-8") as f:
+with open(schema_file, "r", encoding="utf-8-sig") as f:
     schema_registry = json.load(f)
 
 
@@ -41,7 +41,7 @@ for file in existing_files:
 
     try:
 
-        content = file.read_text(encoding="utf-8")
+        content = file.read_text(encoding="utf-8-sig")
 
         table_match = table_pattern.search(content)
 
@@ -72,7 +72,7 @@ for old_file in list(existing_files):
 
     try:
 
-        content = old_file.read_text(encoding="utf-8")
+        content = old_file.read_text(encoding="utf-8-sig")
 
         table_match = table_pattern.search(content)
 
@@ -149,7 +149,7 @@ for table_name, columns in schema_registry.items():
 '''
 
 
-        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8-sig"?>
 
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
@@ -219,7 +219,7 @@ for table_name, columns in schema_registry.items():
 '''
 
 
-        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8-sig"?>
 
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
