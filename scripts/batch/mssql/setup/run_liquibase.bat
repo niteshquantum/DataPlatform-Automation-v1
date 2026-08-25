@@ -111,8 +111,14 @@ if defined MSSQL_PASSWORD (
 )
 
 REM =====================================
-REM RUN LIQUIBASE
+REM CLEAR LIQUIBASE CHECKSUMS
 REM =====================================
+
+echo.
+echo =====================================
+echo CLEARING LIQUIBASE CHECKSUMS
+echo =====================================
+echo.
 
 call "%LB_BAT%" ^
 --classpath="%DRIVER%" ^
@@ -120,7 +126,33 @@ call "%LB_BAT%" ^
 --search-path="%ROOT%" ^
 --changeLogFile="%CHANGELOG%" ^
 --url="jdbc:sqlserver://%MSSQL_HOST%:%MSSQL_PORT%;databaseName=%MSSQL_DB%;encrypt=true;trustServerCertificate=true" ^
---username=%MSSQL_USER% ^
+--username="%MSSQL_USER%" ^
+%PASSWORD_OPTION% ^
+clearCheckSums
+
+if errorlevel 1 (
+    echo.
+    echo ERROR: LIQUIBASE CLEAR CHECKSUMS FAILED
+    exit /b 1
+)
+
+REM =====================================
+REM RUN LIQUIBASE UPDATE
+REM =====================================
+
+echo.
+echo =====================================
+echo RUNNING LIQUIBASE UPDATE
+echo =====================================
+echo.
+
+call "%LB_BAT%" ^
+--classpath="%DRIVER%" ^
+--driver=com.microsoft.sqlserver.jdbc.SQLServerDriver ^
+--search-path="%ROOT%" ^
+--changeLogFile="%CHANGELOG%" ^
+--url="jdbc:sqlserver://%MSSQL_HOST%:%MSSQL_PORT%;databaseName=%MSSQL_DB%;encrypt=true;trustServerCertificate=true" ^
+--username="%MSSQL_USER%" ^
 %PASSWORD_OPTION% ^
 update
 
