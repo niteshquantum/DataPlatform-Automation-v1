@@ -1,5 +1,34 @@
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\Mssql-CleanupSafety.ps1"
+$context = Get-MssqlCleanupContext
+$cleanupMode = $env:CLEANUP_MODE
+if ([string]::IsNullOrWhiteSpace($cleanupMode)) { $cleanupMode = 'PRESERVE_DATA' }
+$cleanupMode = $cleanupMode.Trim().ToUpperInvariant()
+if ($cleanupMode -notin @('PRESERVE_DATA', 'DELETE_DATA')) { throw "Invalid CLEANUP_MODE: $cleanupMode" }
+
+Write-Host "Validating safe MSSQL cleanup: $cleanupMode"
+$service = Get-Service -Name $context.ServiceName -ErrorAction SilentlyContinue
+if ($service -and (Test-MssqlProjectManaged $context)) { throw "Verified project-managed MSSQL service still exists: $($context.ServiceName)" }
+if ($service) { Write-Host 'An external SQL Server service with the configured instance name remains untouched.' }
+
+if ((Test-Path -LiteralPath $context.Marker) -and -not (Test-MssqlProjectManaged $context)) {
+    Write-Host 'The ownership marker does not match the installed service. No MSSQL deployment validation is performed.'
+    exit 0
+}
+
+if ($cleanupMode -eq 'PRESERVE_DATA') {
+    if (Test-Path -LiteralPath $context.InstallDir) { throw "Project-managed install directory still exists: $($context.InstallDir)" }
+    if (Test-Path -LiteralPath $context.DataDir) { Write-Host 'PASS: project-managed MSSQL data directory was preserved.' }
+    else { Write-Host 'INFO: project-managed MSSQL data directory did not exist.' }
+}
+else {
+    if (Test-Path -LiteralPath $context.InstallDir) { throw "Project-managed install directory still exists: $($context.InstallDir)" }
+    if (Test-Path -LiteralPath $context.DataDir) { throw "Project-managed data directory still exists: $($context.DataDir)" }
+}
+Write-Host 'MSSQL cleanup validation passed.'
+exit 0
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "VALIDATING MSSQL CLEANUP"
