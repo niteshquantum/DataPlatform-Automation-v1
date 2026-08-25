@@ -1,5 +1,22 @@
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\MongoDB-CleanupSafety.ps1"
+$context = Get-MongoDBCleanupContext
+if (-not (Test-MongoDBProjectManaged $context)) {
+    Write-Host 'No verified project-managed MongoDB deployment was found. External MongoDB resources are untouched.'
+    exit 0
+}
+$service = Get-Service -Name $context.ServiceName -ErrorAction SilentlyContinue
+if ($service -and $service.Status -ne 'Stopped') {
+    Stop-Service -Name $context.ServiceName -Force -ErrorAction Stop
+    $service.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, [TimeSpan]::FromSeconds(60))
+}
+Get-CimInstance Win32_Process -Filter "Name='mongod.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.ExecutablePath -and $_.ExecutablePath.Equals($context.MongodExe, [System.StringComparison]::OrdinalIgnoreCase) } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop }
+Write-Host 'Verified project-managed MongoDB service and processes are stopped.'
+exit 0
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "STOPPING PROJECT-MANAGED MONGODB"

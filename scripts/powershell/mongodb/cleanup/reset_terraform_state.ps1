@@ -1,5 +1,12 @@
 $ErrorActionPreference = "Stop"
 
+$ProjectRootForTerraform = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
+$TerraformStateForCleanup = Join-Path $ProjectRootForTerraform "terraform\mongodb\terraform.tfstate"
+if (!(Test-Path -LiteralPath $TerraformStateForCleanup)) {
+    Write-Host 'No local MongoDB Terraform state is available. Nothing to reset.'
+    exit 0
+}
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "RESETTING MONGODB TERRAFORM STATE"

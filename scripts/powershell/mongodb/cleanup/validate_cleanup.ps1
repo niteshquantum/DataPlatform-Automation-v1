@@ -1,5 +1,26 @@
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\MongoDB-CleanupSafety.ps1"
+$context = Get-MongoDBCleanupContext
+$cleanupMode = if ([string]::IsNullOrWhiteSpace($env:CLEANUP_MODE)) { 'PRESERVE_DATA' } else { $env:CLEANUP_MODE.Trim().ToUpperInvariant() }
+if ($cleanupMode -notin @('PRESERVE_DATA', 'DELETE_DATA')) { throw "Invalid CLEANUP_MODE: $cleanupMode" }
+$service = Get-Service -Name $context.ServiceName -ErrorAction SilentlyContinue
+$isVerifiedProjectDeployment = Test-MongoDBProjectManaged $context
+if ($service -and $isVerifiedProjectDeployment) { throw "Verified project-managed MongoDB service still exists: $($context.ServiceName)" }
+if (-not $isVerifiedProjectDeployment -and ((Test-Path -LiteralPath $context.InstallDir) -or $service)) {
+    Write-Host 'No verified project-managed MongoDB deployment was found. External MongoDB resources are untouched.'
+    exit 0
+}
+if ($cleanupMode -eq 'PRESERVE_DATA') {
+    foreach ($path in @((Join-Path $context.InstallDir 'server'), (Join-Path $context.InstallDir 'mongosh'), (Join-Path $context.InstallDir 'logs'), (Join-Path $context.InstallDir 'config'))) { if (Test-Path -LiteralPath $path) { throw "Project-managed deployment path still exists: $path" } }
+    if (Test-Path -LiteralPath $context.DataDir) { Write-Host 'PASS: project-managed MongoDB data directory was preserved.' }
+    else { Write-Host 'INFO: project-managed MongoDB data directory did not exist.' }
+} else {
+    if (Test-Path -LiteralPath $context.InstallDir) { throw "Project-managed MongoDB install directory still exists: $($context.InstallDir)" }
+}
+Write-Host 'MongoDB cleanup validation passed.'
+exit 0
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "VALIDATING MONGODB CLEANUP"
