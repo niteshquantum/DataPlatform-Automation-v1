@@ -288,7 +288,7 @@ $DatabaseConfig = Load-Config $DatabaseConfigFile
 $DatabaseNameKey = switch ($DbLower) {
 
     "mysql"      { "MYSQL_DB" }
-    "mongodb"    { "MONGODB_DB" }
+    "mongodb"    { "MONGODB_DATABASE" }
     "postgresql" { "POSTGRESQL_DB" }
     "mssql"      { "MSSQL_DB" }
 }
