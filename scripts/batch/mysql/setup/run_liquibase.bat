@@ -9,24 +9,9 @@ echo =====================================
 echo.
 
 if defined MYSQL_PASSWORD (
-    call "%LB_BAT%" ^
-    --classpath="%DRIVER%" ^
-    --driver=com.mysql.cj.jdbc.Driver ^
-    --search-path="%ROOT%" ^
-    --changeLogFile="%CHANGELOG%" ^
-    --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" ^
-    --username="%MYSQL_USER%" ^
-    --password="%MYSQL_PASSWORD%" ^
-    clearCheckSums
+    call "%LB_BAT%" --classpath="%DRIVER%" --driver=com.mysql.cj.jdbc.Driver --search-path="%ROOT%" --changeLogFile="%CHANGELOG%" --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" --username="%MYSQL_USER%" --password="%MYSQL_PASSWORD%" clearCheckSums
 ) else (
-    call "%LB_BAT%" ^
-    --classpath="%DRIVER%" ^
-    --driver=com.mysql.cj.jdbc.Driver ^
-    --search-path="%ROOT%" ^
-    --changeLogFile="%CHANGELOG%" ^
-    --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" ^
-    --username="%MYSQL_USER%" ^
-    clearCheckSums
+    call "%LB_BAT%" --classpath="%DRIVER%" --driver=com.mysql.cj.jdbc.Driver --search-path="%ROOT%" --changeLogFile="%CHANGELOG%" --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" --username="%MYSQL_USER%" clearCheckSums
 )
 
 if errorlevel 1 (
@@ -46,24 +31,9 @@ echo =====================================
 echo.
 
 if defined MYSQL_PASSWORD (
-    call "%LB_BAT%" ^
-    --classpath="%DRIVER%" ^
-    --driver=com.mysql.cj.jdbc.Driver ^
-    --search-path="%ROOT%" ^
-    --changeLogFile="%CHANGELOG%" ^
-    --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" ^
-    --username="%MYSQL_USER%" ^
-    --password="%MYSQL_PASSWORD%" ^
-    update
+    call "%LB_BAT%" --classpath="%DRIVER%" --driver=com.mysql.cj.jdbc.Driver --search-path="%ROOT%" --changeLogFile="%CHANGELOG%" --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" --username="%MYSQL_USER%" --password="%MYSQL_PASSWORD%" update
 ) else (
-    call "%LB_BAT%" ^
-    --classpath="%DRIVER%" ^
-    --driver=com.mysql.cj.jdbc.Driver ^
-    --search-path="%ROOT%" ^
-    --changeLogFile="%CHANGELOG%" ^
-    --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" ^
-    --username="%MYSQL_USER%" ^
-    update
+    call "%LB_BAT%" --classpath="%DRIVER%" --driver=com.mysql.cj.jdbc.Driver --search-path="%ROOT%" --changeLogFile="%CHANGELOG%" --url="jdbc:mysql://%MYSQL_HOST%:%MYSQL_PORT%/%MYSQL_DB%" --username="%MYSQL_USER%" update
 )
 
 if errorlevel 1 (
