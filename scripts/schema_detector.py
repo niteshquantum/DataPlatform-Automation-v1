@@ -238,6 +238,9 @@ def main():
         / "table_source_mapping.json"
     )
 
+    # Ensure metadata/<db_type> directory exists
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+
     logger.info(f"Database type: {db_type}")
     
     # Verify incoming directory exists
