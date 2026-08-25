@@ -21,7 +21,7 @@ if not exist "%SCHEMA_STATUS%" (
     exit /b 0
 )
 
-python -c "import json; f=open(r'%SCHEMA_STATUS%','r'); d=json.load(f); f.close(); print(str(d.get('schema_changed',False)).lower())" > "%TEMP%\schema_changed.tmp"
+python -c "import json; f=open(r'%SCHEMA_STATUS%','r', encoding='utf-8-sig'); d=json.load(f); f.close(); print(str(d.get('schema_changed',False)).lower())" > "%TEMP%\schema_changed.tmp"
 set /p SCHEMA_CHANGED=<"%TEMP%\schema_changed.tmp"
 del /f /q "%TEMP%\schema_changed.tmp"
 
