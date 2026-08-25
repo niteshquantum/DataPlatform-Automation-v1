@@ -39,12 +39,12 @@ if not schema_file.exists():
 
     exit(0)
 
-with open(schema_file, "r", encoding="utf-8") as f:
+with open(schema_file, "r", encoding="utf-8-sig") as f:
     schema_registry = json.load(f)
 
 datatype_registry = {}
 if datatype_file.exists():
-    with open(datatype_file, "r", encoding="utf-8") as f:
+    with open(datatype_file, "r", encoding="utf-8-sig") as f:
         datatype_registry = json.load(f)
 
 existing_files = sorted(
@@ -64,7 +64,7 @@ table_pattern = re.compile(r'tableName="([^"]+)"')
 
 for file in existing_files:
     try:
-        content = file.read_text(encoding="utf-8")
+        content = file.read_text(encoding="utf-8-sig")
         table_match = table_pattern.search(content)
         if not table_match:
             continue

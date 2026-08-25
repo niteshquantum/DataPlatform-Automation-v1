@@ -28,12 +28,12 @@ liquibase_dir = (
 
 liquibase_dir.mkdir(parents=True, exist_ok=True)
 
-with open(schema_file, "r", encoding="utf-8") as f:
+with open(schema_file, "r", encoding="utf-8-sig") as f:
     schema_registry = json.load(f)
 
 datatype_registry = {}
 if datatype_file.exists():
-    with open(datatype_file, "r", encoding="utf-8") as f:
+    with open(datatype_file, "r", encoding="utf-8-sig") as f:
         datatype_registry = json.load(f)
 
 
@@ -55,7 +55,7 @@ for file in existing_files:
 
     try:
 
-        content = file.read_text(encoding="utf-8")
+        content = file.read_text(encoding="utf-8-sig")
 
         table_match = table_pattern.search(content)
 
@@ -86,7 +86,7 @@ for old_file in list(existing_files):
 
     try:
 
-        content = old_file.read_text(encoding="utf-8")
+        content = old_file.read_text(encoding="utf-8-sig")
 
         table_match = table_pattern.search(content)
 
