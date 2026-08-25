@@ -1,8 +1,3 @@
-param (
-    [ValidateSet("PRESERVE_DATA", "DELETE_DATA")]
-    [string]$CleanupMode = "PRESERVE_DATA"
-)
-
 $ErrorActionPreference = "Stop"
 
 function Write-Log {
@@ -42,6 +37,20 @@ $TerraformStateBackup = Join-Path $TerraformDirectory "terraform.tfstate.backup"
 
 $TerraformLockFile = Join-Path $TerraformDirectory ".terraform.tfstate.lock.info"
 
+$ServiceName = "PostgreSQLAutomation"
+
+# =====================================================
+# READ CLEANUP MODE
+# =====================================================
+
+$cleanupMode = $env:CLEANUP_MODE
+
+if ([string]::IsNullOrWhiteSpace($cleanupMode)) {
+    $cleanupMode = "PRESERVE_DATA"
+}
+
+$cleanupMode = $cleanupMode.ToUpper()
+
 # =====================================================
 # START REPORT
 # =====================================================
@@ -53,13 +62,84 @@ Write-Log "======================================="
 Write-Log ""
 
 Write-Log "Project Root : $ProjectRoot"
-Write-Log "Cleanup Mode : $CleanupMode"
+Write-Log "Cleanup Mode : $cleanupMode"
 
 # =====================================================
 # VALIDATE CLEANUP MODE
 # =====================================================
 
-if ($CleanupMode -eq "PRESERVE_DATA") {
+if ($cleanupMode -notin @("PRESERVE_DATA", "DELETE_DATA")) {
+    throw "Invalid CLEANUP_MODE: $cleanupMode. Allowed values: PRESERVE_DATA or DELETE_DATA"
+}
+
+# =====================================================
+# VALIDATE POSTGRESQL PROCESS
+# =====================================================
+
+Write-Log "Checking automation-managed PostgreSQL process..."
+
+$postgresProcesses = Get-CimInstance Win32_Process -Filter "Name='postgres.exe'" |
+    Where-Object {
+        $_.ExecutablePath -and
+        $_.ExecutablePath -like "$PgBin\*"
+    }
+
+if ($postgresProcesses) {
+    throw "Automation-managed PostgreSQL process is still running"
+}
+
+Write-Log "PostgreSQL process validation passed."
+
+# =====================================================
+# VALIDATE WINDOWS SERVICE
+# =====================================================
+
+Write-Log "Checking Windows service: $ServiceName"
+
+$ServiceObject = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+
+if ($ServiceObject) {
+
+    $ServiceConfig = sc.exe qc $ServiceName 2>&1 | Out-String
+
+    $ServiceBinaryPath = ""
+
+    foreach ($Line in $ServiceConfig -split "`r?`n") {
+
+        $Trimmed = $Line.Trim()
+
+        if ($Trimmed -match "^BINARY_PATH_NAME\s*:\s*(.+)$") {
+
+            $ServiceBinaryPath = $Matches[1].Trim()
+
+            if ($ServiceBinaryPath.StartsWith('"') -and $ServiceBinaryPath.EndsWith('"')) {
+                $ServiceBinaryPath = $ServiceBinaryPath.Substring(1, $ServiceBinaryPath.Length - 2)
+            }
+
+            break
+        }
+    }
+
+    if ($ServiceBinaryPath -ne "") {
+
+        $NormalizedServicePath = (Resolve-Path $ServiceBinaryPath -ErrorAction SilentlyContinue).Path
+
+        if (-not $NormalizedServicePath) {
+            $NormalizedServicePath = $ServiceBinaryPath.ToLower()
+        }
+
+        $NormalizedProjectRoot = $ProjectRoot.ToLower()
+
+        if ($NormalizedServicePath -like "$NormalizedProjectRoot*") {
+
+            throw "Cleanup validation failed: Project PostgreSQL service still exists: $ServiceName"
+        }
+    }
+}
+
+Write-Log "Windows service validation passed."
+
+if ($cleanupMode -eq "PRESERVE_DATA") {
 
     Write-Log ""
     Write-Log "Validating PRESERVE_DATA cleanup..."
@@ -90,7 +170,7 @@ if ($CleanupMode -eq "PRESERVE_DATA") {
     }
 }
 
-elseif ($CleanupMode -eq "DELETE_DATA") {
+elseif ($cleanupMode -eq "DELETE_DATA") {
 
     Write-Log ""
     Write-Log "Validating DELETE_DATA cleanup..."
@@ -137,7 +217,7 @@ Write-Log "POSTGRESQL CLEANUP VALIDATION PASSED"
 Write-Log "======================================="
 Write-Log ""
 
-Write-Log "Cleanup Mode : $CleanupMode"
+Write-Log "Cleanup Mode : $cleanupMode"
 Write-Log "Status       : SUCCESS"
 
 exit 0

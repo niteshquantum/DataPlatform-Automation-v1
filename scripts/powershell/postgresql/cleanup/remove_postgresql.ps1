@@ -1,8 +1,3 @@
-param (
-    [ValidateSet("PRESERVE_DATA", "DELETE_DATA")]
-    [string]$CleanupMode = "PRESERVE_DATA"
-)
-
 $ErrorActionPreference = "Stop"
 
 function Write-Log {
@@ -34,6 +29,20 @@ $PgLib   = Join-Path $PgRoot "lib"
 $PgShare = Join-Path $PgRoot "share"
 $PgData  = Join-Path $PgRoot "data"
 
+$ServiceName = "PostgreSQLAutomation"
+
+# =====================================================
+# READ CLEANUP MODE
+# =====================================================
+
+$cleanupMode = $env:CLEANUP_MODE
+
+if ([string]::IsNullOrWhiteSpace($cleanupMode)) {
+    $cleanupMode = "PRESERVE_DATA"
+}
+
+$cleanupMode = $cleanupMode.ToUpper()
+
 # =====================================================
 # START REPORT
 # =====================================================
@@ -46,7 +55,15 @@ Write-Log ""
 
 Write-Log "Project Root : $ProjectRoot"
 Write-Log "PG Root      : $PgRoot"
-Write-Log "Cleanup Mode : $CleanupMode"
+Write-Log "Cleanup Mode : $cleanupMode"
+
+# =====================================================
+# VALIDATE CLEANUP MODE
+# =====================================================
+
+if ($cleanupMode -notin @("PRESERVE_DATA", "DELETE_DATA")) {
+    throw "Invalid CLEANUP_MODE: $cleanupMode. Allowed values: PRESERVE_DATA or DELETE_DATA"
+}
 
 # =====================================================
 # CHECK POSTGRESQL ROOT
@@ -67,10 +84,98 @@ if (!(Test-Path $PgRoot)) {
 }
 
 # =====================================================
+# REMOVE WINDOWS SERVICE
+# =====================================================
+
+Write-Log ""
+Write-Log "Checking Windows service: $ServiceName"
+
+$ServiceObject = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+
+if ($ServiceObject) {
+
+    Write-Log "Windows service found: $ServiceName"
+
+    $ServiceConfig = sc.exe qc $ServiceName 2>&1 | Out-String
+
+    $ServiceBinaryPath = ""
+
+    foreach ($Line in $ServiceConfig -split "`r?`n") {
+
+        $Trimmed = $Line.Trim()
+
+        if ($Trimmed -match "^BINARY_PATH_NAME\s*:\s*(.+)$") {
+
+            $ServiceBinaryPath = $Matches[1].Trim()
+
+            if ($ServiceBinaryPath.StartsWith('"') -and $ServiceBinaryPath.EndsWith('"')) {
+                $ServiceBinaryPath = $ServiceBinaryPath.Substring(1, $ServiceBinaryPath.Length - 2)
+            }
+
+            break
+        }
+    }
+
+    if ($ServiceBinaryPath -eq "") {
+
+        Write-Log "WARNING: Could not determine binary path for service: $ServiceName"
+        Write-Log "Skipping service removal to avoid removing unrelated services."
+    }
+    else {
+
+        $NormalizedServicePath = (Resolve-Path $ServiceBinaryPath -ErrorAction SilentlyContinue).Path
+
+        if (-not $NormalizedServicePath) {
+            $NormalizedServicePath = $ServiceBinaryPath.ToLower()
+        }
+
+        $NormalizedProjectRoot = $ProjectRoot.ToLower()
+
+        if ($NormalizedServicePath -like "$NormalizedProjectRoot*") {
+
+            Write-Log "Service binary path is within project deployment."
+            Write-Log "Service Path: $ServiceBinaryPath"
+
+            Write-Log ""
+            Write-Log "Stopping service before removal: $ServiceName"
+
+            Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
+
+            $ServiceObject.WaitForStatus("Stopped", "00:00:10")
+
+            Write-Log ""
+            Write-Log "Removing Windows service: $ServiceName"
+
+            sc.exe delete $ServiceName 2>&1 | Out-Null
+
+            $ServiceAfterDelete = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+
+            if ($ServiceAfterDelete) {
+                throw "Failed to remove Windows service: $ServiceName"
+            }
+
+            Write-Log "Windows service removed successfully."
+        }
+        else {
+
+            Write-Log "WARNING: Service binary path does not belong to this project."
+            Write-Log "Service Path    : $ServiceBinaryPath"
+            Write-Log "Project Root    : $ProjectRoot"
+            Write-Log "Skipping service removal."
+        }
+    }
+}
+else {
+
+    Write-Log "Windows service not found: $ServiceName"
+    Write-Log "Nothing to remove."
+}
+
+# =====================================================
 # PRESERVE DATA MODE
 # =====================================================
 
-if ($CleanupMode -eq "PRESERVE_DATA") {
+if ($cleanupMode -eq "PRESERVE_DATA") {
 
     Write-Log ""
     Write-Log "PRESERVE_DATA mode selected."
@@ -122,7 +227,7 @@ if ($CleanupMode -eq "PRESERVE_DATA") {
 # DELETE DATA MODE
 # =====================================================
 
-elseif ($CleanupMode -eq "DELETE_DATA") {
+elseif ($cleanupMode -eq "DELETE_DATA") {
 
     Write-Log ""
     Write-Log "DELETE_DATA mode selected."
@@ -149,7 +254,7 @@ elseif ($CleanupMode -eq "DELETE_DATA") {
 Write-Log ""
 Write-Log "Validating PostgreSQL deployment removal..."
 
-if ($CleanupMode -eq "PRESERVE_DATA") {
+if ($cleanupMode -eq "PRESERVE_DATA") {
 
     if (Test-Path $PgBin) {
         throw "PostgreSQL bin directory still exists."
@@ -170,7 +275,7 @@ if ($CleanupMode -eq "PRESERVE_DATA") {
     }
 }
 
-elseif ($CleanupMode -eq "DELETE_DATA") {
+elseif ($cleanupMode -eq "DELETE_DATA") {
 
     if (Test-Path $PgRoot) {
         throw "PostgreSQL deployment directory still exists."
@@ -189,9 +294,9 @@ Write-Log "POSTGRESQL REMOVAL COMPLETED"
 Write-Log "======================================="
 Write-Log ""
 
-Write-Log "Cleanup Mode : $CleanupMode"
+Write-Log "Cleanup Mode : $cleanupMode"
 
-if ($CleanupMode -eq "PRESERVE_DATA") {
+if ($cleanupMode -eq "PRESERVE_DATA") {
     Write-Log "Data Status  : PRESERVED"
 }
 else {
