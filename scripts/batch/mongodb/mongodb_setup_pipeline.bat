@@ -57,6 +57,8 @@ if /I "%INST_INSTANCE_STATE%"=="NO_INSTANCE" (
     call "%PROJECT_ROOT%\scripts\batch\mongodb\setup\run_terraform.bat"
     if errorlevel 1 exit /b 1
 
+    set "MONGODB_NEW_PROJECT_DEPLOYMENT=true"
+
     echo Starting MongoDB instance.
     call "%PROJECT_ROOT%\scripts\batch\mongodb\setup\start_mongodb.bat"
     if errorlevel 1 exit /b 1
@@ -76,6 +78,11 @@ if errorlevel 1 exit /b 1
 
 call "%PROJECT_ROOT%\scripts\batch\mongodb\setup\validate_environment.bat"
 if errorlevel 1 exit /b 1
+
+if /I "%MONGODB_NEW_PROJECT_DEPLOYMENT%"=="true" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ". '%PROJECT_ROOT%\scripts\powershell\mongodb\cleanup\MongoDB-CleanupSafety.ps1'; New-MongoDBOwnershipMarker"
+    if errorlevel 1 exit /b 1
+)
 
 echo.
 echo =====================================

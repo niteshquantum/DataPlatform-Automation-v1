@@ -1,5 +1,28 @@
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\MongoDB-CleanupSafety.ps1"
+$context = Get-MongoDBCleanupContext
+$cleanupMode = if ([string]::IsNullOrWhiteSpace($env:CLEANUP_MODE)) { 'PRESERVE_DATA' } else { $env:CLEANUP_MODE.Trim().ToUpperInvariant() }
+if ($cleanupMode -notin @('PRESERVE_DATA', 'DELETE_DATA')) { throw "Invalid CLEANUP_MODE: $cleanupMode" }
+if (-not (Test-MongoDBProjectManaged $context)) {
+    Write-Host 'No verified project-managed MongoDB deployment was found. External MongoDB resources are untouched.'
+    exit 0
+}
+$service = Get-Service -Name $context.ServiceName -ErrorAction SilentlyContinue
+if ($service) {
+    if ($service.Status -ne 'Stopped') { throw 'Refusing to remove a running project-managed MongoDB service.' }
+    & sc.exe delete $context.ServiceName | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Could not remove project-managed MongoDB service: $($context.ServiceName)" }
+}
+if ($cleanupMode -eq 'PRESERVE_DATA') {
+    foreach ($path in @((Join-Path $context.InstallDir 'server'), (Join-Path $context.InstallDir 'mongosh'), (Join-Path $context.InstallDir 'logs'), (Join-Path $context.InstallDir 'config'))) { Remove-MongoDBProjectPath -Path $path -Context $context }
+    Write-Host 'Project-managed MongoDB deployment was removed; data was preserved.'
+} else {
+    Remove-MongoDBProjectPath -Path $context.InstallDir -Context $context
+    Write-Host 'Project-managed MongoDB deployment and data were removed.'
+}
+exit 0
+
 Write-Host ""
 Write-Host "====================================="
 Write-Host "REMOVING PROJECT-MANAGED MONGODB"

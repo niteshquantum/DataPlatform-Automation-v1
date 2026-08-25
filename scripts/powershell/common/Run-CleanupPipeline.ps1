@@ -258,6 +258,16 @@ if (
         "scripts\powershell\$DbLower\cleanup\drop_$DbLower`_database.ps1"
 }
 
+if (
+    $DbLower -eq "mongodb" -and
+    $DropDatabaseEnabled
+) {
+
+    $DropScript = Join-Path `
+        $PROJECT_ROOT `
+        "scripts\powershell\mongodb\cleanup\drop_mongodb_database.ps1"
+}
+
 
 # ============================================================
 # BUILD NORMAL CLEANUP STEPS
