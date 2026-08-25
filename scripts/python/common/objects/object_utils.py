@@ -29,7 +29,7 @@ def read_json(path):
     with open(
         path,
         "r",
-        encoding="utf-8"
+        encoding="utf-8-sig"
     ) as file:
 
         return json.load(file)

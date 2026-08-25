@@ -142,7 +142,7 @@ def _reconcile_schema_registry(database):
     with open(
         registry_path,
         "r",
-        encoding="utf-8"
+        encoding="utf-8-sig"
     ) as file:
 
         registry = json.load(file)
@@ -241,7 +241,7 @@ def generate(database):
         )
 
         original_content = registry_path.read_text(
-            encoding="utf-8"
+            encoding="utf-8-sig"
         )
 
     try:
