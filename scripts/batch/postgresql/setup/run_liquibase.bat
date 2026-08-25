@@ -193,26 +193,86 @@ if errorlevel 1 (
 )
 
 echo.
+REM =====================================
+REM CLEAR LIQUIBASE CHECKSUMS
+REM =====================================
+
+echo.
+echo =====================================
+echo CLEARING LIQUIBASE CHECKSUMS
+echo =====================================
+echo.
+
+if defined POSTGRESQL_PASSWORD (
+
+    call "%LB_BAT%" ^
+    --classpath="%DRIVER%" ^
+    --driver=org.postgresql.Driver ^
+    --search-path="%ROOT%" ^
+    --changeLogFile="%CHANGELOG%" ^
+    --url="jdbc:postgresql://%POSTGRESQL_HOST%:%POSTGRESQL_PORT%/%POSTGRESQL_DB%" ^
+    --username="%POSTGRESQL_USER%" ^
+    --password="%POSTGRESQL_PASSWORD%" ^
+    clearCheckSums
+
+) else (
+
+    call "%LB_BAT%" ^
+    --classpath="%DRIVER%" ^
+    --driver=org.postgresql.Driver ^
+    --search-path="%ROOT%" ^
+    --changeLogFile="%CHANGELOG%" ^
+    --url="jdbc:postgresql://%POSTGRESQL_HOST%:%POSTGRESQL_PORT%/%POSTGRESQL_DB%" ^
+    --username="%POSTGRESQL_USER%" ^
+    clearCheckSums
+)
+
+if errorlevel 1 (
+
+    echo.
+    echo ERROR: POSTGRESQL LIQUIBASE CLEAR CHECKSUMS FAILED
+    exit /b 1
+)
+
 
 REM =====================================
-REM RUN LIQUIBASE
+REM RUN LIQUIBASE UPDATE
 REM =====================================
 
-set "JAVA_PATH=%JAVA_HOME%\bin\java.exe"
+echo.
+echo =====================================
+echo RUNNING POSTGRESQL LIQUIBASE UPDATE
+echo =====================================
+echo.
 
-call "%LB_BAT%" ^
---classpath="%DRIVER%" ^
---driver=org.postgresql.Driver ^
---search-path="%ROOT%" ^
---changeLogFile="%CHANGELOG%" ^
---url="jdbc:postgresql://%POSTGRESQL_HOST%:%POSTGRESQL_PORT%/%POSTGRESQL_DB%" ^
---username=%POSTGRESQL_USER% ^
-%PASSWORD_OPTION% ^
-%LB_COMMAND%
+if defined POSTGRESQL_PASSWORD (
+
+    call "%LB_BAT%" ^
+    --classpath="%DRIVER%" ^
+    --driver=org.postgresql.Driver ^
+    --search-path="%ROOT%" ^
+    --changeLogFile="%CHANGELOG%" ^
+    --url="jdbc:postgresql://%POSTGRESQL_HOST%:%POSTGRESQL_PORT%/%POSTGRESQL_DB%" ^
+    --username="%POSTGRESQL_USER%" ^
+    --password="%POSTGRESQL_PASSWORD%" ^
+    %LB_COMMAND%
+
+) else (
+
+    call "%LB_BAT%" ^
+    --classpath="%DRIVER%" ^
+    --driver=org.postgresql.Driver ^
+    --search-path="%ROOT%" ^
+    --changeLogFile="%CHANGELOG%" ^
+    --url="jdbc:postgresql://%POSTGRESQL_HOST%:%POSTGRESQL_PORT%/%POSTGRESQL_DB%" ^
+    --username="%POSTGRESQL_USER%" ^
+    %LB_COMMAND%
+)
 
 set "LIQUIBASE_RC=%ERRORLEVEL%"
 
 if not "%LIQUIBASE_RC%"=="0" (
+
     echo.
     echo ERROR: POSTGRESQL LIQUIBASE UPDATE FAILED
     echo Exit Code: %LIQUIBASE_RC%
