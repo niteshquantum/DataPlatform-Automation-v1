@@ -79,7 +79,7 @@ def main():
         print("schema_registry.json not found")
         return
 
-    with open(schema_path, "r", encoding="utf-8") as f:
+    with open(schema_path, "r", encoding="utf-8-sig") as f:
         schema = json.load(f)
 
     existing_registry = {}
