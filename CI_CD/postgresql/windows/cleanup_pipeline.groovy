@@ -13,7 +13,8 @@ pipeline {
             name: 'CLEANUP_MODE',
             choices: [
                 'PRESERVE_DATA',
-                'DELETE_DATA'
+                'DELETE_DATA',
+                'RESET_SCHEMA_CONTEXT'
             ],
             description: 'Select PostgreSQL cleanup mode'
         )
