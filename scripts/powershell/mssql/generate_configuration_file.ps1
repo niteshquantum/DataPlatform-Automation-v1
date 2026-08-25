@@ -26,6 +26,8 @@ $config = Load-Config "$ProjectRoot\config\windows\mssql.conf"
 
 $requiredKeys = @(
     "MSSQL_INSTANCE",
+    "MSSQL_INSTALL_DIR",
+    "MSSQL_DATA_DIR",
     "MSSQL_PASSWORD",
     "MSSQL_FEATURES",
     "MSSQL_SECURITY_MODE",
@@ -65,6 +67,22 @@ if (!(Test-Path $templateFile)) {
 
 $outputFile = Join-Path $ProjectRoot "databases\mssql\ConfigurationFile.ini"
 
+function Resolve-ProjectPath {
+    param([string]$RelativePath)
+
+    $candidate = [System.IO.Path]::GetFullPath((Join-Path $ProjectRoot $RelativePath))
+    $rootWithSeparator = $ProjectRoot.Path.TrimEnd('\') + '\'
+
+    if (-not $candidate.StartsWith($rootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Configured path must be within PROJECT_ROOT: $RelativePath"
+    }
+
+    return $candidate
+}
+
+$installDir = Resolve-ProjectPath $config["MSSQL_INSTALL_DIR"]
+$dataDir = Resolve-ProjectPath $config["MSSQL_DATA_DIR"]
+
 # ------------------------------------------------------------------
 # Read Template
 # ------------------------------------------------------------------
@@ -77,6 +95,8 @@ $content = Get-Content $templateFile -Raw
 
 $replacements = @{
     "{{INSTANCE_NAME}}"           = $config["MSSQL_INSTANCE"]
+    "{{INSTALL_DIR}}"             = $installDir
+    "{{DATA_DIR}}"                = $dataDir
     "{{SA_PASSWORD}}"             = $config["MSSQL_PASSWORD"]
     "{{FEATURES}}"                = $config["MSSQL_FEATURES"]
     "{{SECURITY_MODE}}"           = $config["MSSQL_SECURITY_MODE"]
