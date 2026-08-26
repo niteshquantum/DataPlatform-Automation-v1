@@ -48,7 +48,6 @@
             "mongodb.load",
             "postgresql.load",
             "mssql.load",
-
             "report.view"
         ]
     },

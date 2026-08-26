@@ -66,7 +66,33 @@ then
     PASSWORD_OPTION=(--password="$MSSQL_PASSWORD")
 fi
 
-"$LB" \
+echo "====================================="
+echo "CLEARING LIQUIBASE CHECKSUMS"
+echo "====================================="
+echo
+
+if ! "$LB" \
+--classpath="$DRIVER" \
+--driver=com.microsoft.sqlserver.jdbc.SQLServerDriver \
+--search-path="$PROJECT_ROOT" \
+--changeLogFile="$CHANGELOG" \
+--url="jdbc:sqlserver://$MSSQL_HOST:$MSSQL_PORT;databaseName=$MSSQL_DB;encrypt=true;trustServerCertificate=true" \
+--username="$MSSQL_USER" \
+"${PASSWORD_OPTION[@]}" \
+clearCheckSums
+then
+    echo
+    echo "ERROR: LIQUIBASE CLEAR CHECKSUMS FAILED" >&2
+    exit 1
+fi
+
+echo
+echo "====================================="
+echo "RUNNING LIQUIBASE UPDATE"
+echo "====================================="
+echo
+
+if ! "$LB" \
 --classpath="$DRIVER" \
 --driver=com.microsoft.sqlserver.jdbc.SQLServerDriver \
 --search-path="$PROJECT_ROOT" \
@@ -75,6 +101,11 @@ fi
 --username="$MSSQL_USER" \
 "${PASSWORD_OPTION[@]}" \
 update
+then
+    echo
+    echo "ERROR: LIQUIBASE UPDATE FAILED" >&2
+    exit 1
+fi
 
 echo
 echo "====================================="

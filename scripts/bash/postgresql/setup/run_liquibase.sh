@@ -36,7 +36,32 @@ java -version
 
 echo
 
-"$LB" \
+echo "====================================="
+echo "CLEARING LIQUIBASE CHECKSUMS"
+echo "====================================="
+echo
+
+if ! "$LB" \
+--classpath="$DRIVER" \
+--driver=org.postgresql.Driver \
+--changeLogFile="$CHANGELOG" \
+--url="jdbc:postgresql://$POSTGRESQL_HOST:$POSTGRESQL_PORT/$POSTGRESQL_DB" \
+--username="$POSTGRESQL_USER" \
+--password="$POSTGRESQL_PASSWORD" \
+clearCheckSums
+then
+    echo
+    echo "ERROR: LIQUIBASE CLEAR CHECKSUMS FAILED" >&2
+    exit 1
+fi
+
+echo
+echo "====================================="
+echo "RUNNING LIQUIBASE UPDATE"
+echo "====================================="
+echo
+
+if ! "$LB" \
 --classpath="$DRIVER" \
 --driver=org.postgresql.Driver \
 --changeLogFile="$CHANGELOG" \
@@ -44,6 +69,11 @@ echo
 --username="$POSTGRESQL_USER" \
 --password="$POSTGRESQL_PASSWORD" \
 update
+then
+    echo
+    echo "ERROR: LIQUIBASE UPDATE FAILED" >&2
+    exit 1
+fi
 
 echo
 echo "====================================="
