@@ -331,31 +331,9 @@ pipeline {
             name: 'CLEANUP_MODE',
             choices: [
                 'PRESERVE_DATA',
-                'DELETE_DATA',
-                'RESET_SCHEMA_CONTEXT'
+                'DELETE_DATA'
             ],
             description: 'Select Cleanup Mode'
-        )
-
-        choice(
-            name: 'SOURCE_TYPE',
-            choices: [
-                'google_drive',
-                'local'
-            ],
-            description: 'Select dataset source.'
-        )
-
-        string(
-            name: 'SOURCE_PATH',
-            defaultValue: '',
-            description: 'Dataset location (Google Drive URL or local path)'
-        )
-
-        booleanParam(
-            name: 'FORCE_DOWNLOAD',
-            defaultValue: false,
-            description: 'Force dataset download instead of reusing an existing archive.'
         )
 
         string(
@@ -492,13 +470,7 @@ if (currentBuild.number == 1) {
                         'windows'
                     ) {
 
-                        withEnv([
-                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
-                            "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
-                        ]) {
-                            bat 'scripts\\batch\\postgresql\\postgresql_load_pipeline.bat'
-                        }
+                        bat 'scripts\\batch\\postgresql\\postgresql_load_pipeline.bat'
                     }
                 }
             }
@@ -588,13 +560,7 @@ if (currentBuild.number == 1) {
                         'windows'
                     ) {
 
-                        withEnv([
-                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
-                            "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
-                        ]) {
-                            bat 'scripts\\batch\\mongodb\\mongodb_load_pipeline.bat'
-                        }
+                        bat 'scripts\\batch\\mongodb\\mongodb_load_pipeline.bat'
                     }
                 }
             }
@@ -684,13 +650,7 @@ if (currentBuild.number == 1) {
                         'windows'
                     ) {
 
-                        withEnv([
-                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
-                            "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
-                        ]) {
-                            bat 'scripts\\batch\\mysql\\mysql_load_pipeline.bat'
-                        }
+                        bat 'scripts\\batch\\mysql\\mysql_load_pipeline.bat'
                     }
                 }
             }
@@ -830,13 +790,7 @@ if (currentBuild.number == 1) {
                         'windows'
                     ) {
 
-                        withEnv([
-                            "SOURCE_TYPE=${params.SOURCE_TYPE}",
-                            "SOURCE_PATH=${params.SOURCE_PATH}",
-                            "FORCE_DOWNLOAD=${params.FORCE_DOWNLOAD}"
-                        ]) {
-                            bat 'scripts\\batch\\mssql\\mssql_load_pipeline.bat'
-                        }
+                        bat 'scripts\\batch\\mssql\\mssql_load_pipeline.bat'
                     }
                 }
             }
