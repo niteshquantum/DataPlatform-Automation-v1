@@ -418,10 +418,11 @@ if (currentBuild.number == 1) {
         stage('PostgreSQL Setup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
 					expression { currentBuild.number > 1 }
@@ -463,10 +464,11 @@ if (currentBuild.number == 1) {
         stage('PostgreSQL Load') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
 					expression { currentBuild.number > 1 }
@@ -514,10 +516,11 @@ if (currentBuild.number == 1) {
         stage('MongoDB Setup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
 					expression { currentBuild.number > 1 }
@@ -559,10 +562,11 @@ if (currentBuild.number == 1) {
         stage('MongoDB Load') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
  					expression { currentBuild.number > 1 }
@@ -610,10 +614,11 @@ if (currentBuild.number == 1) {
         stage('MySQL Setup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -655,10 +660,11 @@ if (currentBuild.number == 1) {
         stage('MySQL Load') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -706,10 +712,11 @@ if (currentBuild.number == 1) {
         stage('MySQL Cleanup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -756,10 +763,11 @@ if (currentBuild.number == 1) {
         stage('MSSQL Setup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -801,10 +809,11 @@ if (currentBuild.number == 1) {
         stage('MSSQL Load') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -852,10 +861,11 @@ if (currentBuild.number == 1) {
         stage('MSSQL Cleanup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -902,10 +912,11 @@ if (currentBuild.number == 1) {
         stage('PostgreSQL Cleanup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
@@ -952,10 +963,11 @@ if (currentBuild.number == 1) {
         stage('MongoDB Cleanup') {
 
             agent {
-                label 'windows-node'
+                label 'windows-node-2'
             }
 
             when {
+                beforeAgent true
 
                 allOf {
                     expression { currentBuild.number > 1 }
