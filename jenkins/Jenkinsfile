@@ -300,7 +300,7 @@ pipeline {
     parameters {
         choice(name: 'DATABASE', choices: ['MYSQL', 'POSTGRESQL', 'MONGODB', 'MSSQL'], description: 'Select Database')
         choice(name: 'ACTION', choices: ['SETUP', 'LOAD', 'CLEANUP'], description: 'Select Action')
-        choice(name: 'CLEANUP_MODE', choices: ['PRESERVE_DATA', 'DELETE_DATA'], description: 'Select cleanup mode when ACTION is CLEANUP')
+        choice(name: 'CLEANUP_MODE', choices: ['PRESERVE_DATA', 'DELETE_DATA', 'RESET_SCHEMA_CONTEXT'], description: 'Select MySQL cleanup mode')
         choice(
             name: 'SOURCE_TYPE',
             choices: [

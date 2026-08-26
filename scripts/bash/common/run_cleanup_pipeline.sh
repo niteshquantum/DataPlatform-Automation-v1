@@ -33,11 +33,11 @@ log "Project Root : $PROJECT_ROOT"
 log ""
 
 case "$CLEANUP_MODE" in
-    PRESERVE_DATA|DELETE_DATA)
+    PRESERVE_DATA|DELETE_DATA|RESET_SCHEMA_CONTEXT)
         ;;
     *)
         log "[ERROR] Invalid cleanup mode: $CLEANUP_MODE"
-        log "Allowed values: PRESERVE_DATA, DELETE_DATA"
+        log "Allowed values: PRESERVE_DATA, DELETE_DATA, RESET_SCHEMA_CONTEXT"
         exit 1
         ;;
 esac
@@ -69,6 +69,43 @@ fi
 if [[ ! -f "$DB_CONFIG_FILE" ]]; then
     log "[ERROR] Database cleanup config not found: $DB_CONFIG_FILE"
     exit 1
+fi
+
+if [[ "$CLEANUP_MODE" == "RESET_SCHEMA_CONTEXT" ]]; then
+    if [[ "$DATABASE" != "mysql" ]]; then
+        log "[ERROR] RESET_SCHEMA_CONTEXT is currently supported only for mysql on Ubuntu."
+        exit 1
+    fi
+
+    SCHEMA_CONTEXT_RESET_SCRIPT="$PROJECT_ROOT/scripts/bash/common/reset_schema_context.sh"
+
+    log ""
+    log "====================================="
+    log "SCHEMA CONTEXT RESET MODE"
+    log "====================================="
+    log ""
+    log "Only generated schema context will be reset."
+    log "Actual database, tables and data will NOT be modified."
+    log ""
+
+    if [[ ! -f "$SCHEMA_CONTEXT_RESET_SCRIPT" ]]; then
+        log "[ERROR] Reset schema context script not found: $SCHEMA_CONTEXT_RESET_SCRIPT"
+        exit 1
+    fi
+
+    bash "$SCHEMA_CONTEXT_RESET_SCRIPT" "$DATABASE"
+
+    log ""
+    log "====================================="
+    log "SCHEMA CONTEXT RESET COMPLETED"
+    log "====================================="
+    log ""
+    log "Database     : $DATABASE"
+    log "Cleanup Mode : $CLEANUP_MODE"
+    log "Status       : SUCCESS"
+    log ""
+
+    exit 0
 fi
 
 XML_CLEANUP_ENABLED=$(get_config_value "$DB_CONFIG_FILE" "XML_CLEANUP_ENABLED")
