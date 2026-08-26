@@ -102,9 +102,6 @@ def get_active_lan_ip():
     """
     Automatically detect the active physical
     LAN / Wi-Fi IPv4 address.
-
-    Ignores Docker, virtual bridges,
-    Tailscale, loopback, etc.
     """
 
     try:
@@ -225,8 +222,11 @@ def get_active_lan_ip():
 
 def get_schema_editor_config():
     """
-    Read fixed Ubuntu/Jenkins machine IP
-    and port from network.conf.
+    Select Schema Editor port automatically
+    based on the machine running the pipeline.
+
+    Windows  -> 5002
+    Ubuntu   -> 5000
     """
 
     network_conf = (
@@ -236,17 +236,14 @@ def get_schema_editor_config():
         / "network.conf"
     )
 
-    port = int(
-        os.environ.get(
-            "SCHEMA_EDITOR_PORT",
-            "5000"
-        )
-    )
-
     configured_host = os.environ.get(
         "SCHEMA_EDITOR_HOST",
         ""
     ).strip()
+
+    # Default ports
+    ubuntu_port = 5000
+    windows_port = 5002
 
     if network_conf.exists():
 
@@ -259,24 +256,36 @@ def get_schema_editor_config():
                 encoding="utf-8"
             )
 
-            port = int(
-                os.environ.get(
-                    "SCHEMA_EDITOR_PORT",
-                    config["DEFAULT"].get(
-                        "SCHEMA_EDITOR_PORT",
-                        port
-                    )
-                )
-            )
+            default_config = config["DEFAULT"]
 
             if not configured_host:
 
                 configured_host = (
-                    config["DEFAULT"].get(
+                    default_config.get(
                         "SCHEMA_EDITOR_HOST",
                         ""
                     ).strip()
                 )
+
+            ubuntu_port = int(
+                os.environ.get(
+                    "UBUNTU_SCHEMA_EDITOR_PORT",
+                    default_config.get(
+                        "UBUNTU_SCHEMA_EDITOR_PORT",
+                        "5000"
+                    )
+                )
+            )
+
+            windows_port = int(
+                os.environ.get(
+                    "WINDOWS_SCHEMA_EDITOR_PORT",
+                    default_config.get(
+                        "WINDOWS_SCHEMA_EDITOR_PORT",
+                        "5002"
+                    )
+                )
+            )
 
         except Exception as exc:
 
@@ -288,42 +297,79 @@ def get_schema_editor_config():
 
             sys.exit(1)
 
-    return configured_host, port
+    # Automatically select port based on OS
+
+    if sys.platform.startswith("win"):
+
+        selected_port = windows_port
+        machine_type = "WINDOWS NODE"
+
+    elif sys.platform.startswith("linux"):
+
+        selected_port = ubuntu_port
+        machine_type = "UBUNTU NODE"
+
+    else:
+
+        selected_port = 5000
+        machine_type = "UNKNOWN NODE"
+
+    return configured_host, selected_port, machine_type
 
 
 if __name__ == "__main__":
 
-    # Read configured Ubuntu server IP and port
-    ubuntu_ip, display_port = get_schema_editor_config()
+    # Read configuration
+    configured_host, display_port, machine_type = (
+        get_schema_editor_config()
+    )
 
-    # Automatically detect the active LAN/Wi-Fi IP
-    # of the machine currently running this application
+    # Detect current machine IP
     active_ip = get_active_lan_ip()
 
     print("\n" + "=" * 70)
     print("ACTION REQUIRED - SCHEMA EDITOR")
     print("=" * 70)
 
+    print(f"\nRunning on: {machine_type}")
+    print(f"Database: {DATABASE.upper()}")
+
     print("\nSchema Editor is ready.")
-    print("Use the appropriate URL based on where you are accessing it.\n")
+    print("Use the following URL:\n")
 
-    print("1. CURRENT MACHINE - NETWORK ACCESS")
-    print(f"   http://{active_ip}:{display_port}")
-    print("   Use this URL from another device connected to the same network.\n")
+    # Primary URL - external/configured access
+    if configured_host:
 
-    print("2. SAME MACHINE - LOCAL ACCESS")
-    print(f"   http://127.0.0.1:{display_port}")
-    print("   Use this URL when accessing the Schema Editor from the machine")
-    print("   where the application is currently running.\n")
+        print("PRIMARY URL:")
+        print(
+            f"   http://{configured_host}:{display_port}"
+        )
 
-    if ubuntu_ip:
-        print("3. CONFIGURED UBUNTU SERVER - NETWORK ACCESS")
-        print(f"   http://{ubuntu_ip}:{display_port}")
-        print("   Use this URL to access the configured Ubuntu server.")
-        print("   The server address is defined in config/common/network.conf.\n")
+        print(
+            "\nThis is the URL to use for accessing "
+            "the Schema Editor."
+        )
 
-    print("After selecting datatypes, click 'Save & Continue'.")
-    print("The selections will be saved and the pipeline will continue automatically.")
+    # Current machine network URL
+    print("\nCURRENT MACHINE NETWORK URL:")
+    print(
+        f"   http://{active_ip}:{display_port}"
+    )
+
+    print("\nLOCAL ACCESS:")
+    print(
+        f"   http://127.0.0.1:{display_port}"
+    )
+
+    print(
+        "\nAfter selecting datatypes, "
+        "click 'Save & Continue'."
+    )
+
+    print(
+        "The selections will be saved and "
+        "the pipeline will continue automatically."
+    )
 
     print("=" * 70 + "\n")
 
