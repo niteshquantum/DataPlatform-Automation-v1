@@ -48,7 +48,9 @@ def runTrackedStage(String stageName, Closure stageBody) {
 
 pipeline {
 
-    agent any
+     agent {
+        label 'ubuntu-node'
+    }
 
     options {
         disableConcurrentBuilds()
