@@ -1,53 +1,58 @@
-
-
 def execute(Map context) {
-    def runTrackedStage = context.runTrackedStage ?: { String stageName, Closure stageBody -> stageBody() }
 
+    def runTrackedStage = context.runTrackedStage ?: { String stageName, Closure stageBody ->
+        stageBody()
+    }
 
-        stage('Validate Cleanup Parameters') {
+    stage('Validate Cleanup Parameters') {
 
+        runTrackedStage('Validate Cleanup Parameters') {
 
-                    runTrackedStage('Validate Cleanup Parameters') {
-                        if (
-                            params.CLEANUP_MODE != 'PRESERVE_DATA' &&
-                            params.CLEANUP_MODE != 'DELETE_DATA' &&
-                            params.CLEANUP_MODE != 'RESET_SCHEMA_CONTEXT'
-                        ) {
-                            error("Invalid CLEANUP_MODE: ${params.CLEANUP_MODE}")
-                        }
+            if (
+                params.CLEANUP_MODE != 'PRESERVE_DATA' &&
+                params.CLEANUP_MODE != 'DELETE_DATA' &&
+                params.CLEANUP_MODE != 'RESET_SCHEMA_CONTEXT'
+            ) {
+                error("Invalid CLEANUP_MODE: ${params.CLEANUP_MODE}")
+            }
 
-                        echo """
+            echo """
 =====================================
 MYSQL UBUNTU CLEANUP PARAMETERS
 =====================================
 
 Cleanup Mode : ${params.CLEANUP_MODE}
 """
-                    }
         }
+    }
 
-        stage('Run MySQL Cleanup') {
+    stage('Run MySQL Cleanup') {
 
-                    runTrackedStage('Run MySQL Cleanup') {
-                        withEnv([
-                            "CLEANUP_MODE=${params.CLEANUP_MODE}"
-                        ]) {
-                            sh '''
-                        echo
-                        echo "====================================="
-                        echo "RUNNING MYSQL UBUNTU CLEANUP"
-                        echo "====================================="
-                        echo
+        runTrackedStage('Run MySQL Cleanup') {
 
-                        bash scripts/bash/mysql/cleanup/mysql_cleanup_pipeline.sh
+            withEnv([
+                "CLEANUP_MODE=${params.CLEANUP_MODE}"
+            ]) {
 
-                        echo
-                        echo "====================================="
-                        echo "MYSQL UBUNTU CLEANUP COMPLETED"
-                        echo "====================================="
-                        echo
-                    '''
-                        }
-}
+                sh '''
+echo
+echo "====================================="
+echo "RUNNING MYSQL UBUNTU CLEANUP"
+echo "====================================="
+echo
+
+bash scripts/bash/mysql/cleanup/mysql_cleanup_pipeline.sh
+
+echo
+echo "====================================="
+echo "MYSQL UBUNTU CLEANUP COMPLETED"
+echo "====================================="
+echo
+'''
+            }
+        }
+    }
+
+}  // execute() close
 
 return this

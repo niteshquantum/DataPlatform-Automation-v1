@@ -266,6 +266,101 @@ function Reset-JsonContext {
 
 
 # ============================================================
+# MONGODB-SPECIFIC RESET CONTEXT
+# ============================================================
+
+function Resolve-ProjectResetPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RelativePath
+    )
+
+    $ResolvedPath = [System.IO.Path]::GetFullPath(
+        (Join-Path $PROJECT_ROOT $RelativePath)
+    )
+
+    $ProjectRootPrefix = $PROJECT_ROOT.TrimEnd('\') + '\'
+
+    if (-not $ResolvedPath.StartsWith(
+        $ProjectRootPrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "Refusing to reset path outside PROJECT_ROOT: $RelativePath"
+    }
+
+    return $ResolvedPath
+}
+
+
+function Reset-MongoDBContextFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RelativePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
+
+    $FilePath = Resolve-ProjectResetPath -RelativePath $RelativePath
+    $Directory = Split-Path -Path $FilePath -Parent
+
+    Write-Log ""
+    Write-Log "====================================="
+    Write-Log "RESET $Name"
+    Write-Log "====================================="
+    Write-Log "Path : $FilePath"
+
+    if (!(Test-Path -LiteralPath $Directory)) {
+        New-Item -Path $Directory -ItemType Directory -Force | Out-Null
+    }
+
+    Set-Content -LiteralPath $FilePath -Value $Content -Encoding UTF8
+    Write-Log "Status : RESET SUCCESSFULLY"
+}
+
+
+function Remove-MongoDBContextFileIfPresent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RelativePath
+    )
+
+    $FilePath = Resolve-ProjectResetPath -RelativePath $RelativePath
+
+    Write-Log ""
+    Write-Log "====================================="
+    Write-Log "RESET $Name"
+    Write-Log "====================================="
+    Write-Log "Path : $FilePath"
+
+    if (Test-Path -LiteralPath $FilePath) {
+        Remove-Item -LiteralPath $FilePath -Force
+        Write-Log "Status : REMOVED"
+    }
+    else {
+        Write-Log "Status : NOT FOUND"
+        Write-Log "Action : SKIPPED - Nothing to reset"
+    }
+}
+
+
+function Reset-MongoDBSchemaContext {
+    Reset-MongoDBContextFile -Name "SCHEMA REGISTRY" -RelativePath "metadata\mongodb\schema_registry.json" -Content "{}"
+    Reset-MongoDBContextFile -Name "DATATYPE REGISTRY" -RelativePath "metadata\mongodb\datatype_registry.json" -Content "{}"
+    Reset-MongoDBContextFile -Name "TABLE SOURCE MAPPING" -RelativePath "metadata\mongodb\table_source_mapping.json" -Content "{}"
+    Reset-MongoDBContextFile -Name "CDC STATUS" -RelativePath "metadata\mongodb\cdc_status.json" -Content '{"tables":{}}'
+
+    Remove-MongoDBContextFileIfPresent -Name "LOAD HISTORY" -RelativePath "metadata\data_load_history.jsonl"
+}
+
+
+# ============================================================
 # CONFIGURATION
 # ============================================================
 
@@ -318,6 +413,28 @@ Write-Log "Project Root  : $PROJECT_ROOT"
 Write-Log ""
 Write-Log "Cleanup Config : $CleanupConfigFile"
 Write-Log "Database Config: $DatabaseConfigFile"
+
+
+if ($DbLower -eq "mongodb") {
+    Write-Log ""
+    Write-Log "MongoDB does not use Liquibase or an object registry in this reset flow."
+
+    Reset-MongoDBSchemaContext
+
+    Write-Log ""
+    Write-Log "============================================================"
+    Write-Log "SCHEMA CONTEXT RESET COMPLETED"
+    Write-Log "============================================================"
+    Write-Log ""
+    Write-Log "Database      : $DbLower"
+    Write-Log "Database Name : $DatabaseName"
+    Write-Log "Status        : SUCCESS"
+    Write-Log ""
+    Write-Log "NOTE: MongoDB service, database, collections, indexes and data were NOT modified."
+    Write-Log ""
+
+    exit 0
+}
 
 
 # ============================================================

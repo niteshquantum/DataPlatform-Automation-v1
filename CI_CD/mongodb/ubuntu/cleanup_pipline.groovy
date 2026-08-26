@@ -1,6 +1,6 @@
 pipeline {
 
-    agent any
+    agent { label 'ubuntu-node' }
 
     parameters {
 
@@ -8,7 +8,8 @@ pipeline {
             name: 'CLEANUP_MODE',
             choices: [
                 'PRESERVE_DATA',
-                'DELETE_DATA'
+                'DELETE_DATA',
+                'RESET_SCHEMA_CONTEXT'
             ],
             description: 'Select MongoDB cleanup mode'
         )
@@ -24,7 +25,8 @@ pipeline {
 
                     if (
                         params.CLEANUP_MODE != 'PRESERVE_DATA' &&
-                        params.CLEANUP_MODE != 'DELETE_DATA'
+                        params.CLEANUP_MODE != 'DELETE_DATA' &&
+                        params.CLEANUP_MODE != 'RESET_SCHEMA_CONTEXT'
                     ) {
                         error("Invalid CLEANUP_MODE: ${params.CLEANUP_MODE}")
                     }
