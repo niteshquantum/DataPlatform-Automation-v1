@@ -4,8 +4,19 @@ def execute(Map context) {
     def runTrackedStage = context.runTrackedStage ?: { String stageName, Closure stageBody -> stageBody() }
 
 
-        
 
+        stage('Validate Cleanup Parameters') {
+
+                    runTrackedStage('Validate Cleanup Parameters') {
+                        if (
+                            params.CLEANUP_MODE != 'PRESERVE_DATA' &&
+                            params.CLEANUP_MODE != 'DELETE_DATA' &&
+                            params.CLEANUP_MODE != 'RESET_SCHEMA_CONTEXT'
+                        ) {
+                            error("Invalid CLEANUP_MODE: ${params.CLEANUP_MODE}")
+                        }
+                    }
+        }
 
         stage('Run MongoDB Cleanup') {
 
@@ -15,6 +26,8 @@ def execute(Map context) {
                         ]) {
                             bat 'scripts\\batch\\mongodb\\cleanup\\mongodb_cleanup_pipeline.bat'
                         }
+                    }
+        }
 }
 
 return this

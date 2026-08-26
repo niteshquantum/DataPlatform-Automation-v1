@@ -15,6 +15,8 @@ def execute(Map context) {
                         ]) {
                             bat 'scripts\\batch\\postgresql\\cleanup\\postgresql_cleanup_pipeline.bat'
                         }
+                    }
+        }
 }
 
 return this

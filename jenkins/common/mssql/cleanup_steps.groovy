@@ -48,6 +48,8 @@ Cleanup Mode : ${params.CLEANUP_MODE}
                         echo
                     '''
                         }
+                        }
+        }
 }
 
 return this
