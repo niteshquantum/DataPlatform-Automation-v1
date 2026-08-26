@@ -10,7 +10,8 @@ def execute(Map context) {
                     runTrackedStage('Validate Cleanup Parameters') {
                         if (
                             params.CLEANUP_MODE != 'PRESERVE_DATA' &&
-                            params.CLEANUP_MODE != 'DELETE_DATA'
+                            params.CLEANUP_MODE != 'DELETE_DATA' &&
+                            params.CLEANUP_MODE != 'RESET_SCHEMA_CONTEXT'
                         ) {
                             error("Invalid CLEANUP_MODE: ${params.CLEANUP_MODE}")
                         }

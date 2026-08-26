@@ -72,8 +72,8 @@ if [[ ! -f "$DB_CONFIG_FILE" ]]; then
 fi
 
 if [[ "$CLEANUP_MODE" == "RESET_SCHEMA_CONTEXT" ]]; then
-    if [[ "$DATABASE" != "mysql" ]]; then
-        log "[ERROR] RESET_SCHEMA_CONTEXT is currently supported only for mysql on Ubuntu."
+    if [[ "$DATABASE" != "mysql" && "$DATABASE" != "postgresql" && "$DATABASE" != "mssql" ]]; then
+        log "[ERROR] RESET_SCHEMA_CONTEXT is supported only for mysql, postgresql, and mssql on Ubuntu."
         exit 1
     fi
 

@@ -3,8 +3,8 @@ set -euo pipefail
 
 DATABASE="${1:-}"
 
-if [[ "$DATABASE" != "mysql" ]]; then
-    echo "[ERROR] reset_schema_context.sh supports only mysql." >&2
+if [[ "$DATABASE" != "mysql" && "$DATABASE" != "postgresql" && "$DATABASE" != "mssql" ]]; then
+    echo "[ERROR] reset_schema_context.sh supports mysql, postgresql, and mssql." >&2
     exit 1
 fi
 
@@ -33,8 +33,8 @@ ensure_project_path() {
     fi
 }
 
-CLEANUP_CONFIG_FILE="$PROJECT_ROOT/config/cleanup/ubuntu/mysql.conf"
-DATABASE_CONFIG_FILE="$PROJECT_ROOT/config/ubuntu/mysql.conf"
+CLEANUP_CONFIG_FILE="$PROJECT_ROOT/config/cleanup/ubuntu/$DATABASE.conf"
+DATABASE_CONFIG_FILE="$PROJECT_ROOT/config/ubuntu/$DATABASE.conf"
 
 for config_file in "$CLEANUP_CONFIG_FILE" "$DATABASE_CONFIG_FILE"; do
     if [[ ! -f "$config_file" ]]; then
@@ -43,9 +43,21 @@ for config_file in "$CLEANUP_CONFIG_FILE" "$DATABASE_CONFIG_FILE"; do
     fi
 done
 
-DATABASE_NAME=$(get_config_value "$DATABASE_CONFIG_FILE" "MYSQL_DB")
+case "$DATABASE" in
+    mysql)
+        DATABASE_NAME_KEY="MYSQL_DB"
+        ;;
+    postgresql)
+        DATABASE_NAME_KEY="POSTGRESQL_DB"
+        ;;
+    mssql)
+        DATABASE_NAME_KEY="MSSQL_DB"
+        ;;
+esac
+
+DATABASE_NAME=$(get_config_value "$DATABASE_CONFIG_FILE" "$DATABASE_NAME_KEY")
 if [[ -z "$DATABASE_NAME" ]]; then
-    log "[ERROR] Database name not found in configuration key: MYSQL_DB"
+    log "[ERROR] Database name not found in configuration key: $DATABASE_NAME_KEY"
     exit 1
 fi
 
@@ -58,7 +70,7 @@ log "============================================================"
 log "RESET SCHEMA CONTEXT"
 log "============================================================"
 log ""
-log "Database      : mysql"
+log "Database      : $DATABASE"
 log "Database Name : $DATABASE_NAME"
 log "Project Root  : $PROJECT_ROOT"
 log ""
@@ -100,7 +112,7 @@ if [[ "$LIQUIBASE_ENABLED" == "true" ]]; then
         log "Status : RESET SUCCESSFULLY"
     fi
 else
-    log "Liquibase reset disabled for mysql."
+    log "Liquibase reset disabled for $DATABASE."
 fi
 
 if [[ -n "$HISTORY_FILE_RELATIVE" ]]; then
@@ -121,7 +133,7 @@ if [[ -n "$HISTORY_FILE_RELATIVE" ]]; then
     fi
 fi
 
-metadata_dir="$PROJECT_ROOT/metadata/mysql"
+metadata_dir="$PROJECT_ROOT/metadata/$DATABASE"
 ensure_project_path "$metadata_dir"
 mkdir -p -- "$metadata_dir"
 
@@ -160,7 +172,7 @@ log "============================================================"
 log "SCHEMA CONTEXT RESET COMPLETED"
 log "============================================================"
 log ""
-log "Database      : mysql"
+log "Database      : $DATABASE"
 log "Database Name : $DATABASE_NAME"
 log "Status        : SUCCESS"
 log ""

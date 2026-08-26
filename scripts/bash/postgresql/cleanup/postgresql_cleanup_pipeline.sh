@@ -12,9 +12,9 @@ echo "POSTGRESQL CLEANUP PIPELINE"
 echo "====================================="
 echo
 
-if [[ "$CLEANUP_MODE" != "PRESERVE_DATA" && "$CLEANUP_MODE" != "DELETE_DATA" ]]; then
+if [[ "$CLEANUP_MODE" != "PRESERVE_DATA" && "$CLEANUP_MODE" != "DELETE_DATA" && "$CLEANUP_MODE" != "RESET_SCHEMA_CONTEXT" ]]; then
     echo "ERROR: Invalid CLEANUP_MODE: $CLEANUP_MODE" >&2
-    echo "Valid cleanup modes: PRESERVE_DATA, DELETE_DATA" >&2
+    echo "Valid cleanup modes: PRESERVE_DATA, DELETE_DATA, RESET_SCHEMA_CONTEXT" >&2
     exit 1
 fi
 
