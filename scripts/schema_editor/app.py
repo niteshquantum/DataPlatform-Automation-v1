@@ -290,43 +290,50 @@ def get_schema_editor_config():
 
     return configured_host, port
 
-
 if __name__ == "__main__":
 
-    # Read configured Ubuntu server IP and port
-    ubuntu_ip, display_port = get_schema_editor_config()
+    # Read configured host and Flask internal port
+    configured_host, display_port = get_schema_editor_config()
 
     # Automatically detect the active LAN/Wi-Fi IP
-    # of the machine currently running this application
     active_ip = get_active_lan_ip()
+
+    # External port depends on the machine running the Schema Editor
+    if sys.platform.startswith("win"):
+        external_port = 5002
+    else:
+        external_port = 5000
 
     print("\n" + "=" * 70)
     print("ACTION REQUIRED - SCHEMA EDITOR")
     print("=" * 70)
 
     print("\nSchema Editor is ready.")
-    print("Use the appropriate URL based on where you are accessing it.\n")
 
-    print("1. CURRENT MACHINE - NETWORK ACCESS")
+    # PRIMARY URL - this is the URL you should open
+    if configured_host:
+        print("\nPRIMARY URL:")
+        print(f"   http://{configured_host}:{external_port}")
+        print("\nUse this URL to access the Schema Editor.\n")
+
+    # Current machine network URL
+    print("CURRENT MACHINE - NETWORK ACCESS:")
     print(f"   http://{active_ip}:{display_port}")
-    print("   Use this URL from another device connected to the same network.\n")
+    print("   Internal machine URL.\n")
 
-    print("2. SAME MACHINE - LOCAL ACCESS")
-    print(f"   http://127.0.0.1:{display_port}")
-    print("   Use this URL when accessing the Schema Editor from the machine")
-    print("   where the application is currently running.\n")
-
-    if ubuntu_ip:
-        print("3. CONFIGURED UBUNTU SERVER - NETWORK ACCESS")
-        print(f"   http://{ubuntu_ip}:{display_port}")
-        print("   Use this URL to access the configured Ubuntu server.")
-        print("   The server address is defined in config/common/network.conf.\n")
+    # Local access
+    print("SAME MACHINE - LOCAL ACCESS:")
+    print(f"   http://127.0.0.1:{display_port}\n")
 
     print("After selecting datatypes, click 'Save & Continue'.")
     print("The selections will be saved and the pipeline will continue automatically.")
 
     print("=" * 70 + "\n")
 
+    # IMPORTANT:
+    # Flask continues running on its internal configured port.
+    # Windows = 5000 internally
+    # pfSense forwards 5002 -> Windows:5000
     app.run(
         host="0.0.0.0",
         port=display_port,
