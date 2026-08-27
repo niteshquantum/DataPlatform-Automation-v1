@@ -87,37 +87,31 @@ def execute(Map context) {
 
         stage('Download Dataset') {
 
+            runTrackedStage(
+                'Download Dataset'
+            ) {
 
+                withEnv([
+                    "SOURCE_TYPE=${context.sourceType}",
+                    "SOURCE_PATH=${context.sourcePath}",
+                    "FORCE_DOWNLOAD=${context.forceDownload}"
+                ]) {
 
-                    runTrackedStage(
-                        'Download Dataset'
-                    ) {
-
-                        withEnv([
-                            "SOURCE_TYPE=${context.sourceType}",
-                            "SOURCE_PATH=${context.sourcePath}",
-                            "FORCE_DOWNLOAD=${context.forceDownload}"
-                        ]) {
-                            bat 'scripts\\batch\\common\\download_dataset.bat'
-                        }
-                    }
+                    bat 'scripts\\batch\\common\\download_dataset.bat'
+                }
+            }
         }
 
 
         stage('Verify Download') {
 
-            steps {
+            runTrackedStage(
+                'Verify Download'
+            ) {
 
-                script {
-
-                    runTrackedStage('Verify Download') {
-
-                        bat 'python scripts\\python\\common\\verify_download.py'
-                    }
-                }
+                bat 'python scripts\\python\\common\\verify_download.py'
             }
         }
-
 
         stage('Profile Source Data') {
 
